@@ -1,4 +1,5 @@
 <?php
+// Cache bust: 2025-12-08-07-09
 
 
 /**
@@ -7,19 +8,18 @@
  * Description: this is WooCommerce based plugin to use XPAY online payment gateway 
  * Author: XPAY
  * Author URI: https://xpay.app/
- * Version: 1.0
+ * Version: 1.1
  */
  
 defined( 'ABSPATH' ) or exit;
-
 
 // Make sure WooCommerce is active
 if ( ! in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) {
 	return;
 }
 
-require( 'utils.php' );
-require( 'actions.php' );
+require_once plugin_dir_path( __FILE__ ) . 'utils.php';
+require_once plugin_dir_path( __FILE__ ) . 'actions.php';
 
 /**
  * Add the gateway to WC Available Gateways
@@ -41,14 +41,17 @@ add_filter( 'woocommerce_payment_gateways', 'wc_xpay_add_to_gateways' );
  * @return array $links all plugin links + our custom links (i.e., "Settings")
  */
 function wc_xpay_gateway_plugin_links( $links ) {
-
 	$plugin_links = array(
-		'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=xpay_gateway' ) . '">' . __( 'Configure', 'wc-gateway-xpay' ) . '</a>'
+		'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=xpay_gateway' ) . '">' . esc_html__( 'Configure', 'wc-gateway-xpay' ) . '</a>'
 	);
 
 	return array_merge( $plugin_links, $links );
 }
-add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'wc_xpay_gateway_plugin_links' );
+
+// Register the filter after plugins are loaded to ensure translations are available
+add_action( 'plugins_loaded', function() {
+	add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'wc_xpay_gateway_plugin_links' );
+}, 0 ); // Priority 0 to run early but after translations are loaded
 
 
 /**
@@ -62,47 +65,62 @@ add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'wc_xpay_gatew
  * @author 		Xpay
  */
 add_action( 'plugins_loaded', 'wc_xpay_gateway_init', 11);
-/**
- * Validates the billing phone number field on checkout
- * 
- * UPDATE:
- * This validation now accepts phone numbers from any country with various formats:
- * - With or without country code (e.g., +1, +44)
- * - With common separators (space, dash, period)
- * - Different length standards around the world (typically 8-15 digits)
- * - With or without parentheses for area codes
- * 
- * Examples of valid formats:
- * - +1 (555) 123-4567
- * - +44 7911 123456
- * - 0123456789
- * - +86 123 4567 8901
- */
-function xpay_custom_validate_billing_phone() {
-    if (isset($_POST['billing_phone'])) {
-        // Simplified but effective international phone validation
-        // This will accept almost any reasonable phone number format
-        $phone = trim($_POST['billing_phone']);
-        
-        // Remove all non-numeric characters except the leading +
-        $digits_only = preg_replace('/[^\d+]/', '', $phone);
-        
-        // Check if we have at least 7 digits (minimum reasonable phone number length)
-        // and not more than 15 digits (maximum length per E.164 standard)
-        $digits_count = strlen(ltrim($digits_only, '+'));
-        $is_correct = ($digits_count >= 7 && $digits_count <= 15);
-        
-        if (!$is_correct) {
-            wc_add_notice(__('Please enter a valid phone number. International format is accepted (e.g., +1 123 456 7890).', 'wc-gateway-xpay'), 'error');
-        }
-    }
-}
-add_action('woocommerce_checkout_process', 'xpay_custom_validate_billing_phone');
-
 
 function wc_xpay_gateway_init() {
 
+	/**
+	 * Validates the billing phone number field on checkout
+	 * 
+	 * UPDATE:
+	 * This validation now accepts phone numbers from any country with various formats:
+	 * - With or without country code (e.g., +1, +44)
+	 * - With common separators (space, dash, period)
+	 * - Different length standards around the world (typically 8-15 digits)
+	 * - With or without parentheses for area codes
+	 * 
+	 * Examples of valid formats:
+	 * - +1 (555) 123-4567
+	 * - +44 7911 123456
+	 * - 0123456789
+	 * - +86 123 4567 8901
+	 */
+	if (!function_exists('xpay_custom_validate_billing_phone')) {
+		function xpay_custom_validate_billing_phone() {
+			if (isset($_POST['billing_phone'])) {
+				// Simplified but effective international phone validation
+				// This will accept almost any reasonable phone number format
+				$phone = trim($_POST['billing_phone']);
+				
+				// Remove all non-numeric characters except the leading +
+				$digits_only = preg_replace('/[^\d+]/', '', $phone);
+				
+				// Check if we have at least 7 digits (minimum reasonable phone number length)
+				// and not more than 15 digits (maximum length per E.164 standard)
+				$digits_count = strlen(ltrim($digits_only, '+'));
+				$is_correct = ($digits_count >= 7 && $digits_count <= 15);
+				
+				if (!$is_correct) {
+					wc_add_notice(__('Please enter a valid phone number. International format is accepted (e.g., +1 123 456 7890).', 'wc-gateway-xpay'), 'error');
+				}
+			}
+		}
+		add_action('woocommerce_checkout_process', 'xpay_custom_validate_billing_phone');
+	}
+
+
 	class WC_Gateway_Xpay extends WC_Payment_Gateway {
+
+        /**
+         * Plugin URL
+         * @var string
+         */
+        public $xpay_plugin_url;
+
+        /**
+         * Payment instructions
+         * @var string
+         */
+        public $instructions;
 
         /**
          * Constructor for the gateway.
@@ -200,7 +218,7 @@ function wc_xpay_gateway_init() {
                             ),
                             "community_id" => $community_id,
                             "variable_amount_id" => $wc_settings->get_option("variable_amount_id"),
-                            "currency" => $wc_settings->get_option("currency"),
+                            "currency" => $order->get_currency(),
                             "original_amount" => $original_amount,
                             "amount" => $total_amount
                         );
@@ -246,15 +264,63 @@ function wc_xpay_gateway_init() {
                         $resp = httpPost($url, $payload, $api_key, $debug);
                         $resp = json_decode($resp, TRUE);
 
+                        // Check for API errors
+                        if (!isset($resp['status']['code']) || $resp['status']['code'] !== 200) {
+                            $error_message = isset($resp['status']['message']) ? $resp['status']['message'] : __('Payment processing failed. Please check your settings.', 'wc-gateway-xpay');
+                            if (isset($resp['status']['errors']) && is_array($resp['status']['errors'])) {
+                                $error_messages_list = array();
+                                
+                                // Recursive closure to flatten errors with keys
+                                $process_errors_recursive = function($data, $prefix = '') use (&$process_errors_recursive, &$error_messages_list) {
+                                    foreach ($data as $key => $value) {
+                                        // Determine label from key
+                                        $label = '';
+                                        if (is_string($key) && !is_numeric($key)) {
+                                            $human_key = ucfirst(str_replace('_', ' ', $key));
+                                            $label = $prefix ? $prefix . ' - ' . $human_key : $human_key;
+                                        } else {
+                                            $label = $prefix;
+                                        }
+
+                                        if (is_array($value)) {
+                                            $process_errors_recursive($value, $label);
+                                        } else {
+                                            // It's a string message
+                                            if (!empty($value)) {
+                                                if ($label) {
+                                                    $error_messages_list[] = '<strong>' . esc_html($label) . ':</strong> ' . esc_html($value);
+                                                } else {
+                                                    $error_messages_list[] = esc_html($value);
+                                                }
+                                            }
+                                        }
+                                    }
+                                };
+                                
+                                $process_errors_recursive($resp['status']['errors']);
+                                
+                                if (!empty($error_messages_list)) {
+                                    $error_message = implode('<br/>', $error_messages_list);
+                                }
+                            }
+                            return "<p id='xpay_message' class='woocommerce-error'>" . wp_kses_post($error_message) . "</p>";
+                        }
+
                         // Store transaction ID
-                        add_post_meta($order->id, "xpay_transaction_id", $resp["data"]["transaction_uuid"]);
+                        if (isset($resp["data"]["transaction_uuid"])) {
+                            add_post_meta($order->get_id(), "xpay_transaction_id", $resp["data"]["transaction_uuid"]);
+                        }
 
                         // Generate payment modal for methods that need it
                         if (in_array($payment_method, ['card', 'fawry', 'valu', 'wallets', 'installment'])) {
-                            generate_payment_modal($resp["data"]["iframe_url"], $resp["data"]["transaction_uuid"], $order->id, $community_id);
+                            $iframe_url = isset($resp["data"]["iframe_url"]) ? $resp["data"]["iframe_url"] : '';
+                            $transaction_uuid = isset($resp["data"]["transaction_uuid"]) ? $resp["data"]["transaction_uuid"] : '';
+                            
+                            generate_payment_modal($iframe_url, $transaction_uuid, $order->get_id(), $community_id);
                             return "<p id='xpay_message'> Your order is waiting XPAY payment you must see xpay popup now or <a data-toggle='modal' data-target='#xpay_modal'> click here </a></p>";
                         } else {
-                            return "<p id='xpay_message'>".$resp["data"]["message"]."</p>";
+                            $success_message = isset($resp["data"]["message"]) ? $resp["data"]["message"] : __('Payment initiated.', 'wc-gateway-xpay');
+                            return "<p id='xpay_message'>". esc_html($success_message) ."</p>";
                         }
                     }
                     return $str;
@@ -331,18 +397,6 @@ function wc_xpay_gateway_init() {
                     'description' => __('This is the ID of your community you get form Xpay', 'wc-gateway-xpay'),
                     'desc_tip' => true,
                     'required' => true,
-                ),
-                'currency' => array(
-                    'title' => __('currency', 'wc-gateway-xpay'),
-                    'type' => 'select',
-                    'required' => true,
-                    'options' => array(
-                        'USD' => 'USD',
-                        'EUR' => 'EUR',
-                        'EGP' => 'EGP',
-                        'SAR' => 'SAR',
-                    ),
-                    'default' => 'EGP'
                 ),
                 'variable_amount_id' => array(
                     'title' => __('Variable Amount Template ID', 'wc-gateway-xpay'),
