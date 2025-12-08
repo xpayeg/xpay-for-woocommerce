@@ -1,5 +1,5 @@
 <?php
-// Cache bust: 2025-12-08-07-09
+// Cache bust: 2025-12-08-07-45
 
 
 /**
@@ -89,7 +89,7 @@ function wc_xpay_gateway_init() {
 			if (isset($_POST['billing_phone'])) {
 				// Simplified but effective international phone validation
 				// This will accept almost any reasonable phone number format
-				$phone = trim($_POST['billing_phone']);
+				$phone = sanitize_text_field( wp_unslash( $_POST['billing_phone'] ) );
 				
 				// Remove all non-numeric characters except the leading +
 				$digits_only = preg_replace('/[^\d+]/', '', $phone);
@@ -265,7 +265,7 @@ function wc_xpay_gateway_init() {
                         $resp = json_decode($resp, TRUE);
 
                         // Check for API errors
-                        if (!isset($resp['status']['code']) || $resp['status']['code'] !== 200) {
+                        if (!is_array($resp) || !isset($resp['status']['code']) || $resp['status']['code'] !== 200) {
                             $error_message = isset($resp['status']['message']) ? $resp['status']['message'] : __('Payment processing failed. Please check your settings.', 'wc-gateway-xpay');
                             if (isset($resp['status']['errors']) && is_array($resp['status']['errors'])) {
                                 $error_messages_list = array();
