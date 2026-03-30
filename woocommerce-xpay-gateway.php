@@ -687,7 +687,7 @@ if (!function_exists("generate_payment_modal")) {
                         <p style="color:red">Don't close the popup until you finish payment</p>
                     </div>
                     <div class="modal-body">
-                        <iframe src="<?php echo esc_url($iframe_url) ?>" style="border:none; width:100% ;height:450px "></iframe>
+                        <iframe src="<?php echo esc_url($iframe_url) ?>" class="no-lazy skip-lazy" style="border:none; width:100% !important; height:450px !important;"></iframe>
                     </div>
                     <div class="modal-footer">
                         <input type="hidden" name="trn_uuid" id="xpay_trn_uuid" value="<?php esc_html_e($trn_uuid, 'wc-gateway-xpay'); ?>">
