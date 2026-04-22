@@ -411,7 +411,7 @@ function wc_xpay_gateway_init() {
                 'FAWRY' => __('Fawry', 'wc-gateway-xpay'),
                 'VALU' => __('valU', 'wc-gateway-xpay'),
                 'MEEZA/DIGITAL' => __('Wallets', 'wc-gateway-xpay'),
-                'Installment' => __('Installment', 'wc-gateway-xpay'),
+                'Installment' => __('NBE Installments', 'wc-gateway-xpay'),
             ];
 
             if (isset($data['data']['supports_installments']) && $data['data']['supports_installments'] === true) {
