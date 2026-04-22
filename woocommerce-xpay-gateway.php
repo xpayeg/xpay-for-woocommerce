@@ -245,6 +245,7 @@ function wc_xpay_gateway_init() {
                             'card' => array('pay_using' => 'card'),
                             'kiosk' => array('pay_using' => 'kiosk'),
                             'fawry' => array('pay_using' => 'fawry'),
+                            'apple' => array('pay_using' => 'apple'),
                             'valu' => array('pay_using' => 'valu'),
                             'wallets' => array('pay_using' => 'meeza/digital'),
                             'installment' => array(
@@ -312,7 +313,7 @@ function wc_xpay_gateway_init() {
                         }
 
                         // Generate payment modal for methods that need it
-                        if (in_array($payment_method, ['card', 'fawry', 'valu', 'wallets', 'installment'])) {
+                        if (in_array($payment_method, ['card', 'fawry', 'valu', 'wallets', 'installment', 'apple'])) {
                             $iframe_url = isset($resp["data"]["iframe_url"]) ? $resp["data"]["iframe_url"] : '';
                             $transaction_uuid = isset($resp["data"]["transaction_uuid"]) ? $resp["data"]["transaction_uuid"] : '';
                             
@@ -463,6 +464,7 @@ function wc_xpay_gateway_init() {
             $method_labels = [
                 'CARD' => __('Card', 'wc-gateway-xpay'),
                 'FAWRY' => __('Fawry', 'wc-gateway-xpay'),
+                'APPLE' => __('Apple Pay', 'wc-gateway-xpay'),
                 'VALU' => __('valU', 'wc-gateway-xpay'),
                 'MEEZA/DIGITAL' => __('Wallets', 'wc-gateway-xpay'),
                 'Installment' => __('NBE Installments', 'wc-gateway-xpay'),
