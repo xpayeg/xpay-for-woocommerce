@@ -20,80 +20,103 @@ header('Content-Type: application/json');
 $inputJSON = file_get_contents('php://input');
 $data = json_decode($inputJSON, true);
 
+// Resolve the body's secret_key value. Real XPay webhooks have observed
+// emitting the merchant secret at top level (`secret_key`) — but XPay's
+// public examples wrap the same fields inside an `extra_details` object,
+// so we accept either location for forward/backward compatibility.
+$body_secret = '';
+if (is_array($data)) {
+    if (isset($data['secret_key'])) {
+        $body_secret = trim((string) $data['secret_key']);
+    } elseif (isset($data['extra_details']['secret_key'])) {
+        $body_secret = trim((string) $data['extra_details']['secret_key']);
+    }
+}
+
 // Logger: webhook.received. Headers and IP only — payload-level fields are
-// emitted in webhook.lookup once we know which order it relates to.
+// emitted in webhook.lookup once we know which order it relates to. Body
+// shape (key list, no values) is logged so unexpected payload structures
+// surface in the log without leaking secret values.
+$body_top_keys      = is_array($data) ? array_keys($data) : array();
+$extra_details_keys = (is_array($data) && isset($data['extra_details']) && is_array($data['extra_details']))
+    ? array_keys($data['extra_details'])
+    : array();
 do_action('xpay_logger_event', 'webhook.received', array(
     'remote_ip'        => isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : null,
     'forwarded_for'    => isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_X_FORWARDED_FOR'])) : null,
     'cf_ray'           => isset($_SERVER['HTTP_CF_RAY']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_CF_RAY'])) : null,
     'content_length'   => isset($_SERVER['CONTENT_LENGTH']) ? (int) $_SERVER['CONTENT_LENGTH'] : 0,
-    'has_signature_hdr' => isset($_SERVER['HTTP_X_XPAY_SIGNATURE']),
+    'has_body_secret'  => '' !== $body_secret,
+    'body_top_keys'    => $body_top_keys,
+    'extra_details_keys' => $extra_details_keys,
     'json_parsed'      => is_array($data),
     'transaction_id'   => is_array($data) && isset($data['transaction_id']) ? trim((string) $data['transaction_id']) : null,
     'transaction_status' => is_array($data) && isset($data['transaction_status']) ? (string) $data['transaction_status'] : null,
 ), 'webhook received');
 
 // ---------------------------------------------------------------------
-// Optional HMAC signature verification.
+// Optional webhook verification.
 //
-// Mode 1 — Legacy / unsigned (default): leave 'webhook_secret' empty in
-// the gateway settings. Webhooks are accepted without signature checks,
-// preserving compatibility with merchants who connected before XPay
-// supported signing.
+// XPay does not sign webhooks via a header. Instead, when the merchant
+// configures a secret in their XPay community settings, XPay echoes
+// that same value back inside the webhook JSON body under a
+// `secret_key` field (top-level on observed production webhooks; XPay's
+// public examples sometimes show it nested under `extra_details` —
+// $body_secret resolution above accepts either). We verify by
+// constant-time comparing that body field against the gateway's
+// webhook_secret setting.
 //
-// Mode 2 — Strict: configure 'webhook_secret' in BOTH the gateway settings
-// AND XPay's webhook configuration. Every webhook MUST then carry a valid
-// X-XPay-Signature header. Missing or mismatched signatures are rejected
-// with 401. There is intentionally no silent fallback to unsigned once a
-// secret is configured — that would defeat the merchant's choice to
-// enable verification and create a downgrade attack surface.
+// Mode 1 — Legacy / unverified (default): leave 'webhook_secret' empty
+// in the gateway settings. Webhooks are accepted without checks. Used
+// by merchants who have not configured a secret in their XPay community,
+// or who installed the plugin before secret support existed.
 //
-// Header name and format below are guesses based on common conventions
-// (Stripe / GitHub / Shopify all use HMAC-SHA256 of the raw body in some
-// header). Confirm with XPay's team and update the three constants when
-// the actual scheme is verified.
+// Mode 2 — Verified: configure 'webhook_secret' in BOTH the gateway
+// settings AND the matching field in your XPay community. Every webhook
+// MUST then carry that same value as `secret_key` in the body. Missing
+// or mismatched secrets are rejected with HTTP 401 — there is
+// intentionally no silent fallback to unverified once a secret is
+// configured, because that would defeat the merchant's choice and
+// create a downgrade attack surface.
+//
+// Constant-time comparison via hash_equals() is used even though the
+// secret is plain-text: a naive === would leak the secret byte-by-byte
+// to an attacker timing the response.
 // ---------------------------------------------------------------------
-$xpay_sig_header = 'HTTP_X_XPAY_SIGNATURE'; // PHP server-var form of X-XPay-Signature
-$xpay_sig_algo   = 'sha256';
-$xpay_sig_format = 'hex'; // 'hex' or 'base64'
+$xpay_settings  = get_option('woocommerce_xpay_gateway_settings', array());
+$webhook_secret = isset($xpay_settings['webhook_secret']) ? trim((string) $xpay_settings['webhook_secret']) : '';
 
-$xpay_settings   = get_option('woocommerce_xpay_gateway_settings', array());
-$webhook_secret  = isset($xpay_settings['webhook_secret']) ? trim((string) $xpay_settings['webhook_secret']) : '';
-$received_sig    = isset($_SERVER[$xpay_sig_header]) ? trim(sanitize_text_field(wp_unslash($_SERVER[$xpay_sig_header]))) : '';
-
-$signature_state = 'unsigned';
+$signature_state = 'no_secret_configured';
 if ('' !== $webhook_secret) {
-    if ('' === $received_sig) {
-        // Secret configured but no signature header arrived. Reject rather
-        // than silently fall through to unsigned — a merchant who set the
-        // secret expects strict verification.
-        error_log('[xpay] webhook rejected: signature header missing while secret is configured');
+    if ('' === $body_secret) {
+        // Secret configured locally but the body did not carry one. Reject
+        // rather than silently fall through to unverified — a merchant
+        // who set the secret expects strict verification.
+        error_log('[xpay] webhook rejected: secret_key missing in body while local secret is configured');
         do_action('xpay_logger_event', 'webhook.applied', array(
-            'branch'          => 'signature_missing',
-            'signature_state' => 'no_header_present',
-        ), 'webhook rejected: header missing while secret configured');
+            'branch'          => 'secret_missing_in_body',
+            'signature_state' => 'secret_missing_in_body',
+        ), 'webhook rejected: secret_key missing in body while secret configured');
         status_header(401);
         wp_send_json_error([
-            'message' => 'Webhook signature required',
+            'message' => 'Webhook secret required',
         ]);
     }
-    $hmac     = hash_hmac($xpay_sig_algo, $inputJSON, $webhook_secret, 'base64' === $xpay_sig_format);
-    $expected = ('base64' === $xpay_sig_format) ? base64_encode($hmac) : $hmac;
-    if (!hash_equals($expected, $received_sig)) {
-        error_log('[xpay] webhook rejected: HMAC signature mismatch');
+    if (!hash_equals($webhook_secret, $body_secret)) {
+        error_log('[xpay] webhook rejected: secret_key mismatch');
         do_action('xpay_logger_event', 'webhook.applied', array(
-            'branch'          => 'signature_mismatch',
-            'signature_state' => 'mismatch',
-        ), 'webhook rejected: HMAC mismatch');
+            'branch'          => 'secret_mismatch',
+            'signature_state' => 'secret_mismatch',
+        ), 'webhook rejected: secret_key mismatch');
         status_header(401);
         wp_send_json_error([
-            'message' => 'Invalid webhook signature',
+            'message' => 'Invalid webhook secret',
         ]);
     }
-    error_log('[xpay] webhook signature verified');
+    error_log('[xpay] webhook secret verified');
     $signature_state = 'verified';
 } else {
-    error_log('[xpay] webhook accepted unsigned (no secret configured)');
+    error_log('[xpay] webhook accepted unverified (no secret configured)');
     $signature_state = 'no_secret_configured';
 }
 

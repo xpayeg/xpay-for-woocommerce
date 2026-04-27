@@ -22,6 +22,7 @@ final class WC_XPay_Logger_Redactor {
 		'x-api-key',
 		'webhook_secret',
 		'secret',
+		'secret_key',
 		'authorization',
 		'cookie',
 		'set-cookie',

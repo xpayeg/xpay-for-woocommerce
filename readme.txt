@@ -144,7 +144,8 @@ Yes. The gateway settings option key (`woocommerce_xpay_gateway_settings`) is un
 * Added GPL-2.0-or-later license declaration in plugin header.
 * Added `External services` and `Privacy` disclosure sections.
 * Added bundled `/languages/xpay-for-woocommerce.pot` template (114 strings) for translators.
-* Hardened webhook signature handling: when `webhook_secret` is configured but no `X-XPay-Signature` header arrives, the webhook is rejected with HTTP 401 instead of silently accepted.
+* Webhook verification now reads `secret_key` from the JSON body (XPay's actual scheme — top-level field on observed production webhooks; also accepted nested under `extra_details.secret_key` for forward-compat with XPay's published examples) and constant-time-compares it against the configured `webhook_secret`. Earlier 2.0.0 builds checked an `X-XPay-Signature` HMAC header that XPay's production webhooks don't send; with the secret configured, every real signed webhook was rejected and orders only completed via the modal-poll fallback.
+* When `webhook_secret` is configured but no matching value arrives in the body, the webhook is rejected with HTTP 401 instead of silently accepted.
 * Added `wp_cache_add` lock around `payment_complete()` in both the webhook receiver and the modal-close poll, preventing double-fire of `woocommerce_payment_complete` when the two paths race.
 * Tightened prepare-amount call: dedicated 20-second timeout and zero retries, keeping worst-case checkout request budget under typical PHP-FPM `request_terminate_timeout`.
 * Added transient-backed circuit breaker (5 consecutive failures → 60-second fail-fast window) to prevent PHP-FPM saturation when XPay is degraded.

@@ -369,7 +369,7 @@ function wc_xpay_gateway_init() {
                 'webhook_secret' => array(
                     'title'       => __('Webhook secret (optional)', 'xpay-for-woocommerce'),
                     'type'        => 'password',
-                    'description' => __('Paste the same secret here that you saved in XPay\'s "secret" field next to the callback URL. When this AND a signature header are both present on an incoming webhook, the plugin verifies a hex HMAC-SHA256 of the raw body and rejects mismatches with HTTP 401. Leave empty to accept unsigned webhooks during setup.', 'xpay-for-woocommerce'),
+                    'description' => __('Paste the same secret here that you saved in your XPay community settings. When set, every incoming webhook must carry the same value as <code>secret_key</code> in the JSON body; missing or mismatched values are rejected with HTTP 401. Leave empty to accept webhooks without verification (suitable for initial setup, before you configure a secret in your XPay community).', 'xpay-for-woocommerce'),
                     'default'     => '',
                     'desc_tip'    => false,
                 ),
