@@ -1069,20 +1069,55 @@ if (!function_exists("xpay_generate_payment_modal")) {
     }
 }
 
-// Enqueue styles
+/**
+ * Is the current request rendering a page where XPay checkout JS/CSS is
+ * actually used? checkout.js targets the classic-checkout payment-method
+ * radios and promo-code input; both only exist on the checkout form itself.
+ * Receipt page (order-pay) and order-received endpoint don't host them.
+ *
+ * Falls back to true if WC's conditional helpers aren't loaded — better to
+ * over-enqueue than break checkout on an unusual context where the helpers
+ * are missing.
+ */
+function xpay_is_checkout_context() {
+    if ( ! function_exists( 'is_checkout' ) ) {
+        return true;
+    }
+    if ( ! is_checkout() ) {
+        return false;
+    }
+    if ( function_exists( 'is_checkout_pay_page' ) && is_checkout_pay_page() ) {
+        return false;
+    }
+    if ( function_exists( 'is_wc_endpoint_url' ) && is_wc_endpoint_url( 'order-received' ) ) {
+        return false;
+    }
+    return true;
+}
+
+// Enqueue styles. The promo code container, apply button, and input are all
+// rendered inside payment_fields() — i.e. only on the checkout form. Loading
+// the stylesheet on every front-end page (homepage, shop, product, blog,
+// account) added ~2 KB of uncached CSS to every render with no targets.
 add_action('wp_enqueue_scripts', 'xpay_enqueue_styles');
 function xpay_enqueue_styles() {
-    if (is_admin()) {
+    if (is_admin() || ! xpay_is_checkout_context()) {
         return;
     }
     wp_enqueue_style('xpay-styles', plugin_dir_url(__FILE__) . 'assets/css/style.css', array(), WC_XPAY_VERSION);
 }
 
-// Enqueue scripts
+// Enqueue scripts. checkout.js binds to .xpay-payment-radio, #apply_promo_code
+// and the order-total markup — all of which only exist on the classic
+// checkout form. Previously this ran on every front-end page (only gated by
+// is_admin), which:
+//   - shipped 14 KB of JS + 600 B of inline xpayJSData on every page render
+//   - constructed `new WC_Gateway_Xpay()` and generated 2 nonces per page
+//   - leaked iframe_base_url / community_id / variable_amount_id into HTML
+//     of pages that have nothing to do with checkout.
 add_action('wp_enqueue_scripts', 'xpay_enqueue_checkout_scripts');
 function xpay_enqueue_checkout_scripts() {
-    // Prevent running in admin area
-    if (is_admin()) {
+    if (is_admin() || ! xpay_is_checkout_context()) {
         return;
     }
     // Get WooCommerce settings

@@ -184,10 +184,22 @@ function xpay_get_payment_methods_fees() {
         $payload['selected_payment_method'] = $selected_method;
     }
 
+    // WC fires `updated_checkout` on every address/shipping/method/coupon
+    // tweak — without caching, each fire triggers an upstream prepare-amount
+    // call (~500ms-1s), so a single checkout flow burns 2-3s waiting on a
+    // deterministic fee calculation. Cache for 60s keyed by everything that
+    // affects the upstream response.
+    $cache_key = 'xpay_fees_' . md5($url . '|' . wp_json_encode($payload));
+    $cached    = get_transient($cache_key);
+    if (is_array($cached)) {
+        wp_send_json_success($cached);
+    }
+
     $response = xpay_http_post($url, wp_json_encode($payload), $api_key, $xpay_gateway->get_option('debug'));
     $resp     = json_decode($response, true);
 
     if (is_array($resp) && isset($resp['data'])) {
+        set_transient($cache_key, $resp['data'], MINUTE_IN_SECONDS);
         wp_send_json_success($resp['data']);
     } else {
         wp_send_json_error(array('message' => 'Failed to retrieve prepare amount data from Backend.'));

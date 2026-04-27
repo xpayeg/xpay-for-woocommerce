@@ -259,30 +259,19 @@ jQuery(document).ready(function ($) {
         storePromocode(response.data.promocode_id, response.data.value);
     }
 
-    // 6. Initialization Functions
-        function initPromoCodeFunctionality() {
-            // Initially hide promo code input section
-            $('.promo-code-input-section').hide();
-            
-            // Handle "Have Xpay Promo Code?" click
-            $('.promo-code-toggle').on('click', function(e) {
-                e.preventDefault();
-                $('.promo-code-input-section').slideToggle();
-                $(this).toggleClass('active');
-            });
-    
-            $('#apply_promo_code').on('click', function(e) {
-                e.preventDefault();
-                const promoCode = $('#xpay_promo_code').val();
-                
-                if (!promoCode) {
-                    displayMessage('Please enter a promo code');
-                    return;
-                }
-                
-                validatePromoCode(promoCode);
-            });
+    // Delegated click handler for the Apply button. Bound once on the body
+    // so it survives WooCommerce's checkout-review fragment replacement on
+    // every `updated_checkout` event without needing to be rebound (which
+    // could stack on partial re-renders triggered by some funnel plugins).
+    $(document.body).on('click', '#apply_promo_code', function (e) {
+        e.preventDefault();
+        const promoCode = $('#xpay_promo_code').val();
+        if (!promoCode) {
+            displayMessage('Please enter a promo code');
+            return;
         }
+        validatePromoCode(promoCode);
+    });
         
         // Detect payment method change
         $(document).on('change', '.xpay-payment-radio', function () {
@@ -313,11 +302,12 @@ jQuery(document).ready(function ($) {
             // OrderBreakdown(selectedPaymentMethod);
         });
 
-    $(document.body).on('updated_checkout', function() {
-        getPaymentMethodsFees();      
+    // Refresh the per-method fee breakdown whenever WC re-renders the order
+    // review. The PHP-side AJAX handler caches identical (amount, currency,
+    // method) lookups for 60s via a transient, so repeated fires during a
+    // single checkout flow no longer trigger an upstream prepare-amount
+    // call each time.
+    $(document.body).on('updated_checkout', function () {
+        getPaymentMethodsFees();
     });
-
-     initPromoCodeFunctionality();
-    // Initialize promo code functionality once
-    $(document.body).on('updated_checkout', initPromoCodeFunctionality);
 });
