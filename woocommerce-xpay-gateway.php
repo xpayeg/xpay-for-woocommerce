@@ -737,9 +737,85 @@ if (!function_exists("generate_payment_modal")) {
                 var xpayOrderId = <?php echo wp_json_encode((string) $order_id); ?>;
                 var xpayThankyouUrl = <?php echo wp_json_encode($thankyou_url); ?>;
 
+                // Poll interval (ms) for auto-detecting payment completion.
+                // The XPay iframe does not postMessage to its parent on
+                // success, so we poll our own check_transaction.php endpoint
+                // (same-origin from the browser) until either the order is
+                // paid or the customer closes the modal manually.
+                //
+                // check_transaction.php only echoes 'SUCCESSFUL' for orders
+                // already in processing/completed state; FAILED, PENDING,
+                // and INVALID statuses do NOT trigger auto-close, so a
+                // failed payment leaves the modal open for the customer to
+                // see XPay's failure message.
+                var POLL_INTERVAL_MS    = 10000;
+                var COUNTDOWN_SECONDS   = 5;
+
                 $(function () {
                     var $modal = $('#xpay_modal');
                     if (!$modal.length) { return; }
+
+                    var pollTimer      = null;
+                    var countdownTimer = null;
+                    var redirected     = false;
+
+                    function stopPolling() {
+                        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+                    }
+                    function stopCountdown() {
+                        if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+                    }
+
+                    function doRedirect() {
+                        if (xpayThankyouUrl) {
+                            window.location.href = xpayThankyouUrl;
+                        }
+                    }
+
+                    function showSuccessAndCountdown() {
+                        if (redirected) { return; }
+                        redirected = true;
+                        stopPolling();
+
+                        // If the modal is still open, show an in-modal
+                        // banner with a visible countdown so the customer
+                        // sees the success state before being redirected.
+                        // If the modal was already closed (customer pressed
+                        // X after paying), redirect straight away.
+                        if ($modal.is(':visible')) {
+                            var $banner = $('#xpay_success_banner');
+                            var $count  = $('#xpay_redirect_countdown');
+                            var remaining = COUNTDOWN_SECONDS;
+                            $count.text(remaining);
+                            $banner.show();
+                            countdownTimer = setInterval(function () {
+                                remaining--;
+                                $count.text(remaining > 0 ? remaining : 0);
+                                if (remaining <= 0) {
+                                    stopCountdown();
+                                    doRedirect();
+                                }
+                            }, 1000);
+                        } else {
+                            $('#xpay_message').text('Thank you - your order payment was completed successfully.');
+                            doRedirect();
+                        }
+                    }
+
+                    function checkAndMaybeRedirect() {
+                        $.get(xpayPluginUrl + 'check_transaction.php', {
+                            trn_uuid: $('#xpay_trn_uuid').val(),
+                            community_id: xpayCommunityId,
+                            order_id: xpayOrderId
+                        }, function (data) {
+                            if (data === 'SUCCESSFUL') {
+                                showSuccessAndCountdown();
+                            }
+                            // Any other status (FAILED, PENDING, INVALID,
+                            // empty) is ignored — the modal stays open and
+                            // polling continues until the customer closes it.
+                        });
+                    }
 
                     $modal.modal({
                         backdrop: 'static',
@@ -749,22 +825,16 @@ if (!function_exists("generate_payment_modal")) {
                     $modal.on('shown.bs.modal', function () {
                         $modal.css('z-index', 900);
                         $('.modal-backdrop:not(#xpay_modal)').hide();
+                        pollTimer = setInterval(checkAndMaybeRedirect, POLL_INTERVAL_MS);
                     });
 
                     $modal.on('hidden.bs.modal', function () {
-                        var trnUuid = $('#xpay_trn_uuid').val();
-                        $.get(xpayPluginUrl + 'check_transaction.php', {
-                            trn_uuid: trnUuid,
-                            community_id: xpayCommunityId,
-                            order_id: xpayOrderId
-                        }, function (data) {
-                            if (data === 'SUCCESSFUL') {
-                                $('#xpay_message').text('Thank you - your order payment was completed successfully.');
-                                if (xpayThankyouUrl) {
-                                    window.location.href = xpayThankyouUrl;
-                                }
-                            }
-                        });
+                        stopPolling();
+                        // Customer-initiated close: do one final status check
+                        // in case payment completed between polls. If it did,
+                        // the redirect happens via doRedirect() (no banner —
+                        // modal is no longer visible).
+                        checkAndMaybeRedirect();
                     });
                 });
             })(window.jQuery);
@@ -779,6 +849,12 @@ if (!function_exists("generate_payment_modal")) {
                         <p style="color:red"><?php esc_html_e("Don't close the popup until you finish payment", 'wc-gateway-xpay'); ?></p>
                     </div>
                     <div class="modal-body">
+                        <div id="xpay_success_banner" style="display:none; padding:12px; background:#d4edda; color:#155724; border:1px solid #c3e6cb; border-radius:4px; margin-bottom:10px; text-align:center; font-weight:500;">
+                            &#10003; <?php esc_html_e('Payment confirmed.', 'wc-gateway-xpay'); ?>
+                            <?php esc_html_e('Redirecting in', 'wc-gateway-xpay'); ?>
+                            <span id="xpay_redirect_countdown">5</span>
+                            <?php esc_html_e('seconds…', 'wc-gateway-xpay'); ?>
+                        </div>
                         <iframe src="<?php echo esc_url($iframe_url); ?>" class="no-lazy skip-lazy" style="border:none; width:100% !important; height:450px !important;"></iframe>
                     </div>
                     <div class="modal-footer">
