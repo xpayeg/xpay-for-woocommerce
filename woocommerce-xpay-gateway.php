@@ -968,25 +968,34 @@ function wc_xpay_gateway_init() {
  */
 if (!function_exists('xpay_iframe_host_is_allowed')) {
     function xpay_iframe_host_is_allowed($iframe_url) {
-        $host = wp_parse_url($iframe_url, PHP_URL_HOST);
+        $scheme = strtolower((string) wp_parse_url($iframe_url, PHP_URL_SCHEME));
+        $host   = wp_parse_url($iframe_url, PHP_URL_HOST);
         if (!$host || !is_string($host)) {
             return false;
         }
         $host = strtolower($host);
-        if ('xpay.app' === $host) {
-            return true;
-        }
-        if (substr($host, -strlen('.xpay.app')) === '.xpay.app') {
-            return true;
+        // Production hosts (xpay.app and any subdomain) MUST use HTTPS.
+        // A response that hands us a non-HTTPS xpay.app URL is either a
+        // misconfiguration or a downgrade attempt and would also trigger
+        // browser mixed-content blocks anyway.
+        if ('xpay.app' === $host || substr($host, -strlen('.xpay.app')) === '.xpay.app') {
+            return 'https' === $scheme;
         }
         // Local-dev escape hatch — only when the gateway is actually
-        // configured for the Local environment, so production deploys
-        // can't be tricked into accepting localhost iframes.
+        // configured for the Local environment, AND the iframe scheme
+        // matches the configured base URL's scheme. This stops production
+        // deploys from accepting localhost iframes, and stops a misconfigured
+        // base URL from accepting an iframe with an unrelated scheme.
         if ('127.0.0.1' === $host || 'localhost' === $host) {
-            $settings = get_option('woocommerce_xpay_gateway_settings', array());
-            $base     = isset($settings['iframe_base_url']) ? (string) $settings['iframe_base_url'] : '';
-            $base_host = wp_parse_url($base, PHP_URL_HOST);
-            if ('127.0.0.1' === $base_host || 'localhost' === $base_host) {
+            $settings    = get_option('woocommerce_xpay_gateway_settings', array());
+            $base        = isset($settings['iframe_base_url']) ? (string) $settings['iframe_base_url'] : '';
+            $base_host   = wp_parse_url($base, PHP_URL_HOST);
+            $base_scheme = strtolower((string) wp_parse_url($base, PHP_URL_SCHEME));
+            if (
+                ('127.0.0.1' === $base_host || 'localhost' === $base_host) &&
+                in_array($scheme, array('http', 'https'), true) &&
+                $scheme === $base_scheme
+            ) {
                 return true;
             }
         }

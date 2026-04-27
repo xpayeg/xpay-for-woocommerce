@@ -30,7 +30,7 @@ Log into <https://community.xpay.app/admin/login/> with your production credenti
 
 1. Find your community settings.
 2. **Callback URL** field: paste your production callback URL — copy it directly from the plugin settings (WC → Settings → Payments → Xpay → Manage). The plugin computes the URL from its own install path so it's always correct. For a stock v2.0.0 install it looks like:
-   ```
+   ```text
    https://your-domain.example/wp-content/plugins/xpay-for-woocommerce/update_order.php
    ```
    (use your real production domain, not staging or localhost)

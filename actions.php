@@ -89,6 +89,14 @@ function xpay_handle_validate_promo_code() {
         // exactly what XPay's validate endpoint returned, and
         // xpay_store_promo_details no longer writes session at all.
         if (function_exists('WC') && WC()->session) {
+            // Clear any prior promo before storing the new one. Without this,
+            // a 200-OK response that XPay returns with empty/zero data (e.g. a
+            // promo that validated but yielded no discount) would leave the
+            // previous promo's id/amount in session, and the cart-fee hook
+            // would keep applying the stale discount silently.
+            WC()->session->__unset('promocode_id');
+            WC()->session->__unset('discount_amount');
+
             $promo_id = isset($body['data']['promocode_id']) ? sanitize_text_field((string) $body['data']['promocode_id']) : '';
             $value    = isset($body['data']['value'])        ? (float) $body['data']['value']                              : 0.0;
             if ('' !== $promo_id && $value > 0) {
@@ -135,11 +143,16 @@ add_action('wp_ajax_xpay_clear_promo_details', 'xpay_handle_clear_promo_details'
 add_action('wp_ajax_nopriv_xpay_clear_promo_details', 'xpay_handle_clear_promo_details');
 function xpay_handle_clear_promo_details() {
     check_ajax_referer('validate-promo-code', 'security');
-    
-    // Clear promo code data from session
-    WC()->session->__unset('promocode_id');
-    WC()->session->__unset('discount_amount');
-    
+
+    // Mirror the guard used everywhere else we touch the session — WC's
+    // session loader can be skipped in unusual AJAX contexts (third-party
+    // checkout builders, very early plugin boot ordering), and a fatal
+    // here would 500 the AJAX call instead of cleanly no-op'ing.
+    if (function_exists('WC') && WC()->session) {
+        WC()->session->__unset('promocode_id');
+        WC()->session->__unset('discount_amount');
+    }
+
     wp_send_json_success(array(
         'message' => 'Promo code cleared successfully'
     ));
@@ -162,12 +175,13 @@ function xpay_get_payment_methods_fees() {
     $variable_id  = $xpay_gateway->get_option('variable_amount_id');
     $currency     = get_option('woocommerce_currency');
 
-    // WPFunnels and other custom checkouts may not have a populated WC
-    // cart in the AJAX context. Accept the amount from the client as a
-    // fallback when the cart total is 0.
+    // Prefer the server-side cart total. The posted amount is client-supplied
+    // and only used as a fallback when WC()->cart is unavailable in the AJAX
+    // context (WPFunnels and other custom checkouts can render outside the
+    // standard WC cart lifecycle, leaving cart->total at 0).
     $posted_amount = isset($_POST['amount']) ? floatval(wp_unslash($_POST['amount'])) : 0;
     $cart_amount   = (function_exists('WC') && WC()->cart) ? (float) WC()->cart->total : 0;
-    $order_amount  = $posted_amount > 0 ? $posted_amount : $cart_amount;
+    $order_amount  = $cart_amount > 0 ? $cart_amount : $posted_amount;
 
     if ($order_amount <= 0) {
         wp_send_json_error(array('message' => 'Amount unavailable.'));

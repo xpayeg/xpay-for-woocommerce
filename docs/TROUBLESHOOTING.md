@@ -30,7 +30,7 @@ In a private/incognito window so cookies don't carry over from previous sessions
 
 The log is line-oriented. Each entry looks like:
 
-```
+```text
 [2026-04-27T11:30:57Z] [de8234993c45] [webhook.applied] [order=39] webhook applied: payment_complete {"branch":"successful","order_status_out":"processing"}
 ```
 

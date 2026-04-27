@@ -151,7 +151,7 @@ From your SVN checkout directory:
 ```bash
 # 1. Empty trunk/ and copy in the plugin from the ZIP
 rm -rf trunk/*
-unzip -d trunk-tmp /path/to/woocommerce-xpay-plugin/dist/xpay-for-woocommerce-2.0.0.zip
+unzip -d trunk-tmp /path/to/dist/xpay-for-woocommerce-2.0.0.zip
 mv trunk-tmp/xpay-for-woocommerce/* trunk/
 rmdir trunk-tmp/xpay-for-woocommerce trunk-tmp
 

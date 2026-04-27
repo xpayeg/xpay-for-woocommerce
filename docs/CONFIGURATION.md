@@ -86,7 +86,7 @@ These tell the plugin which XPay account to authenticate as. You get all three f
 ### Callback URL (informational, not editable)
 
 - **What you see:** A read-only field showing the URL XPay should send webhooks to. The plugin computes it dynamically from its own install path, so it's always correct regardless of the directory name. For a stock v2.0.0 install it looks like:
-  ```
+  ```text
   https://{your-domain}/wp-content/plugins/xpay-for-woocommerce/update_order.php
   ```
   …but if you installed under a different folder name, the field reflects that — always copy what the plugin shows you, not the example.
