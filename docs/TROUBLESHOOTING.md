@@ -85,9 +85,9 @@ Filter to one order: `grep "order=39" log-file.log`. Filter to one request: `gre
 5. **`webhook.applied branch: signature_mismatch`** → secret mismatch between plugin and XPay dashboard.
 
 **Fix:**
-- Confirm the callback URL on your XPay dashboard matches `https://your-domain/wp-content/plugins/woocommerce-xpay-plugin/update_order.php` exactly (HTTPS, correct domain, exact path).
+- Open WC → Settings → Payments → Xpay → Manage and copy the exact **Callback URL** the plugin shows (it's computed from the plugin's install path, so it's always correct). Confirm the value on your XPay dashboard matches it byte-for-byte (HTTPS, correct domain, exact path).
 - Confirm no security plugin (Wordfence, Sucuri, etc.) is blocking the URL — see [COMPATIBILITY.md](../COMPATIBILITY.md#wordfence--sucuri--ithemes-security).
-- Test the URL is reachable from outside: `curl -I https://your-domain/wp-content/plugins/woocommerce-xpay-plugin/update_order.php` should NOT return 403/404. (It returns 405 Method Not Allowed because GET is not implemented — that's fine; it proves the URL is reachable.)
+- Test the URL is reachable from outside: `curl -I <THE_CALLBACK_URL_FROM_SETTINGS>` should NOT return 403/404. (It returns 405 Method Not Allowed because GET is not implemented — that's fine; it proves the URL is reachable.)
 
 **Manual recovery for a stuck order:**
 - WP Admin → WooCommerce → Orders → click the order → change status to **Processing** manually. The customer paid; the order is real.

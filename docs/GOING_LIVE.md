@@ -10,7 +10,7 @@ The actual switch is small (a few setting changes). Most of the work is the pre-
 
 Before you flip the environment to Production, confirm all of the following. Each failure here is something a real customer would experience as a broken payment.
 
-- [ ] **HTTPS is enabled** on your site, and the certificate is valid. The webhook callback URL must be reachable over HTTPS in production. Test with `curl -i -X POST -H 'Content-Type: application/json' -d '{}' https://your-domain/wp-content/plugins/woocommerce-xpay-plugin/update_order.php` — you should get back HTTP 400 with a "Missing transaction_id" body. That confirms TLS works and the endpoint is alive. Any TLS error or 5xx means the URL is unreachable.
+- [ ] **HTTPS is enabled** on your site, and the certificate is valid. The webhook callback URL must be reachable over HTTPS in production. Take the exact callback URL from the plugin settings (WC → Settings → Payments → Xpay → Manage), then test with `curl -i -X POST -H 'Content-Type: application/json' -d '{}' <THAT_URL>` — you should get back HTTP 400 with a "Missing transaction_id" body. That confirms TLS works and the endpoint is alive. Any TLS error or 5xx means the URL is unreachable.
 - [ ] **Production credentials obtained** from XPay: production `community_id`, production `payment_api_key`, production `variable_amount_id`. These are different values from your staging credentials.
 - [ ] **Production webhook secret** generated (32+ random characters; `openssl rand -hex 32` works) and ready to paste into both XPay's production dashboard and the plugin's setting.
 - [ ] **Staging end-to-end verified** — at minimum, one successful payment with a test card, with the order moving from `pending` to `processing` automatically (proves the webhook reached your site and was processed).
@@ -29,9 +29,9 @@ This is the actual cutover. Plan for 15-30 minutes of focused attention.
 Log into <https://community.xpay.app/admin/login/> with your production credentials.
 
 1. Find your community settings.
-2. **Callback URL** field: paste your production callback URL:
+2. **Callback URL** field: paste your production callback URL — copy it directly from the plugin settings (WC → Settings → Payments → Xpay → Manage). The plugin computes the URL from its own install path so it's always correct. For a stock v2.0.0 install it looks like:
    ```
-   https://your-domain.example/wp-content/plugins/woocommerce-xpay-plugin/update_order.php
+   https://your-domain.example/wp-content/plugins/xpay-for-woocommerce/update_order.php
    ```
    (use your real production domain, not staging or localhost)
 3. **Secret** field (next to the callback URL): paste the 32-character webhook secret you generated above.
@@ -109,7 +109,7 @@ Once you're comfortable everything is stable, **disable the diagnostic logger** 
 | Customer sees "Payment processing failed" | Production credentials still set to staging values, or vice versa | Re-check community_id, payment_api_key, variable_amount_id are all the production set |
 | No payment methods show on checkout | Production community has no methods enabled, or API key is wrong | Log into XPay production dashboard, enable methods, verify API key |
 | Webhook returns 401 | Plugin's webhook_secret doesn't match XPay's secret field | Re-paste the secret on both sides; they must be byte-for-byte identical |
-| Webhook returns 404 | Path issue — usually a security plugin (Wordfence/Sucuri) blocking direct PHP file access | Whitelist `/wp-content/plugins/woocommerce-xpay-plugin/update_order.php` in your security plugin |
+| Webhook returns 404 | Path issue — usually a security plugin (Wordfence/Sucuri) blocking direct PHP file access | Whitelist the callback path shown in the plugin settings (e.g. `/wp-content/plugins/xpay-for-woocommerce/update_order.php`) in your security plugin |
 | Iframe doesn't open in customer's browser | Cookie consent banner blocking iframe cookies, or theme loading conflicting Bootstrap | See [COMPATIBILITY.md](../COMPATIBILITY.md) for cookie-consent and Bootstrap notes |
 
 ---

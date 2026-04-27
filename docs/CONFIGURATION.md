@@ -85,11 +85,12 @@ These tell the plugin which XPay account to authenticate as. You get all three f
 
 ### Callback URL (informational, not editable)
 
-- **What you see:** A read-only field showing the URL XPay should send webhooks to. Always:
+- **What you see:** A read-only field showing the URL XPay should send webhooks to. The plugin computes it dynamically from its own install path, so it's always correct regardless of the directory name. For a stock v2.0.0 install it looks like:
   ```
-  https://{your-domain}/wp-content/plugins/woocommerce-xpay-plugin/update_order.php
+  https://{your-domain}/wp-content/plugins/xpay-for-woocommerce/update_order.php
   ```
-- **What to do with it:** Copy this exact URL and paste it into the **Callback URL** field on your XPay dashboard (separately for staging and production accounts). Without this, XPay doesn't know where to send payment-confirmation webhooks, and orders will sit in `pending` even after the customer pays.
+  …but if you installed under a different folder name, the field reflects that — always copy what the plugin shows you, not the example.
+- **What to do with it:** Copy the exact URL the plugin shows and paste it into the **Callback URL** field on your XPay dashboard (separately for staging and production accounts). Without this, XPay doesn't know where to send payment-confirmation webhooks, and orders will sit in `pending` even after the customer pays.
 - **HTTPS:** XPay requires HTTPS in production. If your site isn't on HTTPS, get a Let's Encrypt certificate before going live.
 
 ### Webhook secret

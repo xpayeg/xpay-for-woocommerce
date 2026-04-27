@@ -198,14 +198,17 @@ snapshot under `caching_plugin`.
 
 Their default WAF rule sets sometimes block direct requests to PHP files
 inside `/wp-content/plugins/`. Our webhook receiver lives at
-`/wp-content/plugins/woocommerce-xpay-plugin/update_order.php`. If
-Wordfence (etc.) blocks it, XPay's webhook returns 403 and the order is
-stuck in `pending` even after the customer paid.
+`/wp-content/plugins/xpay-for-woocommerce/update_order.php` (or whatever
+folder name the plugin is installed under — the exact path is shown in
+WC → Settings → Payments → Xpay → Manage as the **Callback URL**).
+If Wordfence (etc.) blocks it, XPay's webhook returns 403 and the order
+is stuck in `pending` even after the customer paid.
 
-**Fix**: whitelist the callback URL in the security plugin's WAF rules. If
-that's not possible, we can ship the webhook as a `register_rest_route`
-endpoint at `/wp-json/xpay/v1/webhook` — REST endpoints are rarely WAF-blocked.
-File a request and we'll prioritize.
+**Fix**: whitelist the callback URL shown in the plugin settings in your
+security plugin's WAF rules. If that's not possible, we can ship the
+webhook as a `register_rest_route` endpoint at `/wp-json/xpay/v1/webhook`
+— REST endpoints are rarely WAF-blocked. File a request and we'll
+prioritize.
 
 ---
 

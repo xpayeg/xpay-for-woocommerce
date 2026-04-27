@@ -25,18 +25,18 @@ Before installing the plugin, make sure you have:
 
 ### Option A — manual upload (most common)
 
-1. Download the plugin folder `woocommerce-xpay-plugin/` (or the `.zip` if distributed that way).
+1. Download the plugin `.zip` (`xpay-for-woocommerce-{VERSION}.zip` from the GitHub releases page or WordPress.org).
 2. WP Admin → **Plugins → Add New → Upload Plugin**, choose the `.zip`, click **Install Now**.
-   - Or, copy the folder to `wp-content/plugins/` over SFTP/SSH.
-3. WP Admin → **Plugins → Installed Plugins** — find **WooCommerce XPAY Gateway** and click **Activate**.
+   - Or, extract the zip and copy the resulting `xpay-for-woocommerce/` folder to `wp-content/plugins/` over SFTP/SSH.
+3. WP Admin → **Plugins → Installed Plugins** — find **XPay for WooCommerce** and click **Activate**.
 
 On activation, the plugin auto-creates the directory `wp-content/uploads/xpay-logs/` (used by the diagnostic logger when you enable it later) and schedules a daily WP-Cron event to prune old log files.
 
 ### Option B — via WP-CLI
 
 ```bash
-# Assuming the plugin folder lives at wp-content/plugins/woocommerce-xpay-plugin
-wp plugin activate woocommerce-xpay-plugin
+# Assuming the plugin folder lives at wp-content/plugins/xpay-for-woocommerce
+wp plugin activate xpay-for-woocommerce
 ```
 
 ---
@@ -86,9 +86,9 @@ For the full reference of every setting, see [CONFIGURATION.md](CONFIGURATION.md
 
 XPay sends a webhook to your site after each transaction completes. Without this configured, orders will stay in `pending` forever even though customers' cards are charged.
 
-1. Copy the callback URL shown in the gateway settings page. It looks like:
+1. Copy the callback URL shown in the gateway settings page (the plugin generates it dynamically from its install path — always copy what the plugin displays, don't hardcode it from this doc). It looks like:
    ```
-   https://yoursite.example/wp-content/plugins/woocommerce-xpay-plugin/update_order.php
+   https://yoursite.example/wp-content/plugins/xpay-for-woocommerce/update_order.php
    ```
 2. Log into the **staging** dashboard at <https://staging.xpay.app/admin/login/>.
 3. Navigate to your community settings → **Callback URL** field.
