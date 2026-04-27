@@ -1,13 +1,14 @@
 <?php
 
 /**
- * Timeout for outbound XPay HTTP calls. Kept low so process_payment can
- * make 2 sequential calls (prepare-amount then pay) and still stay under
- * the default PHP max_execution_time of 30s — even when the prepare call
- * retries once. The pay call is invoked with max_retries=0 to bound risk
- * of double-charge if PHP is killed mid-flow.
+ * Timeout for outbound XPay HTTP calls. Staging has been observed taking
+ * up to 15s on the pay/variable-amount endpoint, so we leave 25s of
+ * headroom. Combined with @set_time_limit(60) at the top of process_payment,
+ * the worst-case (prepare 25 + 1s retry + 25 + pay 25 = 76s) exceeds the
+ * default 30s PHP limit but is bounded by the 60s set_time_limit on hosts
+ * that honor it. The pay call uses max_retries=0 to bound double-charge risk.
  */
-const XPAY_HTTP_TIMEOUT = 8;
+const XPAY_HTTP_TIMEOUT = 25;
 
 /**
  * Browser-like User-Agent. The default WP_HTTP UA ("WordPress/X.X.X; ...")

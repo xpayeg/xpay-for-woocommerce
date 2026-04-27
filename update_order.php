@@ -8,6 +8,51 @@ header('Content-Type: application/json');
 $inputJSON = file_get_contents('php://input');
 $data = json_decode($inputJSON, true);
 
+// ---------------------------------------------------------------------
+// Optional HMAC signature verification (fail-open during setup).
+//
+// Configure 'webhook_secret' in the gateway settings AND paste the same
+// value into XPay staging's "secret" field. Once BOTH are set, every
+// webhook MUST carry a valid X-XPay-Signature header — invalid signatures
+// are rejected with 401.
+//
+// If either side is missing (no secret configured OR no signature header
+// arrived) we accept the request and log it. This lets testing proceed
+// before XPay is configured to sign, and it tolerates a transient gap if
+// the merchant rotates the secret.
+//
+// Header name and format below are guesses based on common conventions
+// (Stripe / GitHub / Shopify all use HMAC-SHA256 of the raw body in some
+// header). When XPay's actual scheme is observed in real traffic, update
+// the three constants at the top of this block.
+// ---------------------------------------------------------------------
+$xpay_sig_header = 'HTTP_X_XPAY_SIGNATURE'; // PHP server-var form of X-XPay-Signature
+$xpay_sig_algo   = 'sha256';
+$xpay_sig_format = 'hex'; // 'hex' or 'base64'
+
+$xpay_settings   = get_option('woocommerce_xpay_gateway_settings', array());
+$webhook_secret  = isset($xpay_settings['webhook_secret']) ? trim((string) $xpay_settings['webhook_secret']) : '';
+$received_sig    = isset($_SERVER[$xpay_sig_header]) ? trim((string) $_SERVER[$xpay_sig_header]) : '';
+
+if ('' !== $webhook_secret && '' !== $received_sig) {
+    $hmac     = hash_hmac($xpay_sig_algo, $inputJSON, $webhook_secret, 'base64' === $xpay_sig_format);
+    $expected = ('base64' === $xpay_sig_format) ? base64_encode($hmac) : $hmac;
+    if (!hash_equals($expected, $received_sig)) {
+        error_log('[xpay] webhook rejected: HMAC signature mismatch');
+        status_header(401);
+        wp_send_json_error([
+            'message' => 'Invalid webhook signature',
+        ]);
+    }
+    error_log('[xpay] webhook signature verified');
+} else {
+    error_log(sprintf(
+        '[xpay] webhook accepted unsigned (secret_configured=%d, signature_present=%d) — set both to enable strict verification',
+        '' !== $webhook_secret ? 1 : 0,
+        '' !== $received_sig ? 1 : 0
+    ));
+}
+
 $transaction_id = isset($data["transaction_id"]) ? trim($data["transaction_id"]) : null;
 $transaction_status = isset($data["transaction_status"]) ? $data["transaction_status"] : null;
 

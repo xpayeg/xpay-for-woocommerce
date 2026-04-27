@@ -266,6 +266,13 @@ function wc_xpay_gateway_init() {
                     'default' => __($this->xpay_plugin_url . 'update_order.php', 'wc-gateway-xpay'),
                     'custom_attributes' => array('hidden' => true)
                 ),
+                'webhook_secret' => array(
+                    'title'       => __('Webhook secret (optional)', 'wc-gateway-xpay'),
+                    'type'        => 'password',
+                    'description' => __('Paste the same secret here that you saved in XPay\'s "secret" field next to the callback URL. When this AND a signature header are both present on an incoming webhook, the plugin verifies a hex HMAC-SHA256 of the raw body and rejects mismatches with HTTP 401. Leave empty to accept unsigned webhooks during setup.', 'wc-gateway-xpay'),
+                    'default'     => '',
+                    'desc_tip'    => false,
+                ),
                 'debug' => array(
                     'title' => __('Debug', 'wc-gateway-xpay'),
                     'type' => 'checkbox',
@@ -471,6 +478,11 @@ function wc_xpay_gateway_init() {
          * @return array
          */
         public function process_payment($order_id) {
+            // Two sequential XPay HTTP calls (prepare-amount then pay) plus
+            // the retry budget can take up to ~46s in pathological cases.
+            // Request 60s of execution time on hosts that allow it.
+            @set_time_limit(60);
+
             $order = wc_get_order($order_id);
             if (!$order) {
                 wc_add_notice(__('Order not found.', 'wc-gateway-xpay'), 'error');
@@ -537,7 +549,7 @@ function wc_xpay_gateway_init() {
                 $api_key,
                 $debug
             );
-            $prepare = json_decode($prepare_body, true);
+            $prepare = is_string($prepare_body) ? json_decode($prepare_body, true) : null;
             if (!is_array($prepare) || !isset($prepare['data']['total_amount'])) {
                 wc_add_notice(__('Payment processing failed. Please try again.', 'wc-gateway-xpay'), 'error');
                 $order->update_status('failed', __('XPay prepare-amount call failed', 'wc-gateway-xpay'));
@@ -616,7 +628,9 @@ function wc_xpay_gateway_init() {
                 $debug,
                 0
             );
-            $resp = json_decode($pay_body, true);
+            // PHP 8 deprecates json_decode(null). httpPost returns null on
+            // timeout / WAF block / network error — guard before decoding.
+            $resp = is_string($pay_body) ? json_decode($pay_body, true) : null;
             if (!is_array($resp) || (isset($resp['status']['code']) ? $resp['status']['code'] : 0) !== 200) {
                 $msg = isset($resp['status']['message']) ? $resp['status']['message'] : __('Payment processing failed.', 'wc-gateway-xpay');
                 // If XPay returned a structured error (status.code set), the
