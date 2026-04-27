@@ -105,7 +105,12 @@ jQuery(document).ready(function ($) {
             dataType: 'json',
             data: {
                 action: 'xpay_get_payment_methods_fees',
-                payment_method: paymentMethod
+                payment_method: paymentMethod,
+                // WPFunnels and other non-standard checkouts may have an
+                // empty WC cart in the AJAX context, so forward the amount
+                // captured at page render via xpayJSData.initialData.
+                amount: xpayJSData.initialData && xpayJSData.initialData.subtotal_amount,
+                nonce: xpayJSData.ajax.fees_nonce
             },
             beforeSend: function () {
                 $("#xpay_total_amount").text("Updating...");

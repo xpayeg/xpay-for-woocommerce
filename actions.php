@@ -7,36 +7,37 @@ function handle_validate_xpay_promo_code() {
     // Verify the security nonce to ensure the request is legitimate
     check_ajax_referer('validate-promo-code', 'security');
 
-    // Get the gateway settings
-    $gateway = new WC_Gateway_Xpay();
-    $api_key = $gateway->get_option('payment_api_key');
-    $debug = $gateway->get_option("debug");
+    // Pull all credentials and the upstream URL from server-side settings.
+    // The previous version accepted `url` from $_POST and forwarded the
+    // api_key to it — an SSRF that turned this endpoint into an open relay
+    // for credential exfiltration to attacker-controlled hosts.
+    $gateway            = new WC_Gateway_Xpay();
+    $api_key            = $gateway->get_option('payment_api_key');
+    $debug              = $gateway->get_option('debug');
+    $base_url           = rtrim($gateway->get_option('iframe_base_url'), '/');
+    $server_community   = $gateway->get_option('community_id');
+    $server_variable_id = $gateway->get_option('variable_amount_id');
 
-    // Sanitize and retrieve the promo code, community ID, and API URL from the AJAX request
-    $name = sanitize_text_field($_POST['name']);
-    $community_id = isset($_POST['community_id']) ? sanitize_text_field($_POST['community_id']) : null; 
-    $amount = isset($_POST['amount']) ? sanitize_text_field($_POST['amount']) : null; 
-    $currency = isset($_POST['currency']) ? sanitize_text_field($_POST['currency']) : null;
-    $payment_for = isset($_POST['payment_for']) ? sanitize_text_field($_POST['payment_for']) : null;
-    $phone_number = isset($_POST['phone_number']) ? sanitize_text_field($_POST['phone_number']) : null;
-    $variable_amount_id = isset($_POST['variable_amount_id']) ? sanitize_text_field($_POST['variable_amount_id']) : null;
-    $api_url = sanitize_url($_POST['url']);
+    if (!$api_key || !$base_url || !$server_community) {
+        wp_send_json_error(array('message' => 'XPay gateway is not configured'));
+    }
 
-  // Check if any required parameters are missing
-    $required_params = array(
-        'name',
-        'community_id',
-        'amount',
-        'currency',
-        'payment_for',
-        'phone_number',
-        'variable_amount_id',
-        'api_url'
-    );
-    foreach ($required_params as $param) {
+    $name         = isset($_POST['name'])         ? sanitize_text_field(wp_unslash($_POST['name']))         : '';
+    $amount       = isset($_POST['amount'])       ? sanitize_text_field(wp_unslash($_POST['amount']))       : '';
+    $currency     = isset($_POST['currency'])     ? sanitize_text_field(wp_unslash($_POST['currency']))     : '';
+    $payment_for  = isset($_POST['payment_for'])  ? sanitize_text_field(wp_unslash($_POST['payment_for']))  : '';
+    $phone_number = isset($_POST['phone_number']) ? sanitize_text_field(wp_unslash($_POST['phone_number'])) : '';
+
+    // Use server-side community_id and variable_amount_id, not anything
+    // the caller supplied. (Caller-supplied versions could target an
+    // unrelated XPay community whose promo codes happen to validate.)
+    $community_id       = $server_community;
+    $variable_amount_id = $server_variable_id;
+    $api_url            = $base_url . '/api/promocodes/validate/';
+
+    foreach (array('name', 'amount', 'currency', 'payment_for', 'phone_number') as $param) {
         if (empty($$param)) {
             wp_send_json_error(array('message' => 'Missing required parameters'));
-            return;
         }
     }
 
@@ -116,43 +117,47 @@ function handle_clear_promocode_details() {
 add_action('wp_ajax_xpay_get_payment_methods_fees', 'xpay_get_payment_methods_fees');
 add_action('wp_ajax_nopriv_xpay_get_payment_methods_fees', 'xpay_get_payment_methods_fees');
 function xpay_get_payment_methods_fees() {
-    // Make payment method check optional
-    $selected_method = isset($_POST['payment_method']) ? sanitize_text_field($_POST['payment_method']) : '';
+    check_ajax_referer('xpay-fees', 'nonce');
 
-    // Ensure WooCommerce is available
+    $selected_method = isset($_POST['payment_method']) ? sanitize_text_field(wp_unslash($_POST['payment_method'])) : '';
+
     if (!function_exists('WC')) {
         wp_send_json_error(array('message' => 'WooCommerce not available.'));
     }
 
-    // Retrieve plugin settings
     $xpay_gateway = new WC_Gateway_Xpay();
-    $api_key = $xpay_gateway->get_option("payment_api_key");
-    $community_id = $xpay_gateway->get_option("community_id");
-    $currency = get_option('woocommerce_currency');
-    $order_amount = WC()->cart->total;
+    $api_key      = $xpay_gateway->get_option('payment_api_key');
+    $community_id = $xpay_gateway->get_option('community_id');
+    $variable_id  = $xpay_gateway->get_option('variable_amount_id');
+    $currency     = get_option('woocommerce_currency');
 
-    // Prepare XPAY API request
-    $url = $xpay_gateway->get_option("iframe_base_url") . "/api/v1/payments/prepare-amount/";
-    $payload = array(
-        "community_id" => $community_id,
-        "amount" => $order_amount,
-        "currency" => $currency
-    );
-    
-    // Add selected_payment_method only if it has a value
-    if (!empty($selected_method)) {
-        $payload["selected_payment_method"] = $selected_method;
+    // WPFunnels and other custom checkouts may not have a populated WC
+    // cart in the AJAX context. Accept the amount from the client as a
+    // fallback when the cart total is 0.
+    $posted_amount = isset($_POST['amount']) ? floatval(wp_unslash($_POST['amount'])) : 0;
+    $cart_amount   = (function_exists('WC') && WC()->cart) ? (float) WC()->cart->total : 0;
+    $order_amount  = $posted_amount > 0 ? $posted_amount : $cart_amount;
+
+    if ($order_amount <= 0) {
+        wp_send_json_error(array('message' => 'Amount unavailable.'));
     }
-    
-    $payload = json_encode($payload);
-   
-    // Call XPAY API
-    $response = httpPost($url, $payload, $api_key, false);
-    $resp = json_decode($response, TRUE);
 
-    // Return the API response directly
-    if (isset($resp["data"])) {
-        wp_send_json_success($resp["data"]);
+    $url     = rtrim($xpay_gateway->get_option('iframe_base_url'), '/') . '/api/v1/payments/prepare-amount/';
+    $payload = array(
+        'community_id'       => $community_id,
+        'amount'             => $order_amount,
+        'currency'           => $currency,
+        'variable_amount_id' => $variable_id,
+    );
+    if (!empty($selected_method)) {
+        $payload['selected_payment_method'] = $selected_method;
+    }
+
+    $response = httpPost($url, wp_json_encode($payload), $api_key, $xpay_gateway->get_option('debug'));
+    $resp     = json_decode($response, true);
+
+    if (is_array($resp) && isset($resp['data'])) {
+        wp_send_json_success($resp['data']);
     } else {
         wp_send_json_error(array('message' => 'Failed to retrieve prepare amount data from Backend.'));
     }

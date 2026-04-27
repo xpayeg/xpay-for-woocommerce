@@ -13,6 +13,23 @@
  
 defined( 'ABSPATH' ) or exit;
 
+// Declare compatibility with WooCommerce features that gate plugins on
+// explicit opt-in: High-Performance Order Storage (HPOS) and the new
+// Cart/Checkout Blocks. Without these declarations WC marks the plugin
+// as incompatible and may disable it on stores that have these enabled.
+// before_woocommerce_init fires regardless of whether WC ends up loading,
+// so this is safe to register before the WC-active check below.
+add_action( 'before_woocommerce_init', function () {
+	if ( class_exists( '\Automattic\WooCommerce\Utilities\FeaturesUtil' ) ) {
+		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility(
+			'custom_order_tables', __FILE__, true
+		);
+		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility(
+			'cart_checkout_blocks', __FILE__, true
+		);
+	}
+} );
+
 // Make sure WooCommerce is active
 if ( ! in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) {
 	return;
@@ -20,6 +37,21 @@ if ( ! in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins',
 
 require_once plugin_dir_path( __FILE__ ) . 'utils.php';
 require_once plugin_dir_path( __FILE__ ) . 'actions.php';
+
+// Register a Cart/Checkout Blocks integration so the gateway shows up on
+// stores using the new block-based checkout (default for WC 8.3+).
+add_action( 'woocommerce_blocks_loaded', function () {
+	if ( ! class_exists( '\Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType' ) ) {
+		return;
+	}
+	require_once plugin_dir_path( __FILE__ ) . 'class-wc-xpay-blocks-integration.php';
+	add_action(
+		'woocommerce_blocks_payment_method_type_registration',
+		function ( $registry ) {
+			$registry->register( new WC_Xpay_Blocks_Integration() );
+		}
+	);
+} );
 
 /**
  * Add the gateway to WC Available Gateways
@@ -145,217 +177,19 @@ function wc_xpay_gateway_init() {
             // Actions
             add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
 
-            // Custom validation for Billing Phone checkout field
-            add_filter('the_title', 'woo_personalize_order_received_title', 10, 2);
-            if (!function_exists("woo_personalize_order_received_title")) {
-                function woo_personalize_order_received_title($title, $id) {
-                    if (is_order_received_page() && get_the_ID() === $id) {
-                        global $wp;
-
-                        // Get the order
-                        $order_id = apply_filters('woocommerce_thankyou_order_id', absint($wp->query_vars['order-received']));
-                        $order_key = apply_filters('woocommerce_thankyou_order_key', empty($_GET['key']) ? '' : wc_clean($_GET['key']));
-
-                        if ($order_id > 0) {
-                            $order = wc_get_order($order_id);
-                            if ($order->get_order_key() != $order_key) {
-                                $order = false;
-                            }
-                        }
-
-                        if (isset($order)) {
-                            // $title = '<p id="xpay_order_message">' . __('Thank you - your order is now pending payment. You should see Xpay popup now to make payment.', 'wc-gateway-xpay') . '</p>';
-                        }
-                    }
-                    return $title;
-                }
+            // Render the XPay iframe on the standard WC pay-for-order page,
+            // not the thank-you page. Customer pays here, then is redirected
+            // to the thank-you page after payment confirmation. We register
+            // only once even if the gateway is instantiated multiple times
+            // (WC keeps a singleton, and enqueue_checkout_scripts creates
+            // another instance) — otherwise receipt_page would fire twice
+            // and the modal HTML would be duplicated.
+            static $receipt_action_registered = false;
+            if (!$receipt_action_registered) {
+                add_action('woocommerce_receipt_' . $this->id, array($this, 'receipt_page'));
+                $receipt_action_registered = true;
             }
 
-            add_filter('woocommerce_thankyou_order_received_text', 'woo_change_order_received_text', 10, 2);
-            if (!function_exists("woo_change_order_received_text")) {
-                function woo_change_order_received_text($str, $order) {
-                    $name = $order->get_billing_first_name() . " " . $order->get_billing_last_name();
-                    $email = $order->get_billing_email();
-                    $mobile = $order->get_billing_phone(); 
-                    global $woocommerce;
-                    $wc_settings = new WC_Gateway_Xpay;
-                    $payment_method = isset($_REQUEST["xpay_payment"]) ? $_REQUEST["xpay_payment"] : '';
-
-                    $installment_period = isset($_REQUEST["xpay_installment_period"]) ? $_REQUEST["xpay_installment_period"] : '';   
-                    // Get promo code data from session instead of meta
-                    $promocode_id = WC()->session->get('promocode_id');
-                    $discount_amount = WC()->session->get('discount_amount');
-                    error_log("Debug: Retrieved promocode_id on Thank You page: " . $promocode_id);
-                    error_log("Debug: Retrieved discount_amount on Thank You page: ". $discount_amount);
-
-                    // Check if the xpay_payment parameter exists
-                    if ($payment_method) {
-                        $api_key = $wc_settings->get_option("payment_api_key");
-                        $debug = $wc_settings->get_option("debug");
-                        $community_id = $wc_settings->get_option("community_id");
-                        $subtotal_amount = $order->get_total();                        
-                    
-                        // Prepare amount
-                        $url = $wc_settings->get_option("iframe_base_url") . "/api/v1/payments/prepare-amount/";
-                        $payload = json_encode(array(
-                            "community_id" => $community_id,
-                            "amount" => $subtotal_amount,
-                            "selected_payment_method" => $payment_method
-                        ));
-                        $resp = httpPost($url, $payload, $api_key, $debug);
-                        $resp = json_decode($resp, TRUE);
-                        $installment_fees = isset($resp["data"]["installment_fees"]) ? $resp["data"]["installment_fees"] : [];
-                        $total_amount = $resp["data"]["total_amount"];
-                        
-                        $original_amount = $order->get_total();
-                        
-                        // Base payload for all payment methods
-                        $base_payload = array(
-                            "billing_data" => array(
-                                "name" => $name,
-                                "email" => $email,
-                                "phone_number" => $mobile,
-                            ),
-                            "community_id" => $community_id,
-                            "variable_amount_id" => $wc_settings->get_option("variable_amount_id"),
-                            "currency" => $order->get_currency(),
-                            "original_amount" => $original_amount,
-                            "amount" => $total_amount
-                        );
-
-                        // Add promocode if exists
-                        if (!empty($promocode_id)) {
-                            $base_payload["promocode_id"] = $promocode_id;
-                            $base_payload["amount"] = $discount_amount;
-                        }
-                        
-                        $current_installment_fees = 0;
-                        // If installment, calculate fees first
-                        if ($payment_method == "installment") {
-                            foreach ($installment_fees as $fee) {
-                                if ((int)$fee["period_duration"] === (int)$installment_period) {
-                                    $current_installment_fees = $fee["installment_fees"] + $fee["const_fees"];
-                                    break;
-                                }
-                            }
-                        }
-
-                        // Payment method specific configurations
-                        $payment_config = array(
-                            'card' => array('pay_using' => 'card'),
-                            'kiosk' => array('pay_using' => 'kiosk'),
-                            'fawry' => array('pay_using' => 'fawry'),
-                            'apple' => array('pay_using' => 'apple'),
-                            'valu' => array('pay_using' => 'valu'),
-                            'wallets' => array('pay_using' => 'meeza/digital'),
-                            'installment' => array(
-                                'pay_using' => 'card',
-                                'amount' => $original_amount + $current_installment_fees,
-                                'installment_period' => $installment_period
-                            )
-                        );
-
-                        // Merge base payload with payment specific config
-                        $payload = array_merge($base_payload, $payment_config[$payment_method]);
-                        $payload = json_encode($payload);
-                        
-                        error_log("Debug: Payload for {$payment_method} payment: " . $payload);
-                        
-                        $url = $wc_settings->get_option("iframe_base_url") . "/api/v1/payments/pay/variable-amount";
-                        $resp = httpPost($url, $payload, $api_key, $debug);
-                        $resp = json_decode($resp, TRUE);
-
-                        // Check for API errors
-                        if (!is_array($resp) || !isset($resp['status']['code']) || $resp['status']['code'] !== 200) {
-                            $error_message = isset($resp['status']['message']) ? $resp['status']['message'] : __('Payment processing failed. Please check your settings.', 'wc-gateway-xpay');
-                            if (isset($resp['status']['errors']) && is_array($resp['status']['errors'])) {
-                                $error_messages_list = array();
-                                
-                                // Recursive closure to flatten errors with keys
-                                $process_errors_recursive = function($data, $prefix = '') use (&$process_errors_recursive, &$error_messages_list) {
-                                    foreach ($data as $key => $value) {
-                                        // Determine label from key
-                                        $label = '';
-                                        if (is_string($key) && !is_numeric($key)) {
-                                            $human_key = ucfirst(str_replace('_', ' ', $key));
-                                            $label = $prefix ? $prefix . ' - ' . $human_key : $human_key;
-                                        } else {
-                                            $label = $prefix;
-                                        }
-
-                                        if (is_array($value)) {
-                                            $process_errors_recursive($value, $label);
-                                        } else {
-                                            // It's a string message
-                                            if (!empty($value)) {
-                                                if ($label) {
-                                                    $error_messages_list[] = '<strong>' . esc_html($label) . ':</strong> ' . esc_html($value);
-                                                } else {
-                                                    $error_messages_list[] = esc_html($value);
-                                                }
-                                            }
-                                        }
-                                    }
-                                };
-                                
-                                $process_errors_recursive($resp['status']['errors']);
-                                
-                                if (!empty($error_messages_list)) {
-                                    $error_message = implode('<br/>', $error_messages_list);
-                                }
-                            }
-                            return "<p id='xpay_message' class='woocommerce-error'>" . wp_kses_post($error_message) . "</p>";
-                        }
-
-                        // Store transaction ID
-                        if (isset($resp["data"]["transaction_uuid"])) {
-                            add_post_meta($order->get_id(), "xpay_transaction_id", $resp["data"]["transaction_uuid"]);
-                        }
-
-                        // Generate payment modal for methods that need it
-                        if (in_array($payment_method, ['card', 'fawry', 'valu', 'wallets', 'installment', 'apple'])) {
-                            $iframe_url = isset($resp["data"]["iframe_url"]) ? $resp["data"]["iframe_url"] : '';
-                            $transaction_uuid = isset($resp["data"]["transaction_uuid"]) ? $resp["data"]["transaction_uuid"] : '';
-                            
-                            generate_payment_modal($iframe_url, $transaction_uuid, $order->get_id(), $community_id);
-                            return "<p id='xpay_message'> Your order is waiting XPAY payment you must see xpay popup now or <a data-toggle='modal' data-target='#xpay_modal'> click here </a></p>";
-                        } else {
-                            $success_message = isset($resp["data"]["message"]) ? $resp["data"]["message"] : __('Payment initiated.', 'wc-gateway-xpay');
-                            return "<p id='xpay_message'>". esc_html($success_message) ."</p>";
-                        }
-                    }
-                    return $str;
-                }
-            }
-            // Add JavaScript to remove the xpay_payment parameter from the URL to avoid reopening the card info after refresh
-            add_action('wp_footer', 'remove_xpay_payment_param');
-            if (!function_exists("remove_xpay_payment_param")) {
-                function remove_xpay_payment_param() {
-                    if (isset($_GET['xpay_payment'])) {
-                        ?>
-                        <script type="text/javascript">
-                            if (window.history.replaceState) {
-                                var url = new URL(window.location);
-                                url.searchParams.delete('xpay_payment');
-                                window.history.replaceState(null, null, url);
-                            }
-                        </script>
-                        <?php
-                    }
-                    // remove installment period parameter
-                    if (isset($_GET['xpay_installment_period'])) {
-                        ?>
-                        <script type="text/javascript">
-                            if (window.history.replaceState) {
-                                var url = new URL(window.location);
-                                url.searchParams.delete('xpay_installment_period');
-                                window.history.replaceState(null, null, url);
-                            }
-                        </script>
-                        <?php
-                    }
-                }
-            } // Add this closing brace
             // Hook into the payment fields display
             add_action('woocommerce_credit_card_form_start', array($this, 'payment_fields'));
         }
@@ -443,23 +277,16 @@ function wc_xpay_gateway_init() {
         public function payment_fields() {
             do_action('woocommerce_xpay_form_start', $this->id);
 
-            // Fetch available payment methods from API
+            // Fetch available payment methods from XPay (cached + WAF-resilient).
             $community_id = $this->settings['community_id'];
-            $api_url =$this->settings['iframe_base_url'] . "/api/communities/preferences/?community_id=" . $community_id;
-            $response = wp_remote_get($api_url);
-            $payment_methods = [];
-            $allow_promo_code = false; // Default: Hide promo code section
-            if (!is_wp_error($response)) {
-                $body = wp_remote_retrieve_body($response);
-                $data = json_decode($body, true);
-                if (isset($data['data']['payment_methods'])) {
-                    $payment_methods = $data['data']['payment_methods'];
-                }
-                 // Check if promo codes are allowed
-            if (isset($data['data']['allow_promo_code']) && $data['data']['allow_promo_code'] === true) {
-                $allow_promo_code = true;
-            }
-            }
+            $prefs = xpay_get_community_preferences(
+                $this->settings['iframe_base_url'],
+                $community_id,
+                $this->get_option('payment_api_key'),
+                $this->get_option('debug')
+            );
+            $payment_methods  = $prefs['payment_methods'];
+            $allow_promo_code = $prefs['allow_promo_code'];
 
             $method_labels = [
                 'CARD' => __('Card', 'wc-gateway-xpay'),
@@ -470,7 +297,10 @@ function wc_xpay_gateway_init() {
                 'Installment' => __('NBE Installments', 'wc-gateway-xpay'),
             ];
 
-            if (isset($data['data']['supports_installments']) && $data['data']['supports_installments'] === true) {
+            // Add the installment pseudo-method only if XPay supports it AND
+            // it's not already in the methods list (the upstream API has no
+            // contract preventing 'Installment' from appearing there).
+            if (!empty($prefs['supports_installments']) && !in_array('Installment', (array) $payment_methods, true)) {
                 $payment_methods['installment'] = 'Installment';
             }
 
@@ -484,13 +314,32 @@ function wc_xpay_gateway_init() {
             }
             // ===== End Conditional Promo Code Section =====  
 
+            // Default-check CARD when present, otherwise the first rendered
+            // method. Without this, communities that don't support cards
+            // would render with no radio checked at all.
+            $has_card        = in_array('CARD', (array) $payment_methods, true);
+            $checked_assigned = false;
             foreach ($payment_methods as $method) {
-                if (isset($method_labels[$method])  ) {
-                    echo '<label class="xpay-method" style="display: flex; align-items: center;">
-                            <input type="radio" class="xpay-payment-radio" name="xpay_payment_method" value="' . strtolower($method) . '" style="margin-right: 5px;" ' . ($method === 'CARD' ? 'checked' : '') . '>
-                            ' . $method_labels[$method] . '
-                        </label>';
+                if (!isset($method_labels[$method])) {
+                    continue;
                 }
+                // Normalize via the shared map — strtolower would turn
+                // 'MEEZA/DIGITAL' into 'meeza/digital', which sanitize_text_field
+                // would preserve but the payment_config lookup uses 'wallets'.
+                $internal_key = xpay_normalize_method_code($method);
+                $checked      = '';
+                if ($has_card) {
+                    if ('CARD' === $method) {
+                        $checked = 'checked';
+                    }
+                } elseif (!$checked_assigned) {
+                    $checked          = 'checked';
+                    $checked_assigned = true;
+                }
+                echo '<label class="xpay-method" style="display: flex; align-items: center;">
+                        <input type="radio" class="xpay-payment-radio" name="xpay_payment_method" value="' . esc_attr($internal_key) . '" style="margin-right: 5px;" ' . $checked . '>
+                        ' . esc_html($method_labels[$method]) . '
+                    </label>';
             }
 
 
@@ -509,44 +358,54 @@ function wc_xpay_gateway_init() {
                     $('input[name="xpay_payment_method"]').change(function() {
                         if ($(this).val() === 'installment') { 
                             $.ajax({
-                                url: '<?php echo admin_url("admin-ajax.php"); ?>',
+                                url: <?php echo wp_json_encode( admin_url( 'admin-ajax.php' ) ); ?>,
                                 method: 'POST',
                                 data: {
                                     action: 'fetch_installment_plans',
-                                    amount: '<?php echo WC()->cart->total; ?>',
-                                    url: '<?php echo $this->settings['iframe_base_url'] . "/api/v1/payments/prepare-amount/"; ?>',
-                                    api_key: '<?php echo $this->settings['payment_api_key']; ?>',
-                                    selected_payment_method: 'installment',
-                                    community_id: '<?php echo $this->settings['community_id']; ?>',
+                                    amount: <?php echo (float) WC()->cart->total; ?>,
+                                    nonce: <?php echo wp_json_encode( wp_create_nonce( 'xpay-installments' ) ); ?>
                                 },
                                 success: function(response) {
                                     $('#installment_options').show();
-                                    const data = JSON.parse(JSON.parse(response));  
+                                    const data = JSON.parse(JSON.parse(response));
                                     if (data && data.data && data.data.installment_fees) {
-                                        const cartAmount = parseFloat('<?php echo WC()->cart->total; ?>'); 
+                                        const cartAmount = <?php echo (float) WC()->cart->total; ?>;
                                         const installmentPlans = data.data.installment_fees;
+                                        const labels = <?php echo wp_json_encode(array(
+                                            'months'         => __('Months', 'wc-gateway-xpay'),
+                                            'totalInterest'  => __('Total Interest:', 'wc-gateway-xpay'),
+                                            'monthlyPayment' => __('Monthly Payment:', 'wc-gateway-xpay'),
+                                            'currency'       => __('EGP', 'wc-gateway-xpay'),
+                                        )); ?>;
                                         $('#installment_card_container').empty();
 
                                         installmentPlans.forEach(function(plan) {
                                             const totalAmount = cartAmount + parseFloat(plan.installment_fees + plan.const_fees);
                                             const monthlyPayment = parseFloat((totalAmount / plan.period_duration).toFixed(2));
-
-                                            const card = `
-                                                <div class="installment-card" data-duration="${plan.period_duration}" data-total-amount="${totalAmount.toFixed(2)}"
-                                                    style="border: 2px solid #ddd; padding: 15px; border-radius: 8px; width: 200px; text-align: center; cursor: pointer; background: #f9f9f9; flex: 1">
-                                                    <strong>${plan.period_duration} <?php echo __('Months', 'wc-gateway-xpay'); ?></strong>
-                                                    <p><?php echo __('Total Interest:', 'wc-gateway-xpay'); ?> ${plan.interest_percentage}</p>
-                                                    <p><?php echo __('Monthly Payment:', 'wc-gateway-xpay'); ?>  ${monthlyPayment} <?php echo __('EGP', 'wc-gateway-xpay'); ?></p>
-                                                </div>
-                                            `;
-                                            $('#installment_card_container').append(card);
+                                            const $card = $('<div class="installment-card"></div>')
+                                                .attr('data-duration', plan.period_duration)
+                                                .attr('data-total-amount', totalAmount.toFixed(2))
+                                                .css({
+                                                    border: '2px solid #ddd',
+                                                    padding: '15px',
+                                                    borderRadius: '8px',
+                                                    width: '200px',
+                                                    textAlign: 'center',
+                                                    cursor: 'pointer',
+                                                    background: '#f9f9f9',
+                                                    flex: 1
+                                                });
+                                            $('<strong></strong>').text(plan.period_duration + ' ' + labels.months).appendTo($card);
+                                            $('<p></p>').text(labels.totalInterest + ' ' + plan.interest_percentage).appendTo($card);
+                                            $('<p></p>').text(labels.monthlyPayment + ' ' + monthlyPayment + ' ' + labels.currency).appendTo($card);
+                                            $('#installment_card_container').append($card);
                                         });
                                     } else {
-                                        alert('<?php echo __('Failed to fetch installment plans. Please try again.', 'wc-gateway-xpay'); ?>');
+                                        alert(<?php echo wp_json_encode( __('Failed to fetch installment plans. Please try again.', 'wc-gateway-xpay') ); ?>);
                                     }
                                 },
                                 error: function(error) {
-                                    alert('<?php echo __('Failed to load installment plans. Please try again.', 'wc-gateway-xpay'); ?>');
+                                    alert(<?php echo wp_json_encode( __('Failed to load installment plans. Please try again.', 'wc-gateway-xpay') ); ?>);
                                 }
                             });
                         } else {
@@ -597,7 +456,10 @@ function wc_xpay_gateway_init() {
          * @param bool $plain_text
          */
         public function email_instructions($order, $sent_to_admin, $plain_text = false) {
-            if ($this->instructions && !$sent_to_admin && $this->id === $order->payment_method && $order->has_status('on-hold')) {
+            // Use the CRUD getter — direct property access on WC_Order is
+            // deprecated and emits PHP 8 dynamic-property warnings, and is
+            // not HPOS-safe.
+            if ($this->instructions && !$sent_to_admin && $this->id === $order->get_payment_method() && $order->has_status('on-hold')) {
                 echo wpautop(wptexturize($this->instructions)) . PHP_EOL;
             }
         }
@@ -610,90 +472,304 @@ function wc_xpay_gateway_init() {
          */
         public function process_payment($order_id) {
             $order = wc_get_order($order_id);
-
-            // Mark as on-hold (we're awaiting the payment)
-            $order->update_status('pending', __('Awaiting payment', 'wc-gateway-xpay'));
-
-            // Reduce stock levels
-            $order->reduce_order_stock();
-
-            // Remove cart
-            WC()->cart->empty_cart();
-
-            // Return thank you redirect
-            $redirect_url = $this->get_return_url($order) . "&xpay_payment=" . $_REQUEST["xpay_payment_method"];
-
-            if (
-                isset($_REQUEST["xpay_selected_installment_plan"]) && !empty($_REQUEST["xpay_selected_installment_plan"] )
-            ) {
-                $redirect_url .= "&xpay_installment_period=" . $_REQUEST["xpay_selected_installment_plan"];
+            if (!$order) {
+                wc_add_notice(__('Order not found.', 'wc-gateway-xpay'), 'error');
+                return array('result' => 'failure');
             }
 
+            // Idempotency: if a transaction was already created for this order
+            // (e.g. customer hit Place Order twice), reuse it instead of
+            // creating another one upstream.
+            $existing_txn    = $order->get_meta('xpay_transaction_id');
+            $existing_iframe = $order->get_meta('xpay_iframe_url');
+            if ($existing_txn && $existing_iframe && !$order->is_paid()) {
+                return array(
+                    'result'   => 'success',
+                    'redirect' => $order->get_checkout_payment_url(true),
+                );
+            }
+
+            // Concurrent-attempt guard. If a previous process_payment started
+            // the pay call but never finished writing meta (e.g. PHP killed
+            // mid-flow), a recent xpay_pay_started_at is the only evidence we
+            // have that the customer may already be charged at XPay. Block
+            // retries within a 10-minute window so we don't double-charge.
+            // After the window we assume the prior attempt has resolved and
+            // allow a fresh try.
+            $started_at = $order->get_meta('xpay_pay_started_at');
+            if ($started_at) {
+                $started_ts = strtotime($started_at . ' UTC');
+                if ($started_ts && (time() - $started_ts) < 10 * MINUTE_IN_SECONDS && empty($existing_txn)) {
+                    wc_add_notice(__('A previous payment attempt for this order is still being processed. If you were not redirected to the payment page, please contact support to confirm the payment status before trying again.', 'wc-gateway-xpay'), 'error');
+                    return array('result' => 'failure');
+                }
+            }
+
+            // Use $_POST not $_REQUEST so cookies cannot override form fields.
+            // sanitize_text_field (not sanitize_key) preserves the slash in
+            // 'meeza/digital' — but we then validate against an explicit
+            // whitelist so only known keys reach the API.
+            $payment_method     = isset($_POST['xpay_payment_method']) ? sanitize_text_field(wp_unslash($_POST['xpay_payment_method'])) : '';
+            $installment_period = isset($_POST['xpay_selected_installment_plan']) ? sanitize_text_field(wp_unslash($_POST['xpay_selected_installment_plan'])) : '';
+
+            if (!in_array($payment_method, xpay_allowed_method_keys(), true)) {
+                wc_add_notice(__('Please select a valid payment method.', 'wc-gateway-xpay'), 'error');
+                return array('result' => 'failure');
+            }
+
+            $api_key      = $this->get_option('payment_api_key');
+            $debug        = $this->get_option('debug');
+            $community_id = $this->get_option('community_id');
+            $variable_id  = $this->get_option('variable_amount_id');
+            $base_url     = rtrim($this->get_option('iframe_base_url'), '/');
+
+            $original_amount = $order->get_total();
+
+            // Step 1: prepare-amount.
+            $prepare_body = httpPost(
+                $base_url . '/api/v1/payments/prepare-amount/',
+                wp_json_encode(array(
+                    'community_id'            => $community_id,
+                    'amount'                  => $original_amount,
+                    'selected_payment_method' => $payment_method,
+                    'variable_amount_id'      => $variable_id,
+                )),
+                $api_key,
+                $debug
+            );
+            $prepare = json_decode($prepare_body, true);
+            if (!is_array($prepare) || !isset($prepare['data']['total_amount'])) {
+                wc_add_notice(__('Payment processing failed. Please try again.', 'wc-gateway-xpay'), 'error');
+                $order->update_status('failed', __('XPay prepare-amount call failed', 'wc-gateway-xpay'));
+                return array('result' => 'failure');
+            }
+            $total_amount     = $prepare['data']['total_amount'];
+            $installment_fees = isset($prepare['data']['installment_fees']) ? $prepare['data']['installment_fees'] : array();
+
+            // Step 2: build the pay/variable-amount payload.
+            $promocode_id    = WC()->session ? WC()->session->get('promocode_id')    : null;
+            $discount_amount = WC()->session ? WC()->session->get('discount_amount') : null;
+
+            $base_payload = array(
+                'billing_data' => array(
+                    'name'         => trim($order->get_billing_first_name() . ' ' . $order->get_billing_last_name()),
+                    'email'        => $order->get_billing_email(),
+                    'phone_number' => $order->get_billing_phone(),
+                ),
+                'community_id'       => $community_id,
+                'variable_amount_id' => $variable_id,
+                'currency'           => $order->get_currency(),
+                'original_amount'    => $original_amount,
+                'amount'             => $total_amount,
+            );
+            if (!empty($promocode_id)) {
+                $base_payload['promocode_id'] = $promocode_id;
+                $base_payload['amount']       = $discount_amount;
+            }
+
+            $current_installment_fees = 0;
+            if ($payment_method === 'installment') {
+                foreach ($installment_fees as $fee) {
+                    if ((int) $fee['period_duration'] === (int) $installment_period) {
+                        $current_installment_fees = $fee['installment_fees'] + $fee['const_fees'];
+                        break;
+                    }
+                }
+            }
+
+            $payment_config = array(
+                'card'        => array('pay_using' => 'card'),
+                'kiosk'       => array('pay_using' => 'kiosk'),
+                'fawry'       => array('pay_using' => 'fawry'),
+                'apple'       => array('pay_using' => 'apple'),
+                'valu'        => array('pay_using' => 'valu'),
+                'wallets'     => array('pay_using' => 'meeza/digital'),
+                'installment' => array(
+                    'pay_using'          => 'card',
+                    'amount'             => $original_amount + $current_installment_fees,
+                    'installment_period' => $installment_period,
+                ),
+            );
+            if (!isset($payment_config[$payment_method])) {
+                wc_add_notice(__('Unknown payment method.', 'wc-gateway-xpay'), 'error');
+                return array('result' => 'failure');
+            }
+            $payload = array_merge($base_payload, $payment_config[$payment_method]);
+
+            // Pre-save the payment-attempt fingerprint BEFORE the pay call so
+            // that if PHP times out between the API call and our success-path
+            // save below (which would charge the customer but not record the
+            // transaction), the next attempt's concurrent-attempt guard will
+            // catch it instead of silently double-charging.
+            $order->update_meta_data('xpay_payment_method', $payment_method);
+            $order->update_meta_data('xpay_pay_started_at', gmdate('Y-m-d H:i:s'));
+            $order->save();
+
+            // Step 3: pay/variable-amount. max_retries = 0 because retrying a
+            // pay call after a timeout/non-JSON response risks double-charge —
+            // the first attempt may have succeeded server-side at XPay even if
+            // we never received the response.
+            $pay_body = httpPost(
+                $base_url . '/api/v1/payments/pay/variable-amount',
+                wp_json_encode($payload),
+                $api_key,
+                $debug,
+                0
+            );
+            $resp = json_decode($pay_body, true);
+            if (!is_array($resp) || (isset($resp['status']['code']) ? $resp['status']['code'] : 0) !== 200) {
+                $msg = isset($resp['status']['message']) ? $resp['status']['message'] : __('Payment processing failed.', 'wc-gateway-xpay');
+                // If XPay returned a structured error (status.code set), the
+                // call cleanly failed with no charge ambiguity. Clear the
+                // in-flight fingerprint so the customer can retry immediately.
+                // If status.code is missing (timeout / null response), keep
+                // the fingerprint to block retries inside the 10-min window.
+                if (is_array($resp) && isset($resp['status']['code'])) {
+                    $order->delete_meta_data('xpay_pay_started_at');
+                    $order->save();
+                }
+                wc_add_notice($msg, 'error');
+                $order->update_status('failed', sprintf(__('XPay pay call failed: %s', 'wc-gateway-xpay'), $msg));
+                return array('result' => 'failure');
+            }
+
+            // Persist transaction details on the order. Stock is NOT reduced
+            // here — that happens via $order->payment_complete() once the
+            // webhook confirms payment. trim() on the txn id so the strict
+            // === comparisons in update_order.php / check_transaction.php
+            // can't fail on whitespace-padded upstream values.
+            if (!empty($resp['data']['transaction_uuid'])) {
+                $order->update_meta_data('xpay_transaction_id', trim((string) $resp['data']['transaction_uuid']));
+            }
+            if (!empty($resp['data']['iframe_url'])) {
+                $order->update_meta_data('xpay_iframe_url', $resp['data']['iframe_url']);
+            }
+            if (!empty($resp['data']['message'])) {
+                $order->update_meta_data('xpay_response_message', $resp['data']['message']);
+            }
+            $order->update_meta_data('xpay_payment_method', $payment_method);
+            $order->update_status('pending', __('Awaiting XPay payment', 'wc-gateway-xpay'));
+            $order->save();
+
+            // The cart can be cleared now: the order is the source of truth.
+            WC()->cart->empty_cart();
 
             return array(
-                'result' => 'success',
-                'redirect' => $redirect_url,
+                'result'   => 'success',
+                'redirect' => $order->get_checkout_payment_url(true),
             );
+        }
+
+        /**
+         * Renders the XPay iframe on the WC pay-for-order page
+         * (/checkout/order-pay/{id}/). Reads the transaction details that
+         * process_payment() persisted on the order — no API call here, so
+         * refreshes are free.
+         */
+        public function receipt_page($order_id) {
+            $order = wc_get_order($order_id);
+            if (!$order) {
+                return;
+            }
+
+            $iframe_url   = $order->get_meta('xpay_iframe_url');
+            $trn_uuid     = $order->get_meta('xpay_transaction_id');
+            $message      = $order->get_meta('xpay_response_message');
+            $community_id = $this->get_option('community_id');
+
+            if ($iframe_url) {
+                if (function_exists('generate_payment_modal')) {
+                    generate_payment_modal($iframe_url, $trn_uuid, $order->get_id(), $community_id);
+                }
+                echo "<p id='xpay_message'>"
+                    . esc_html__('Please complete your payment in the popup window. If it did not open, ', 'wc-gateway-xpay')
+                    . "<a data-toggle='modal' data-target='#xpay_modal'>" . esc_html__('click here', 'wc-gateway-xpay') . "</a>."
+                    . "</p>";
+                return;
+            }
+
+            if ($message) {
+                echo "<p id='xpay_message'>" . esc_html($message) . "</p>";
+                return;
+            }
+
+            echo "<p id='xpay_message'>"
+                . esc_html__('Your payment is being processed. You will receive a confirmation shortly.', 'wc-gateway-xpay')
+                . "</p>";
         }
     }
 }
 
 if (!function_exists("generate_payment_modal")) {
     function generate_payment_modal($iframe_url, $trn_uuid, $order_id, $community_id) {
-        // jQuery code start below
+        // Bootstrap CSS/JS for the modal. We rely on WordPress's bundled
+        // jQuery (already enqueued by WC on checkout/order-pay pages); we do
+        // NOT load our own jQuery and we do NOT call noConflict — that
+        // previously wiped window.jQuery for the rest of the page.
+        $thankyou_url = '';
+        $order_obj    = wc_get_order($order_id);
+        if ($order_obj) {
+            $thankyou_url = $order_obj->get_checkout_order_received_url();
+        }
         ?>
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
 
         <script>
-            xpay_plugin_url = '<?php echo plugin_dir_url(__FILE__) ?>'
-            XPay_JQ = jQuery.noConflict(true);
-            XPay_JQ(function (XPay_JQ) {
-                XPay_JQ('#xpay_modal').modal({
-                    backdrop: 'static',
-                    keyboard: false,
-                });
+            (function ($) {
+                if (typeof $ === 'undefined') { return; }
+                var xpayPluginUrl = <?php echo wp_json_encode(plugin_dir_url(__FILE__)); ?>;
+                var xpayCommunityId = <?php echo wp_json_encode((string) $community_id); ?>;
+                var xpayOrderId = <?php echo wp_json_encode((string) $order_id); ?>;
+                var xpayThankyouUrl = <?php echo wp_json_encode($thankyou_url); ?>;
 
-                XPay_JQ('#xpay_modal').on('shown.bs.modal', function () {
-                    XPay_JQ('#xpay_modal').css("z-index", 900);
-                    XPay_JQ(".modal-backdrop:not(#xpay_modal)").hide();
-                });
+                $(function () {
+                    var $modal = $('#xpay_modal');
+                    if (!$modal.length) { return; }
 
-                XPay_JQ('#xpay_modal').on('hidden.bs.modal', function () {
-                    trn_uuid = XPay_JQ("#xpay_trn_uuid").val()
-                    check_trn_endpoint_url = xpay_plugin_url + 'check_transaction.php';
-                    XPay_JQ.get(check_trn_endpoint_url,
-                        {
-                            trn_uuid: trn_uuid,
-                            community_id: '<?php echo $community_id ?>',
-                            order_id: '<?php echo $order_id ?>'
-                        },
-                        function (data) {
-                            if (data == "SUCCESSFUL") {
-                                XPay_JQ("#xpay_message").text("Thank you - your order payment done Successfully");
-                                XPay_JQ('#xpay_modal').modal('hide'); // Close the modal
+                    $modal.modal({
+                        backdrop: 'static',
+                        keyboard: false
+                    });
+
+                    $modal.on('shown.bs.modal', function () {
+                        $modal.css('z-index', 900);
+                        $('.modal-backdrop:not(#xpay_modal)').hide();
+                    });
+
+                    $modal.on('hidden.bs.modal', function () {
+                        var trnUuid = $('#xpay_trn_uuid').val();
+                        $.get(xpayPluginUrl + 'check_transaction.php', {
+                            trn_uuid: trnUuid,
+                            community_id: xpayCommunityId,
+                            order_id: xpayOrderId
+                        }, function (data) {
+                            if (data === 'SUCCESSFUL') {
+                                $('#xpay_message').text('Thank you - your order payment was completed successfully.');
+                                if (xpayThankyouUrl) {
+                                    window.location.href = xpayThankyouUrl;
+                                }
                             }
                         });
-                })
-            });
+                    });
+                });
+            })(window.jQuery);
         </script>
         <!-- Modal -->
-        <div class="modal fade" id="xpay_modal" role="dialog" style="visibility:visible;"> 
+        <div class="modal fade" id="xpay_modal" role="dialog" style="visibility:visible;">
             <div class="modal-dialog">
-                <!-- Modal content-->
                 <div class="modal-content">
                     <div class="modal-header">
                         <button type="button" class="close" data-dismiss="modal">&times;</button>
-                        <h4 class="modal-title">Xpay Payment</h4>
-                        <p style="color:red">Don't close the popup until you finish payment</p>
+                        <h4 class="modal-title"><?php esc_html_e('Xpay Payment', 'wc-gateway-xpay'); ?></h4>
+                        <p style="color:red"><?php esc_html_e("Don't close the popup until you finish payment", 'wc-gateway-xpay'); ?></p>
                     </div>
                     <div class="modal-body">
-                        <iframe src="<?php echo esc_url($iframe_url) ?>" class="no-lazy skip-lazy" style="border:none; width:100% !important; height:450px !important;"></iframe>
+                        <iframe src="<?php echo esc_url($iframe_url); ?>" class="no-lazy skip-lazy" style="border:none; width:100% !important; height:450px !important;"></iframe>
                     </div>
                     <div class="modal-footer">
-                        <input type="hidden" name="trn_uuid" id="xpay_trn_uuid" value="<?php esc_html_e($trn_uuid, 'wc-gateway-xpay'); ?>">
-                        <button type="button" class="btn" data-dismiss="modal">Close</button>
+                        <input type="hidden" name="trn_uuid" id="xpay_trn_uuid" value="<?php echo esc_attr($trn_uuid); ?>">
+                        <button type="button" class="btn" data-dismiss="modal"><?php esc_html_e('Close', 'wc-gateway-xpay'); ?></button>
                     </div>
                 </div>
             </div>
@@ -735,10 +811,12 @@ function enqueue_checkout_scripts() {
         true
     );
 
-    // Shared data for AJAX
+    // Shared data for AJAX. Each AJAX endpoint gets its own nonce so
+    // a token leaked from one form can't be replayed against another.
     $sharedData = array(
-        'ajax_url' => admin_url('admin-ajax.php'),
-        'nonce'    => wp_create_nonce('validate-promo-code'),
+        'ajax_url'   => admin_url('admin-ajax.php'),
+        'nonce'      => wp_create_nonce('validate-promo-code'),
+        'fees_nonce' => wp_create_nonce('xpay-fees'),
     );
     // fetch prepare amount data stored in wc Session for checkout page in order summary 
     $initialData = array(
