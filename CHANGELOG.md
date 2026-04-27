@@ -128,7 +128,7 @@ Replaces the Bootstrap 3 modal dependency with a vanilla CSS+JS implementation, 
 - **jQuery sanity check on modal init.** Detects whether `window.jQuery` is present and whether its major version is 3 or above. If jQuery is missing or pre-3.x, emits a browser console warning AND a `js.compat_warning` log event (`details: jquery_missing` or `jquery_below_3:<version>`). The modal itself does not depend on jQuery, so the warning is informational rather than blocking — but other XPay UI surfaces (installment selector, promo code) still need it via WP's bundled copy.
 - **`referrerpolicy="strict-origin-when-cross-origin"` on the iframe** so XPay only sees the origin (not the full URL) of the merchant's payment page.
 - **`aria-modal`, `aria-labelledby`, `aria-hidden` attributes** on the modal markup — accessibility improvement that comes for free with the rewrite.
-- **Documentation:** new "WordPress Blocks (Gutenberg) compatibility" section in [COMPATIBILITY.md](COMPATIBILITY.md) covering Cart/Checkout Blocks, block themes/FSE, and classic shortcode checkout. New risk-categorized "Themes" section listing low/medium/high-risk patterns with diagnosis recipes. New "Theme conflict" and "jQuery loaded but version is unexpected" sections in [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
+- **Documentation:** new "WordPress Blocks (Gutenberg) compatibility" section in [COMPATIBILITY.md](docs/COMPATIBILITY.md) covering Cart/Checkout Blocks, block themes/FSE, and classic shortcode checkout. New risk-categorized "Themes" section listing low/medium/high-risk patterns with diagnosis recipes. New "Theme conflict" and "jQuery loaded but version is unexpected" sections in [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
 ### Changed
 

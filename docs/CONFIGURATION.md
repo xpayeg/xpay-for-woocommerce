@@ -132,7 +132,7 @@ These tell the plugin which XPay account to authenticate as. You get all three f
 - **Default:** Off
 - **What it does:** Only relevant if you also have WPFunnels active. WPFunnels filters the post-payment URL through its own funnel-routing format. On WPFunnels Free without a configured upsell step, this rewrite causes XPay customers to land on `/cart/` instead of a "Thank you for your order" page. Turn this on to force the standard WooCommerce order-received URL for XPay orders.
 - **When to leave OFF:** If you have a configured WPFunnels Pro upsell flow that you want XPay customers to enter after paying.
-- **Detection:** The plugin shows a one-time admin notice nudging you to enable this whenever WPFunnels is detected and the setting is still off. Dismissal is per-user and persistent. See [COMPATIBILITY.md](../COMPATIBILITY.md#wpfunnels-confirmed) for the full background.
+- **Detection:** The plugin shows a one-time admin notice nudging you to enable this whenever WPFunnels is detected and the setting is still off. Dismissal is per-user and persistent. See [COMPATIBILITY.md](COMPATIBILITY.md#wpfunnels-confirmed) for the full background.
 
 ---
 

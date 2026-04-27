@@ -183,7 +183,7 @@ For older versions and full release notes, see the bundled `CHANGELOG.md` in the
 == Upgrade Notice ==
 
 = 2.0.0 =
-Major release: plugin renamed to "XPay for WooCommerce" (slug: `xpay-for-woocommerce`). Existing merchants on the old `woocommerce-xpay-plugin` directory: deactivate the old plugin, install this one, and your gateway settings will carry over (the underlying option key is unchanged). Includes substantial security and reliability improvements — strict webhook verification when configured, payment_complete idempotency lock, circuit breaker for upstream slowness, reassurance-first error copy, and full WordPress.org compliance.
+Plugin renamed to XPay for WooCommerce. Merchants on the old `woocommerce-xpay-plugin` directory: deactivate the old plugin and install this one. Gateway settings carry over automatically. Includes security and reliability improvements; see the changelog for details.
 
 = 1.3.1 =
 Accessibility fix for the payment modal. No setting changes required. Hard-refresh after upgrade to clear cached modal markup.

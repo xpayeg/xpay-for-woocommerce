@@ -18,7 +18,7 @@ first-class citizens.
 ### Cart & Checkout Blocks (WC 8.3+ default checkout)
 
 Fully supported. Implementation lives in
-[`class-wc-xpay-blocks-integration.php`](class-wc-xpay-blocks-integration.php).
+[`class-wc-xpay-blocks-integration.php`](../class-wc-xpay-blocks-integration.php).
 The plugin:
 
 - Declares `cart_checkout_blocks` compatibility via
@@ -28,7 +28,7 @@ The plugin:
 - Registers a `WC_Xpay_Blocks_Integration` class on
   `woocommerce_blocks_payment_method_type_registration`.
 - Ships a small block-side script
-  ([`assets/js/blocks-integration.js`](assets/js/blocks-integration.js))
+  ([`assets/js/blocks-integration.js`](../assets/js/blocks-integration.js))
   that registers the gateway with `wc-blocks-registry`, mirrors the radio
   list from the same cached preferences helper used by classic checkout,
   and forwards the selected method as `paymentMethodData` (which WC

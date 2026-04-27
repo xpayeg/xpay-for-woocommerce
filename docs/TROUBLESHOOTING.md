@@ -86,7 +86,7 @@ Filter to one order: `grep "order=39" log-file.log`. Filter to one request: `gre
 
 **Fix:**
 - Open WC → Settings → Payments → Xpay → Manage and copy the exact **Callback URL** the plugin shows (it's computed from the plugin's install path, so it's always correct). Confirm the value on your XPay dashboard matches it byte-for-byte (HTTPS, correct domain, exact path).
-- Confirm no security plugin (Wordfence, Sucuri, etc.) is blocking the URL — see [COMPATIBILITY.md](../COMPATIBILITY.md#wordfence--sucuri--ithemes-security).
+- Confirm no security plugin (Wordfence, Sucuri, etc.) is blocking the URL — see [COMPATIBILITY.md](COMPATIBILITY.md#wordfence--sucuri--ithemes-security).
 - Test the URL is reachable from outside: `curl -I <THE_CALLBACK_URL_FROM_SETTINGS>` should NOT return 403/404. (It returns 405 Method Not Allowed because GET is not implemented — that's fine; it proves the URL is reachable.)
 
 **Manual recovery for a stuck order:**
@@ -139,7 +139,7 @@ This is a WC core message, not from our plugin. It appears at checkout when WC a
 5. Check the `boot` entry's `cookie_consent` field — if a consent plugin is detected, the iframe cookies may be blocked.
 
 **Fix:**
-- See [COMPATIBILITY.md](../COMPATIBILITY.md) — sections on cookie consent, themes, and CSP
+- See [COMPATIBILITY.md](COMPATIBILITY.md) — sections on cookie consent, themes, and CSP
 - For the consent banner case, allowlist `*.xpay.app` for iframe cookies
 - For the lazy-loader case, our iframe ships `class="no-lazy skip-lazy"` (the two most common opt-out conventions); themes using a different opt-out class need a merchant-side tweak
 
@@ -151,13 +151,13 @@ This is a WC core message, not from our plugin. It appears at checkout when WC a
 
 **Diagnose:**
 1. WP Admin → Tools → XPay Logger → look at the most recent `boot` entry. The `theme` and `parent_theme` fields name the active theme.
-2. Cross-reference with [COMPATIBILITY.md → Themes](../COMPATIBILITY.md#themes). Is the theme in the Low/Medium/High-risk table?
+2. Cross-reference with [COMPATIBILITY.md → Themes](COMPATIBILITY.md#themes). Is the theme in the Low/Medium/High-risk table?
 3. Look at `boot.hooks_inventory` — any non-XPay callbacks listed under `the_title`, `woocommerce_thankyou`, or `woocommerce_checkout_process` from a `wp-content/themes/...` source path are candidates for the conflict.
 4. If the modal won't open or render correctly, check for `modal.client_event js_error` entries — uncaught JS errors often pinpoint the offending script.
 5. If the modal opens but the iframe is blank, open browser DevTools → Network tab and check for the iframe URL. If blocked, look for CSP violations in the Console tab. If lazy-loaded, the iframe element will be present but `src` swapped to a placeholder.
 
 **Fix:**
-- For known patterns: see the table in [COMPATIBILITY.md → Themes](../COMPATIBILITY.md#themes).
+- For known patterns: see the table in [COMPATIBILITY.md → Themes](COMPATIBILITY.md#themes).
 - For unknown patterns: temporarily switch to a known-good theme (Storefront or Twenty Twenty-Five) and reproduce. If the issue goes away, you've isolated the theme as the cause. File a ticket with the log file and the theme name; we'll add a section to COMPATIBILITY.md.
 
 ---
@@ -202,7 +202,7 @@ This is a WC core message, not from our plugin. It appears at checkout when WC a
 
 **Fix:**
 - WP Admin → WC → Settings → Payments → Xpay → enable **WPFunnels compatibility**, save.
-- See [COMPATIBILITY.md](../COMPATIBILITY.md#wpfunnels-confirmed) for the full background.
+- See [COMPATIBILITY.md](COMPATIBILITY.md#wpfunnels-confirmed) for the full background.
 
 ---
 

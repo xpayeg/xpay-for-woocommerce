@@ -74,7 +74,7 @@ Fill in the settings:
 | Webhook secret | Leave empty for now — see step 6 |
 | Debug | Off (turn on temporarily if you need verbose `error_log` output) |
 | Diagnostic logger | Off (turn on if you hit any issues — see [TROUBLESHOOTING.md](TROUBLESHOOTING.md)) |
-| WPFunnels compatibility | Off (turn on if you also use WPFunnels — see [COMPATIBILITY.md](../COMPATIBILITY.md)) |
+| WPFunnels compatibility | Off (turn on if you also use WPFunnels — see [COMPATIBILITY.md](COMPATIBILITY.md)) |
 
 Click **Save changes**.
 
@@ -138,4 +138,4 @@ If something doesn't work as described, see [TROUBLESHOOTING.md](TROUBLESHOOTING
 
 - **Test the full flow** before going live — try a successful payment, an abandoned payment (close the iframe), and a different payment method (Fawry, valU) if your community has them enabled.
 - **Read [GOING_LIVE.md](GOING_LIVE.md)** when you're ready to switch to production.
-- **Read [COMPATIBILITY.md](../COMPATIBILITY.md)** if you use other plugins that touch the checkout flow (WPFunnels, caching plugins, security plugins, etc.) — there are some known interactions worth knowing about.
+- **Read [COMPATIBILITY.md](COMPATIBILITY.md)** if you use other plugins that touch the checkout flow (WPFunnels, caching plugins, security plugins, etc.) — there are some known interactions worth knowing about.
