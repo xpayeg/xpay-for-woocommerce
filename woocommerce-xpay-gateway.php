@@ -5,10 +5,10 @@
 /**
  * Plugin Name: WooCommerce XPAY Gateway
  * Plugin URI: https://xpay.app/wooCommerce-xpay
- * Description: this is WooCommerce based plugin to use XPAY online payment gateway 
+ * Description: this is WooCommerce based plugin to use XPAY online payment gateway
  * Author: XPAY
  * Author URI: https://xpay.app/
- * Version: 1.1
+ * Version: 1.3.1
  */
  
 defined( 'ABSPATH' ) or exit;
@@ -30,6 +30,27 @@ add_action( 'before_woocommerce_init', function () {
 	}
 } );
 
+// XPay flow logger — bundled with the plugin, off by default. Loaded
+// unconditionally so activation/deactivation/cron hooks register, but its
+// hot-path listeners only attach when explicitly enabled in settings. The
+// admin Tools page is always reachable so merchants can enable/test it
+// without leaving the dashboard.
+require_once plugin_dir_path( __FILE__ ) . 'includes/logger/class-wc-xpay-logger.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/logger/class-wc-xpay-logger-admin.php';
+register_activation_hook(   __FILE__, array( 'WC_XPay_Logger', 'on_plugin_activation' ) );
+register_deactivation_hook( __FILE__, array( 'WC_XPay_Logger', 'on_plugin_deactivation' ) );
+add_action( 'plugins_loaded', array( 'WC_XPay_Logger', 'init' ), 99 );
+add_action( 'plugins_loaded', array( 'WC_XPay_Logger_Admin', 'register' ), 99 );
+
+// Third-party plugin compatibility shims and the admin notices that nudge
+// merchants toward enabling them. Loaded unconditionally — each shim
+// internally checks both the third-party plugin's presence and our own
+// per-shim toggle before doing anything.
+require_once plugin_dir_path( __FILE__ ) . 'includes/compat/class-wc-xpay-wpfunnels-compat.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-wc-xpay-admin-notices.php';
+add_action( 'plugins_loaded', array( 'WC_XPay_WPFunnels_Compat', 'init' ), 99 );
+add_action( 'plugins_loaded', array( 'WC_XPay_Admin_Notices', 'init' ), 99 );
+
 // Make sure WooCommerce is active
 if ( ! in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) {
 	return;
@@ -37,6 +58,50 @@ if ( ! in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins',
 
 require_once plugin_dir_path( __FILE__ ) . 'utils.php';
 require_once plugin_dir_path( __FILE__ ) . 'actions.php';
+
+/**
+ * Cart-fee label used to surface the XPay promo discount on the WC cart and
+ * order. Used by both the cart-fee hook (to add the fee) and process_payment
+ * (to recover the pre-discount total when sending to XPay's API). Keep
+ * unique so other plugins' fees never collide with this name.
+ */
+const XPAY_PROMO_FEE_NAME = 'XPay promo discount';
+
+/**
+ * Apply the XPay promo discount as a negative WC cart fee, so the discount
+ * appears on the cart preview, in the checkout summary, in the resulting
+ * order's totals, and on customer-facing emails. Without this, WC reports
+ * the un-discounted total while XPay charges the discounted amount and
+ * reconciliation diverges (H14).
+ *
+ * The discount value comes from the WC session, where it was written by
+ * handle_validate_xpay_promo_code from XPay's server-side validate
+ * response. The session value cannot be tampered with by the client (C5).
+ */
+add_action( 'woocommerce_cart_calculate_fees', 'xpay_apply_promo_fee_to_cart', 99 );
+function xpay_apply_promo_fee_to_cart( $cart ) {
+	if ( ! function_exists( 'WC' ) || ! WC()->session ) {
+		return;
+	}
+	$promo_id = (string) WC()->session->get( 'promocode_id' );
+	$value    = (float)  WC()->session->get( 'discount_amount' ); // final amount AFTER discount, per XPay's response
+	if ( '' === $promo_id || $value <= 0 ) {
+		return;
+	}
+
+	// Pre-fee total: subtotal + shipping + taxes. We deliberately ignore
+	// other plugins' fees here — the discount applies to the merchandise
+	// subtotal, not to other plugins' surcharges.
+	$pre_discount = (float) $cart->cart_contents_total
+	              + (float) $cart->shipping_total
+	              + (float) $cart->get_taxes_total();
+	$fee_amount   = $value - $pre_discount; // negative when value < pre-discount
+	if ( $fee_amount >= 0 ) {
+		return; // promo doesn't actually reduce the total — nothing to apply
+	}
+
+	$cart->add_fee( XPAY_PROMO_FEE_NAME, $fee_amount, false /* taxable */ );
+}
 
 // Register a Cart/Checkout Blocks integration so the gateway shows up on
 // stores using the new block-based checkout (default for WC 8.3+).
@@ -279,6 +344,20 @@ function wc_xpay_gateway_init() {
                     'label' => __('Enable debug alert messages', 'wc-gateway-xpay'),
                     'default' => 'no'
                 ),
+                'logger_enabled' => array(
+                    'title'       => __('Diagnostic logger', 'wc-gateway-xpay'),
+                    'type'        => 'checkbox',
+                    'label'       => __('Enable XPay flow logger', 'wc-gateway-xpay'),
+                    'description' => __('When enabled, every step of the XPay flow is recorded to <code>wp-content/uploads/xpay-logs/</code> with secrets redacted. View the live tail under <strong>Tools → XPay Logger</strong>. Off by default — turn on while reproducing an issue, then disable. Logs are pruned after 30 days.', 'wc-gateway-xpay'),
+                    'default'     => 'no',
+                ),
+                'wpfunnels_force_standard_redirect' => array(
+                    'title'       => __('WPFunnels compatibility', 'wc-gateway-xpay'),
+                    'type'        => 'checkbox',
+                    'label'       => __('Force standard order-received page after payment', 'wc-gateway-xpay'),
+                    'description' => __('Only relevant when WPFunnels is active. After a successful XPay payment, WPFunnels rewrites the post-payment URL to route through its own funnel flow. On WPFunnels Free (no upsell wired up), the customer ends up on <code>/cart/</code> instead of a thank-you page even though the payment succeeded. Enable this to force the standard WooCommerce order-received page for XPay orders. Leave OFF if you have a configured WPFunnels Pro upsell flow you want XPay orders to enter.', 'wc-gateway-xpay'),
+                    'default'     => 'no',
+                ),
             ));
         }
         public function payment_fields() {
@@ -294,6 +373,15 @@ function wc_xpay_gateway_init() {
             );
             $payment_methods  = $prefs['payment_methods'];
             $allow_promo_code = $prefs['allow_promo_code'];
+
+            do_action('xpay_logger_event', 'payment_fields.render', array(
+                'methods'              => array_values((array) $payment_methods),
+                'method_count'         => count((array) $payment_methods),
+                'allow_promo_code'     => (bool) $allow_promo_code,
+                'supports_installments' => !empty($prefs['supports_installments']),
+                'render_context'       => 'classic',
+                'is_block_theme'       => function_exists('wp_is_block_theme') ? wp_is_block_theme() : null,
+            ), 'payment_fields rendered');
 
             $method_labels = [
                 'CARD' => __('Card', 'wc-gateway-xpay'),
@@ -478,6 +566,7 @@ function wc_xpay_gateway_init() {
          * @return array
          */
         public function process_payment($order_id) {
+            $process_started = microtime(true);
             // Two sequential XPay HTTP calls (prepare-amount then pay) plus
             // the retry budget can take up to ~46s in pathological cases.
             // Request 60s of execution time on hosts that allow it.
@@ -485,9 +574,23 @@ function wc_xpay_gateway_init() {
 
             $order = wc_get_order($order_id);
             if (!$order) {
+                do_action('xpay_logger_event', 'process_payment.start', array(
+                    'order_id' => (int) $order_id,
+                    'error'    => 'order_not_found',
+                ), 'order lookup failed');
                 wc_add_notice(__('Order not found.', 'wc-gateway-xpay'), 'error');
                 return array('result' => 'failure');
             }
+
+            do_action('xpay_logger_event', 'process_payment.start', array(
+                'order_id'           => $order->get_id(),
+                'cart_total'         => function_exists('WC') && WC()->cart ? (float) WC()->cart->total : null,
+                'order_total'        => (float) $order->get_total(),
+                'currency'           => $order->get_currency(),
+                'posted_method'      => isset($_POST['xpay_payment_method']) ? sanitize_text_field(wp_unslash($_POST['xpay_payment_method'])) : '',
+                'posted_installment' => isset($_POST['xpay_selected_installment_plan']) ? sanitize_text_field(wp_unslash($_POST['xpay_selected_installment_plan'])) : '',
+                'order_status_in'    => $order->get_status(),
+            ), 'process_payment entered');
 
             // Idempotency: if a transaction was already created for this order
             // (e.g. customer hit Place Order twice), reuse it instead of
@@ -495,6 +598,11 @@ function wc_xpay_gateway_init() {
             $existing_txn    = $order->get_meta('xpay_transaction_id');
             $existing_iframe = $order->get_meta('xpay_iframe_url');
             if ($existing_txn && $existing_iframe && !$order->is_paid()) {
+                do_action('xpay_logger_event', 'process_payment.end', array(
+                    'order_id'   => $order->get_id(),
+                    'branch'     => 'idempotent_reuse',
+                    'duration_ms' => (int) ((microtime(true) - $process_started) * 1000),
+                ), 'reusing existing transaction; no new pay call');
                 return array(
                     'result'   => 'success',
                     'redirect' => $order->get_checkout_payment_url(true),
@@ -512,6 +620,12 @@ function wc_xpay_gateway_init() {
             if ($started_at) {
                 $started_ts = strtotime($started_at . ' UTC');
                 if ($started_ts && (time() - $started_ts) < 10 * MINUTE_IN_SECONDS && empty($existing_txn)) {
+                    do_action('xpay_logger_event', 'process_payment.end', array(
+                        'order_id'        => $order->get_id(),
+                        'branch'          => 'concurrent_attempt_blocked',
+                        'previous_started_at' => $started_at,
+                        'duration_ms'     => (int) ((microtime(true) - $process_started) * 1000),
+                    ), 'blocked: previous attempt still in flight');
                     wc_add_notice(__('A previous payment attempt for this order is still being processed. If you were not redirected to the payment page, please contact support to confirm the payment status before trying again.', 'wc-gateway-xpay'), 'error');
                     return array('result' => 'failure');
                 }
@@ -535,9 +649,23 @@ function wc_xpay_gateway_init() {
             $variable_id  = $this->get_option('variable_amount_id');
             $base_url     = rtrim($this->get_option('iframe_base_url'), '/');
 
-            $original_amount = $order->get_total();
+            // $order->get_total() includes our XPay promo fee (which is
+            // negative when a promo is active). For the XPay API call we
+            // want the un-discounted total — XPay's pay/variable-amount
+            // expects original_amount to be the pre-promo amount and the
+            // separate `amount` field to be the discounted amount. Other
+            // plugins' fees are deliberately preserved in the total.
+            $original_amount = (float) $order->get_total();
+            foreach ($order->get_fees() as $fee) {
+                if (XPAY_PROMO_FEE_NAME === $fee->get_name()) {
+                    // fee total is negative (e.g. -20), so subtracting a
+                    // negative restores the un-discounted total.
+                    $original_amount -= (float) $fee->get_total();
+                }
+            }
 
             // Step 1: prepare-amount.
+            $prepare_started = microtime(true);
             $prepare_body = httpPost(
                 $base_url . '/api/v1/payments/prepare-amount/',
                 wp_json_encode(array(
@@ -550,7 +678,21 @@ function wc_xpay_gateway_init() {
                 $debug
             );
             $prepare = is_string($prepare_body) ? json_decode($prepare_body, true) : null;
+            do_action('xpay_logger_event', 'process_payment.prepare', array(
+                'order_id'    => $order->get_id(),
+                'duration_ms' => (int) ((microtime(true) - $prepare_started) * 1000),
+                'parsed_ok'   => is_array($prepare),
+                'has_total'   => is_array($prepare) && isset($prepare['data']['total_amount']),
+                'amount_in'   => (float) $original_amount,
+                'amount_out'  => is_array($prepare) && isset($prepare['data']['total_amount']) ? (float) $prepare['data']['total_amount'] : null,
+                'method'      => $payment_method,
+            ), 'prepare-amount call completed');
             if (!is_array($prepare) || !isset($prepare['data']['total_amount'])) {
+                do_action('xpay_logger_event', 'process_payment.end', array(
+                    'order_id'    => $order->get_id(),
+                    'branch'      => 'prepare_failed',
+                    'duration_ms' => (int) ((microtime(true) - $process_started) * 1000),
+                ), 'prepare-amount returned no total_amount');
                 wc_add_notice(__('Payment processing failed. Please try again.', 'wc-gateway-xpay'), 'error');
                 $order->update_status('failed', __('XPay prepare-amount call failed', 'wc-gateway-xpay'));
                 return array('result' => 'failure');
@@ -621,6 +763,7 @@ function wc_xpay_gateway_init() {
             // pay call after a timeout/non-JSON response risks double-charge —
             // the first attempt may have succeeded server-side at XPay even if
             // we never received the response.
+            $pay_started = microtime(true);
             $pay_body = httpPost(
                 $base_url . '/api/v1/payments/pay/variable-amount',
                 wp_json_encode($payload),
@@ -631,6 +774,15 @@ function wc_xpay_gateway_init() {
             // PHP 8 deprecates json_decode(null). httpPost returns null on
             // timeout / WAF block / network error — guard before decoding.
             $resp = is_string($pay_body) ? json_decode($pay_body, true) : null;
+            do_action('xpay_logger_event', 'process_payment.pay', array(
+                'order_id'      => $order->get_id(),
+                'duration_ms'   => (int) ((microtime(true) - $pay_started) * 1000),
+                'parsed_ok'     => is_array($resp),
+                'status_code'   => is_array($resp) && isset($resp['status']['code']) ? (int) $resp['status']['code'] : null,
+                'has_iframe_url' => is_array($resp) && !empty($resp['data']['iframe_url']),
+                'has_txn_uuid'  => is_array($resp) && !empty($resp['data']['transaction_uuid']),
+                'method'        => $payment_method,
+            ), 'pay/variable-amount call completed');
             if (!is_array($resp) || (isset($resp['status']['code']) ? $resp['status']['code'] : 0) !== 200) {
                 $msg = isset($resp['status']['message']) ? $resp['status']['message'] : __('Payment processing failed.', 'wc-gateway-xpay');
                 // If XPay returned a structured error (status.code set), the
@@ -642,6 +794,14 @@ function wc_xpay_gateway_init() {
                     $order->delete_meta_data('xpay_pay_started_at');
                     $order->save();
                 }
+                do_action('xpay_logger_event', 'process_payment.end', array(
+                    'order_id'           => $order->get_id(),
+                    'branch'             => 'pay_failed',
+                    'upstream_status_code' => is_array($resp) && isset($resp['status']['code']) ? (int) $resp['status']['code'] : null,
+                    'upstream_message'   => is_array($resp) && isset($resp['status']['message']) ? (string) $resp['status']['message'] : null,
+                    'fingerprint_kept'   => !is_array($resp) || !isset($resp['status']['code']),
+                    'duration_ms'        => (int) ((microtime(true) - $process_started) * 1000),
+                ), 'pay call did not return success');
                 wc_add_notice($msg, 'error');
                 $order->update_status('failed', sprintf(__('XPay pay call failed: %s', 'wc-gateway-xpay'), $msg));
                 return array('result' => 'failure');
@@ -668,9 +828,19 @@ function wc_xpay_gateway_init() {
             // The cart can be cleared now: the order is the source of truth.
             WC()->cart->empty_cart();
 
+            $redirect_url = $order->get_checkout_payment_url(true);
+            do_action('xpay_logger_event', 'process_payment.end', array(
+                'order_id'        => $order->get_id(),
+                'branch'          => 'success',
+                'order_status_out' => $order->get_status(),
+                'has_iframe_url'  => !empty($resp['data']['iframe_url']),
+                'redirect_path'   => wp_parse_url($redirect_url, PHP_URL_PATH),
+                'duration_ms'     => (int) ((microtime(true) - $process_started) * 1000),
+            ), 'process_payment success; awaiting webhook');
+
             return array(
                 'result'   => 'success',
-                'redirect' => $order->get_checkout_payment_url(true),
+                'redirect' => $redirect_url,
             );
         }
 
@@ -695,9 +865,14 @@ function wc_xpay_gateway_init() {
                 if (function_exists('generate_payment_modal')) {
                     generate_payment_modal($iframe_url, $trn_uuid, $order->get_id(), $community_id);
                 }
+                // The "click here" link is a fallback for when the modal
+                // didn't auto-open (possible on aggressive lazy-load themes
+                // or when our JS failed to bind for some reason). Plain
+                // anchor with an id — our vanilla modal JS attaches a click
+                // handler. No Bootstrap data-* attributes.
                 echo "<p id='xpay_message'>"
                     . esc_html__('Please complete your payment in the popup window. If it did not open, ', 'wc-gateway-xpay')
-                    . "<a data-toggle='modal' data-target='#xpay_modal'>" . esc_html__('click here', 'wc-gateway-xpay') . "</a>."
+                    . "<a href='#' id='xpay_modal_open_link'>" . esc_html__('click here', 'wc-gateway-xpay') . "</a>."
                     . "</p>";
                 return;
             }
@@ -714,153 +889,114 @@ function wc_xpay_gateway_init() {
     }
 }
 
+/**
+ * Allowlist check for the host of the iframe URL XPay returned in its
+ * pay/variable-amount response. esc_url protects against unsafe schemes
+ * (javascript:, data:, etc.) but does NOT bind the iframe to XPay-controlled
+ * domains. If XPay's API response is ever compromised or misconfigured to
+ * return an attacker-controlled URL, esc_url alone would still let it
+ * render as an iframe on the merchant's payment page.
+ *
+ * Allowed hosts:
+ *   - any subdomain of xpay.app (covers staging.xpay.app,
+ *     staging-payment.xpay.app, community.xpay.app, community-payment.xpay.app,
+ *     new-dev.xpay.app, etc.)
+ *   - the bare xpay.app
+ *   - 127.0.0.1 / localhost only when the gateway's Environment is set to
+ *     the developer-only Local option
+ */
+if (!function_exists('xpay_iframe_host_is_allowed')) {
+    function xpay_iframe_host_is_allowed($iframe_url) {
+        $host = wp_parse_url($iframe_url, PHP_URL_HOST);
+        if (!$host || !is_string($host)) {
+            return false;
+        }
+        $host = strtolower($host);
+        if ('xpay.app' === $host) {
+            return true;
+        }
+        if (substr($host, -strlen('.xpay.app')) === '.xpay.app') {
+            return true;
+        }
+        // Local-dev escape hatch — only when the gateway is actually
+        // configured for the Local environment, so production deploys
+        // can't be tricked into accepting localhost iframes.
+        if ('127.0.0.1' === $host || 'localhost' === $host) {
+            $settings = get_option('woocommerce_xpay_gateway_settings', array());
+            $base     = isset($settings['iframe_base_url']) ? (string) $settings['iframe_base_url'] : '';
+            $base_host = wp_parse_url($base, PHP_URL_HOST);
+            if ('127.0.0.1' === $base_host || 'localhost' === $base_host) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
 if (!function_exists("generate_payment_modal")) {
     function generate_payment_modal($iframe_url, $trn_uuid, $order_id, $community_id) {
-        // Bootstrap CSS/JS for the modal. We rely on WordPress's bundled
-        // jQuery (already enqueued by WC on checkout/order-pay pages); we do
-        // NOT load our own jQuery and we do NOT call noConflict — that
-        // previously wiped window.jQuery for the rest of the page.
+        // Bind the iframe to XPay-controlled hosts only. If the URL XPay
+        // returned points anywhere else (an upstream compromise, a
+        // misconfiguration, or an attacker-injected response), refuse to
+        // render the iframe and surface a customer-facing error instead.
+        if (!xpay_iframe_host_is_allowed($iframe_url)) {
+            do_action('xpay_logger_event', 'iframe.blocked', array(
+                'order_id'      => (int) $order_id,
+                'rejected_host' => wp_parse_url($iframe_url, PHP_URL_HOST),
+            ), 'iframe URL rejected: host not in xpay-controlled allowlist');
+            echo '<p id="xpay_message" style="color:#a00;">'
+                . esc_html__('Payment system error: the payment URL did not pass safety checks. Please contact support and reference order #', 'wc-gateway-xpay')
+                . esc_html((string) $order_id) . '.</p>';
+            return;
+        }
+
+        // Vanilla CSS/JS modal. Replaces the legacy Bootstrap 3 + jQuery
+        // implementation. Behavior is identical (poll → countdown →
+        // redirect; manual-close fires one final check) but with no
+        // external CDN dependency, no jQuery requirement, and no risk of
+        // colliding with a theme that ships Bootstrap 4 or 5.
         $thankyou_url = '';
         $order_obj    = wc_get_order($order_id);
         if ($order_obj) {
             $thankyou_url = $order_obj->get_checkout_order_received_url();
         }
+
+        $plugin_url = plugin_dir_url(__FILE__);
+        wp_enqueue_style('xpay-modal', $plugin_url . 'assets/css/xpay-modal.css', array(), '1.3.0');
+        wp_register_script('xpay-modal', $plugin_url . 'assets/js/xpay-modal.js', array(), '1.3.0', true);
+        wp_localize_script('xpay-modal', 'xpayModal', array(
+            'logEndpoint' => admin_url('admin-ajax.php'),
+            'logNonce'    => wp_create_nonce('xpay_log_modal_event'),
+            'checkUrl'    => $plugin_url . 'check_transaction.php',
+            'communityId' => (string) $community_id,
+            'orderId'     => (string) $order_id,
+            'thankyouUrl' => $thankyou_url,
+        ));
+        wp_enqueue_script('xpay-modal');
         ?>
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
-        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
-
-        <script>
-            (function ($) {
-                if (typeof $ === 'undefined') { return; }
-                var xpayPluginUrl = <?php echo wp_json_encode(plugin_dir_url(__FILE__)); ?>;
-                var xpayCommunityId = <?php echo wp_json_encode((string) $community_id); ?>;
-                var xpayOrderId = <?php echo wp_json_encode((string) $order_id); ?>;
-                var xpayThankyouUrl = <?php echo wp_json_encode($thankyou_url); ?>;
-
-                // Poll interval (ms) for auto-detecting payment completion.
-                // The XPay iframe does not postMessage to its parent on
-                // success, so we poll our own check_transaction.php endpoint
-                // (same-origin from the browser) until either the order is
-                // paid or the customer closes the modal manually.
-                //
-                // check_transaction.php only echoes 'SUCCESSFUL' for orders
-                // already in processing/completed state; FAILED, PENDING,
-                // and INVALID statuses do NOT trigger auto-close, so a
-                // failed payment leaves the modal open for the customer to
-                // see XPay's failure message.
-                var POLL_INTERVAL_MS    = 10000;
-                var COUNTDOWN_SECONDS   = 5;
-
-                $(function () {
-                    var $modal = $('#xpay_modal');
-                    if (!$modal.length) { return; }
-
-                    var pollTimer      = null;
-                    var countdownTimer = null;
-                    var redirected     = false;
-
-                    function stopPolling() {
-                        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-                    }
-                    function stopCountdown() {
-                        if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
-                    }
-
-                    function doRedirect() {
-                        if (xpayThankyouUrl) {
-                            window.location.href = xpayThankyouUrl;
-                        }
-                    }
-
-                    function showSuccessAndCountdown() {
-                        if (redirected) { return; }
-                        redirected = true;
-                        stopPolling();
-
-                        // If the modal is still open, show an in-modal
-                        // banner with a visible countdown so the customer
-                        // sees the success state before being redirected.
-                        // If the modal was already closed (customer pressed
-                        // X after paying), redirect straight away.
-                        if ($modal.is(':visible')) {
-                            var $banner = $('#xpay_success_banner');
-                            var $count  = $('#xpay_redirect_countdown');
-                            var remaining = COUNTDOWN_SECONDS;
-                            $count.text(remaining);
-                            $banner.show();
-                            countdownTimer = setInterval(function () {
-                                remaining--;
-                                $count.text(remaining > 0 ? remaining : 0);
-                                if (remaining <= 0) {
-                                    stopCountdown();
-                                    doRedirect();
-                                }
-                            }, 1000);
-                        } else {
-                            $('#xpay_message').text('Thank you - your order payment was completed successfully.');
-                            doRedirect();
-                        }
-                    }
-
-                    function checkAndMaybeRedirect() {
-                        $.get(xpayPluginUrl + 'check_transaction.php', {
-                            trn_uuid: $('#xpay_trn_uuid').val(),
-                            community_id: xpayCommunityId,
-                            order_id: xpayOrderId
-                        }, function (data) {
-                            if (data === 'SUCCESSFUL') {
-                                showSuccessAndCountdown();
-                            }
-                            // Any other status (FAILED, PENDING, INVALID,
-                            // empty) is ignored — the modal stays open and
-                            // polling continues until the customer closes it.
-                        });
-                    }
-
-                    $modal.modal({
-                        backdrop: 'static',
-                        keyboard: false
-                    });
-
-                    $modal.on('shown.bs.modal', function () {
-                        $modal.css('z-index', 900);
-                        $('.modal-backdrop:not(#xpay_modal)').hide();
-                        pollTimer = setInterval(checkAndMaybeRedirect, POLL_INTERVAL_MS);
-                    });
-
-                    $modal.on('hidden.bs.modal', function () {
-                        stopPolling();
-                        // Customer-initiated close: do one final status check
-                        // in case payment completed between polls. If it did,
-                        // the redirect happens via doRedirect() (no banner —
-                        // modal is no longer visible).
-                        checkAndMaybeRedirect();
-                    });
-                });
-            })(window.jQuery);
-        </script>
-        <!-- Modal -->
-        <div class="modal fade" id="xpay_modal" role="dialog" style="visibility:visible;">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal">&times;</button>
-                        <h4 class="modal-title"><?php esc_html_e('Xpay Payment', 'wc-gateway-xpay'); ?></h4>
-                        <p style="color:red"><?php esc_html_e("Don't close the popup until you finish payment", 'wc-gateway-xpay'); ?></p>
+        <div id="xpay_modal_backdrop" class="xpay-modal-backdrop">
+            <div id="xpay_modal" class="xpay-modal" role="dialog" aria-modal="true" aria-labelledby="xpay_modal_title" aria-hidden="true">
+                <div class="xpay-modal-header">
+                    <button type="button" class="xpay-modal-close" data-xpay-close
+                            aria-label="<?php esc_attr_e('Close', 'wc-gateway-xpay'); ?>">&times;</button>
+                    <h4 id="xpay_modal_title" class="xpay-modal-title"><?php esc_html_e('Xpay Payment', 'wc-gateway-xpay'); ?></h4>
+                    <p class="xpay-modal-warning"><?php esc_html_e("Don't close the popup until you finish payment", 'wc-gateway-xpay'); ?></p>
+                </div>
+                <div class="xpay-modal-body">
+                    <div id="xpay_success_banner" class="xpay-success-banner" role="status">
+                        &#10003; <?php esc_html_e('Payment confirmed.', 'wc-gateway-xpay'); ?>
+                        <?php esc_html_e('Redirecting in', 'wc-gateway-xpay'); ?>
+                        <span id="xpay_redirect_countdown">5</span>
+                        <?php esc_html_e('seconds…', 'wc-gateway-xpay'); ?>
                     </div>
-                    <div class="modal-body">
-                        <div id="xpay_success_banner" style="display:none; padding:12px; background:#d4edda; color:#155724; border:1px solid #c3e6cb; border-radius:4px; margin-bottom:10px; text-align:center; font-weight:500;">
-                            &#10003; <?php esc_html_e('Payment confirmed.', 'wc-gateway-xpay'); ?>
-                            <?php esc_html_e('Redirecting in', 'wc-gateway-xpay'); ?>
-                            <span id="xpay_redirect_countdown">5</span>
-                            <?php esc_html_e('seconds…', 'wc-gateway-xpay'); ?>
-                        </div>
-                        <iframe src="<?php echo esc_url($iframe_url); ?>" class="no-lazy skip-lazy" style="border:none; width:100% !important; height:450px !important;"></iframe>
-                    </div>
-                    <div class="modal-footer">
-                        <input type="hidden" name="trn_uuid" id="xpay_trn_uuid" value="<?php echo esc_attr($trn_uuid); ?>">
-                        <button type="button" class="btn" data-dismiss="modal"><?php esc_html_e('Close', 'wc-gateway-xpay'); ?></button>
-                    </div>
+                    <iframe src="<?php echo esc_url($iframe_url); ?>"
+                            class="xpay-iframe no-lazy skip-lazy"
+                            title="<?php esc_attr_e('XPay secure payment', 'wc-gateway-xpay'); ?>"
+                            referrerpolicy="strict-origin-when-cross-origin"></iframe>
+                </div>
+                <div class="xpay-modal-footer">
+                    <input type="hidden" name="trn_uuid" id="xpay_trn_uuid" value="<?php echo esc_attr($trn_uuid); ?>">
+                    <button type="button" class="xpay-btn" data-xpay-close><?php esc_html_e('Close', 'wc-gateway-xpay'); ?></button>
                 </div>
             </div>
         </div>

@@ -8,13 +8,26 @@ require( '../../../wp-load.php' );
 $uuid     = isset($_REQUEST['trn_uuid']) ? sanitize_text_field(wp_unslash($_REQUEST['trn_uuid'])) : '';
 $order_id = isset($_REQUEST['order_id']) ? absint($_REQUEST['order_id'])                          : 0;
 
+$check_started = microtime(true);
+
 if (!$uuid || !$order_id) {
+    do_action('xpay_logger_event', 'check_transaction', array(
+        'order_id' => $order_id,
+        'has_uuid' => (bool) $uuid,
+        'result'   => 'INVALID',
+        'reason'   => 'missing_params',
+    ), 'check_transaction: invalid params');
     echo 'INVALID';
     exit;
 }
 
 $order = wc_get_order($order_id);
 if (!$order) {
+    do_action('xpay_logger_event', 'check_transaction', array(
+        'order_id' => $order_id,
+        'result'   => 'INVALID',
+        'reason'   => 'order_not_found',
+    ), 'check_transaction: order missing');
     echo 'INVALID';
     exit;
 }
@@ -23,6 +36,11 @@ if (!$order) {
 // transaction uuid in SUCCESSFUL state could fire payment_complete on
 // the wrong order. Verify the uuid actually belongs to this order.
 if (trim((string) $order->get_meta('xpay_transaction_id')) !== trim($uuid)) {
+    do_action('xpay_logger_event', 'check_transaction', array(
+        'order_id' => $order->get_id(),
+        'result'   => 'INVALID',
+        'reason'   => 'uuid_mismatch',
+    ), 'check_transaction: idor guard hit');
     echo 'INVALID';
     exit;
 }
@@ -30,6 +48,12 @@ if (trim((string) $order->get_meta('xpay_transaction_id')) !== trim($uuid)) {
 // Skip the upstream call entirely if the order is already paid; the
 // modal-close ping is informational at this point.
 if ($order->has_status(array('processing', 'completed'))) {
+    do_action('xpay_logger_event', 'check_transaction', array(
+        'order_id'        => $order->get_id(),
+        'result'          => 'SUCCESSFUL',
+        'reason'          => 'already_paid_short_circuit',
+        'order_status_in' => $order->get_status(),
+    ), 'check_transaction: short-circuit success');
     echo 'SUCCESSFUL';
     exit;
 }
@@ -39,6 +63,12 @@ if ($order->has_status(array('processing', 'completed'))) {
 // after the merchant cancels the order, and payment_complete would flip
 // the status back to processing silently.
 if ($order->has_status(array('cancelled', 'refunded', 'trash'))) {
+    do_action('xpay_logger_event', 'check_transaction', array(
+        'order_id'        => $order->get_id(),
+        'result'          => 'INVALID',
+        'reason'          => 'closed_status',
+        'order_status_in' => $order->get_status(),
+    ), 'check_transaction: refused for closed order');
     echo 'INVALID';
     exit;
 }
@@ -56,10 +86,19 @@ $url          = rtrim($wc_settings->get_option('iframe_base_url'), '/')
 $resp = httpGet($url, $wc_settings->get_option('payment_api_key'), 'no', 0);
 $resp = json_decode($resp, true);
 
-if (is_array($resp) && isset($resp['data']['status']) && 'SUCCESSFUL' === $resp['data']['status']) {
+$status_returned = isset($resp['data']['status']) ? trim((string) $resp['data']['status']) : '';
+
+if (is_array($resp) && 'SUCCESSFUL' === $status_returned) {
     $order->payment_complete($uuid);
     $order->add_order_note(sprintf(__('XPay payment confirmed via modal-close check (txn %s).', 'wc-gateway-xpay'), $uuid));
 }
+
+do_action('xpay_logger_event', 'check_transaction', array(
+    'order_id'         => $order->get_id(),
+    'result'           => '' !== $status_returned ? $status_returned : 'EMPTY',
+    'order_status_out' => $order->get_status(),
+    'duration_ms'      => (int) ((microtime(true) - $check_started) * 1000),
+), 'check_transaction: upstream queried');
 
 echo isset($resp['data']['status']) ? esc_html(trim($resp['data']['status'])) : '';
 

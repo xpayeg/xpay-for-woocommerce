@@ -68,6 +68,14 @@ final class WC_Xpay_Blocks_Integration extends AbstractPaymentMethodType {
 			$methods[] = 'Installment';
 		}
 
+		do_action( 'xpay_logger_event', 'payment_fields.render', array(
+			'methods'              => $methods,
+			'method_count'         => count( $methods ),
+			'allow_promo_code'     => ! empty( $prefs['allow_promo_code'] ),
+			'supports_installments' => ! empty( $prefs['supports_installments'] ),
+			'render_context'       => 'blocks',
+		), 'block-checkout payment-method data assembled' );
+
 		return array(
 			'title'       => isset( $this->settings['title'] )       ? $this->settings['title']       : 'XPay Payment',
 			'description' => isset( $this->settings['description'] ) ? $this->settings['description'] : '',

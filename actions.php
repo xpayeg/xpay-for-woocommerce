@@ -55,7 +55,7 @@ function handle_validate_xpay_promo_code() {
     // Make the API request to validate the promo code
     $response = httpPost($api_url, $request_body, $api_key, $debug);
     $body = json_decode($response, true);
-    
+
     // Handle error response
     if (!isset($body['status']['code']) || $body['status']['code'] !== 200) {
         $error_message = 'Invalid promo code';
@@ -67,16 +67,37 @@ function handle_validate_xpay_promo_code() {
                 }
             }
         }
+        // Defensive: clear any previously-stored promo so a stale session value
+        // doesn't survive a fresh failed validation.
+        if (function_exists('WC') && WC()->session) {
+            WC()->session->__unset('promocode_id');
+            WC()->session->__unset('discount_amount');
+        }
         wp_send_json_error(array('message' => $error_message));
         return;
     }
 
     // Check if response has data
     if (isset($body['data'])) {
+        // SECURITY (C5): atomically store the server-validated discount in
+        // the session here. The legacy `store_promocode_details` AJAX handler
+        // used to accept a discount_amount from $_POST and trust it
+        // verbatim — anyone with a valid checkout-page nonce could set their
+        // own discount. With this atomic-store, the session value is always
+        // exactly what XPay's validate endpoint returned, and
+        // store_promocode_details no longer writes session at all.
+        if (function_exists('WC') && WC()->session) {
+            $promo_id = isset($body['data']['promocode_id']) ? sanitize_text_field((string) $body['data']['promocode_id']) : '';
+            $value    = isset($body['data']['value'])        ? (float) $body['data']['value']                              : 0.0;
+            if ('' !== $promo_id && $value > 0) {
+                WC()->session->set('promocode_id',    $promo_id);
+                WC()->session->set('discount_amount', (string) $value);
+            }
+        }
         wp_send_json_success($body['data']);
     } else {
         wp_send_json_error(array('message' => 'Invalid response format'));
-    }    
+    }
 }
 
 // Update the action registration to match the function name
@@ -84,19 +105,27 @@ add_action('wp_ajax_store_promocode_details', 'handle_store_promocode_details');
 add_action('wp_ajax_nopriv_store_promocode_details', 'handle_store_promocode_details');
 function handle_store_promocode_details() {
     check_ajax_referer('validate-promo-code', 'security');
-    
-    // Get the promocode_id and discount_amount from the AJAX request
-    $promocode_id = sanitize_text_field($_POST['promocode_id']);
-    $discount_amount = sanitize_text_field($_POST['discount_amount']);
-    
-    // Store both values in session
-    WC()->session->set('promocode_id', $promocode_id);
-    WC()->session->set('discount_amount', $discount_amount);
-    
-    // Send a success response with promocode details
+
+    // SECURITY (C5): the discount amount must come from XPay's server-side
+    // validate response (handle_validate_xpay_promo_code stores it in the
+    // session atomically on success). The legacy implementation of this
+    // handler accepted $_POST['discount_amount'] and wrote it directly to
+    // the session — anyone with a valid checkout-page nonce could set their
+    // own discount and pay the discounted amount.
+    //
+    // The handler is kept reachable so the existing front-end JS continues
+    // to call it without errors. Its only behavior now is to read back what
+    // is already in the session and return it. Any POST inputs are ignored.
+    $session_promo_id = '';
+    $session_discount = '';
+    if (function_exists('WC') && WC()->session) {
+        $session_promo_id = (string) WC()->session->get('promocode_id');
+        $session_discount = (string) WC()->session->get('discount_amount');
+    }
+
     wp_send_json_success(array(
-        'promocode_id' => $promocode_id,
-        'discount_amount' => $discount_amount
+        'promocode_id'    => $session_promo_id,
+        'discount_amount' => $session_discount,
     ));
 }
 
