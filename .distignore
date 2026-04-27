@@ -57,6 +57,10 @@ docs/
 #     SVN /assets/ directory (uploaded separately, not in the plugin ZIP). ---
 screenshots/
 
+# --- WP.org plugin-page assets (banner, icon, screenshots). These ship
+#     to wordpress.org via SVN /assets/, NOT in the plugin ZIP. ---
+wporg-assets/
+
 # --- Logs / temp ---
 *.log
 *.tmp
