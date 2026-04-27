@@ -12,6 +12,17 @@
 
 defined( 'ABSPATH' ) or exit;
 
+// tail_file() reads chunks from the END of the log via fopen + fseek +
+// fread, so we don't load multi-MB log files into memory. WP_Filesystem
+// has no equivalent partial-read API. handle_download() streams the log
+// to the browser via readfile() to avoid buffering the whole file. Both
+// patterns are intentional and PCP's AlternativeFunctions warnings on
+// these particular calls are accepted.
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fread
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_readfile
+
 final class WC_XPay_Logger_Admin {
 
 	const PAGE_SLUG = 'xpay-logger';
@@ -27,8 +38,8 @@ final class WC_XPay_Logger_Admin {
 
 	public static function add_menu_page() {
 		add_management_page(
-			__( 'XPay Logger', 'wc-gateway-xpay' ),
-			__( 'XPay Logger', 'wc-gateway-xpay' ),
+			__( 'XPay Logger', 'xpay-for-woocommerce' ),
+			__( 'XPay Logger', 'xpay-for-woocommerce' ),
 			self::CAP,
 			self::PAGE_SLUG,
 			array( __CLASS__, 'render_page' )
@@ -37,7 +48,7 @@ final class WC_XPay_Logger_Admin {
 
 	public static function render_page() {
 		if ( ! current_user_can( self::CAP ) ) {
-			wp_die( esc_html__( 'You do not have permission to view this page.', 'wc-gateway-xpay' ) );
+			wp_die( esc_html__( 'You do not have permission to view this page.', 'xpay-for-woocommerce' ) );
 		}
 
 		$enabled       = WC_XPay_Logger::is_enabled();
@@ -60,16 +71,16 @@ final class WC_XPay_Logger_Admin {
 
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'XPay Logger', 'wc-gateway-xpay' ); ?></h1>
+			<h1><?php esc_html_e( 'XPay Logger', 'xpay-for-woocommerce' ); ?></h1>
 
 			<?php if ( ! $enabled ) : ?>
 				<div class="notice notice-warning">
 					<p>
 						<?php
 						printf(
-							/* translators: %s = link to gateway settings */
 							wp_kses(
-								__( 'The logger is currently <strong>disabled</strong>. Enable it from the <a href="%s">XPay gateway settings</a> to start recording. While disabled the logger has zero runtime cost — no listeners are attached.', 'wc-gateway-xpay' ),
+								/* translators: %s = link to gateway settings */
+								__( 'The logger is currently <strong>disabled</strong>. Enable it from the <a href="%s">XPay gateway settings</a> to start recording. While disabled the logger has zero runtime cost — no listeners are attached.', 'xpay-for-woocommerce' ),
 								array( 'strong' => array(), 'a' => array( 'href' => array() ) )
 							),
 							esc_url( $settings_url )
@@ -80,7 +91,20 @@ final class WC_XPay_Logger_Admin {
 			<?php endif; ?>
 
 			<?php
+			// Flash message after one of our own admin-post handlers below
+			// (clear / download / diagnostics), each of which already runs
+			// check_admin_referer on the action that set the redirect target.
+			// The page itself requires manage_woocommerce (registered via
+			// add_management_page with self::CAP), the value is sanitized
+			// and esc_html'd on output, and an attacker who crafts a URL
+			// can inject only plain text inside the merchant's own admin
+			// notice — no HTML, no script. Adding a separate nonce on the
+			// flash message would be a no-op against the actual threat
+			// model, so we phpcs:ignore the recommended-nonce check rather
+			// than carry a redundant token through the redirect.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			if ( isset( $_GET['xpay_logger_msg'] ) ) {
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 				$msg = sanitize_text_field( wp_unslash( $_GET['xpay_logger_msg'] ) );
 				echo '<div class="notice notice-success is-dismissible"><p>' . esc_html( $msg ) . '</p></div>';
 			}
@@ -89,35 +113,35 @@ final class WC_XPay_Logger_Admin {
 			<div style="display:flex; gap:24px; align-items:flex-start; flex-wrap:wrap; margin-top:16px;">
 				<div style="flex:2; min-width:520px;">
 					<div style="background:#fff; border:1px solid #ccd0d4; padding:12px 16px; margin-bottom:12px;">
-						<strong><?php esc_html_e( 'Status', 'wc-gateway-xpay' ); ?>:</strong>
+						<strong><?php esc_html_e( 'Status', 'xpay-for-woocommerce' ); ?>:</strong>
 						<?php
 						if ( $enabled ) {
-							echo '<span style="color:#1e8449;">● ' . esc_html__( 'Live', 'wc-gateway-xpay' ) . '</span>';
+							echo '<span style="color:#1e8449;">● ' . esc_html__( 'Live', 'xpay-for-woocommerce' ) . '</span>';
 						} else {
-							echo '<span style="color:#888;">○ ' . esc_html__( 'Paused', 'wc-gateway-xpay' ) . '</span>';
+							echo '<span style="color:#888;">○ ' . esc_html__( 'Paused', 'xpay-for-woocommerce' ) . '</span>';
 						}
 						?>
 						&nbsp;|&nbsp;
-						<strong><?php esc_html_e( 'Today\'s log', 'wc-gateway-xpay' ); ?>:</strong>
-						<?php echo esc_html( $log_path ? str_replace( ABSPATH, '', $log_path ) : __( '(not yet created)', 'wc-gateway-xpay' ) ); ?>
+						<strong><?php esc_html_e( 'Today\'s log', 'xpay-for-woocommerce' ); ?>:</strong>
+						<?php echo esc_html( $log_path ? str_replace( ABSPATH, '', $log_path ) : __( '(not yet created)', 'xpay-for-woocommerce' ) ); ?>
 						(<?php echo esc_html( $file_size ); ?>)
 					</div>
 
 					<div style="margin-bottom:12px;">
-						<a class="button" href="<?php echo esc_url( $diagnose_url ); ?>"><?php esc_html_e( 'Run diagnostics snapshot', 'wc-gateway-xpay' ); ?></a>
-						<a class="button" href="<?php echo esc_url( $download_url ); ?>"><?php esc_html_e( 'Download today\'s log', 'wc-gateway-xpay' ); ?></a>
-						<a class="button button-secondary" href="<?php echo esc_url( $clear_url ); ?>" onclick="return confirm('<?php echo esc_js( __( 'Delete today\'s log file? This cannot be undone.', 'wc-gateway-xpay' ) ); ?>');"><?php esc_html_e( 'Clear today\'s log', 'wc-gateway-xpay' ); ?></a>
+						<a class="button" href="<?php echo esc_url( $diagnose_url ); ?>"><?php esc_html_e( 'Run diagnostics snapshot', 'xpay-for-woocommerce' ); ?></a>
+						<a class="button" href="<?php echo esc_url( $download_url ); ?>"><?php esc_html_e( 'Download today\'s log', 'xpay-for-woocommerce' ); ?></a>
+						<a class="button button-secondary" href="<?php echo esc_url( $clear_url ); ?>" onclick="return confirm('<?php echo esc_js( __( 'Delete today\'s log file? This cannot be undone.', 'xpay-for-woocommerce' ) ); ?>');"><?php esc_html_e( 'Clear today\'s log', 'xpay-for-woocommerce' ); ?></a>
 					</div>
 
 					<div style="margin-bottom:8px;">
 						<label>
 							<input type="checkbox" id="xpay-logger-live" checked>
-							<?php esc_html_e( 'Live tail (auto-refresh every 5s)', 'wc-gateway-xpay' ); ?>
+							<?php esc_html_e( 'Live tail (auto-refresh every 5s)', 'xpay-for-woocommerce' ); ?>
 						</label>
 						&nbsp;&nbsp;
-						<input type="text" id="xpay-logger-grep" placeholder="<?php esc_attr_e( 'Filter by text (e.g. order=42, webhook, error)', 'wc-gateway-xpay' ); ?>" style="width:320px;">
+						<input type="text" id="xpay-logger-grep" placeholder="<?php esc_attr_e( 'Filter by text (e.g. order=42, webhook, error)', 'xpay-for-woocommerce' ); ?>" style="width:320px;">
 						<select id="xpay-logger-stage">
-							<option value=""><?php esc_html_e( 'All stages', 'wc-gateway-xpay' ); ?></option>
+							<option value=""><?php esc_html_e( 'All stages', 'xpay-for-woocommerce' ); ?></option>
 							<option value="boot">boot</option>
 							<option value="prefs.fetch">prefs.fetch</option>
 							<option value="payment_fields.render">payment_fields.render</option>
@@ -132,26 +156,26 @@ final class WC_XPay_Logger_Admin {
 					</div>
 
 					<pre id="xpay-logger-tail" style="background:#1d1f21; color:#c5c8c6; padding:12px; border-radius:4px; height:520px; overflow:auto; font-family: Menlo, Consolas, monospace; font-size:12px; line-height:1.45; white-space:pre-wrap; word-break:break-word;">
-<?php esc_html_e( 'Loading…', 'wc-gateway-xpay' ); ?>
+<?php esc_html_e( 'Loading…', 'xpay-for-woocommerce' ); ?>
 					</pre>
 				</div>
 
 				<div style="flex:1; min-width:280px;">
 					<div style="background:#fff; border:1px solid #ccd0d4; padding:12px 16px;">
-						<h2 style="margin-top:0;"><?php esc_html_e( 'Stages reference', 'wc-gateway-xpay' ); ?></h2>
+						<h2 style="margin-top:0;"><?php esc_html_e( 'Stages reference', 'xpay-for-woocommerce' ); ?></h2>
 						<dl style="font-size:12px; line-height:1.6;">
-							<dt><strong>boot</strong></dt><dd><?php esc_html_e( 'Per-request snapshot of versions, theme, conflicting plugins.', 'wc-gateway-xpay' ); ?></dd>
-							<dt><strong>boot.hooks_inventory</strong></dt><dd><?php esc_html_e( 'Non-XPay callbacks attached to checkout hooks.', 'wc-gateway-xpay' ); ?></dd>
-							<dt><strong>prefs.fetch</strong></dt><dd><?php esc_html_e( 'Community preferences API call (methods, promo flag).', 'wc-gateway-xpay' ); ?></dd>
-							<dt><strong>payment_fields.render</strong></dt><dd><?php esc_html_e( 'Gateway radios rendered (classic checkout context).', 'wc-gateway-xpay' ); ?></dd>
-							<dt><strong>process_payment.start / .prepare / .pay / .end</strong></dt><dd><?php esc_html_e( 'Server-side payment lifecycle, with HTTP timings.', 'wc-gateway-xpay' ); ?></dd>
-							<dt><strong>webhook.received / .lookup / .applied</strong></dt><dd><?php esc_html_e( 'Inbound webhook from XPay; signature state, branch taken.', 'wc-gateway-xpay' ); ?></dd>
-							<dt><strong>check_transaction</strong></dt><dd><?php esc_html_e( 'Modal poll endpoint hits; returned status.', 'wc-gateway-xpay' ); ?></dd>
-							<dt><strong>modal.client_event</strong></dt><dd><?php esc_html_e( 'Browser-side events (modal shown/hidden, JS errors).', 'wc-gateway-xpay' ); ?></dd>
-							<dt><strong>diagnostics.snapshot</strong></dt><dd><?php esc_html_e( 'On-demand environment dump (run from button above).', 'wc-gateway-xpay' ); ?></dd>
+							<dt><strong>boot</strong></dt><dd><?php esc_html_e( 'Per-request snapshot of versions, theme, conflicting plugins.', 'xpay-for-woocommerce' ); ?></dd>
+							<dt><strong>boot.hooks_inventory</strong></dt><dd><?php esc_html_e( 'Non-XPay callbacks attached to checkout hooks.', 'xpay-for-woocommerce' ); ?></dd>
+							<dt><strong>prefs.fetch</strong></dt><dd><?php esc_html_e( 'Community preferences API call (methods, promo flag).', 'xpay-for-woocommerce' ); ?></dd>
+							<dt><strong>payment_fields.render</strong></dt><dd><?php esc_html_e( 'Gateway radios rendered (classic checkout context).', 'xpay-for-woocommerce' ); ?></dd>
+							<dt><strong>process_payment.start / .prepare / .pay / .end</strong></dt><dd><?php esc_html_e( 'Server-side payment lifecycle, with HTTP timings.', 'xpay-for-woocommerce' ); ?></dd>
+							<dt><strong>webhook.received / .lookup / .applied</strong></dt><dd><?php esc_html_e( 'Inbound webhook from XPay; signature state, branch taken.', 'xpay-for-woocommerce' ); ?></dd>
+							<dt><strong>check_transaction</strong></dt><dd><?php esc_html_e( 'Modal poll endpoint hits; returned status.', 'xpay-for-woocommerce' ); ?></dd>
+							<dt><strong>modal.client_event</strong></dt><dd><?php esc_html_e( 'Browser-side events (modal shown/hidden, JS errors).', 'xpay-for-woocommerce' ); ?></dd>
+							<dt><strong>diagnostics.snapshot</strong></dt><dd><?php esc_html_e( 'On-demand environment dump (run from button above).', 'xpay-for-woocommerce' ); ?></dd>
 						</dl>
 						<p style="font-size:12px; color:#666;">
-							<?php esc_html_e( 'Secrets and PII are redacted at write time. Logs older than 30 days are pruned automatically.', 'wc-gateway-xpay' ); ?>
+							<?php esc_html_e( 'Secrets and PII are redacted at write time. Logs older than 30 days are pruned automatically.', 'xpay-for-woocommerce' ); ?>
 						</p>
 					</div>
 				</div>
@@ -224,7 +248,7 @@ final class WC_XPay_Logger_Admin {
 							var lines = (data.data && data.data.lines) || [];
 							var filtered = applyFilters(lines);
 							var atBottom = ($tail.scrollHeight - $tail.scrollTop - $tail.clientHeight) < 30;
-							$tail.innerHTML = colorize(filtered) || '<em style="color:#888;">' + <?php echo wp_json_encode( esc_js( __( 'No matching entries.', 'wc-gateway-xpay' ) ) ); ?> + '</em>';
+							$tail.innerHTML = colorize(filtered) || '<em style="color:#888;">' + <?php echo wp_json_encode( esc_js( __( 'No matching entries.', 'xpay-for-woocommerce' ) ) ); ?> + '</em>';
 							if (atBottom) { $tail.scrollTop = $tail.scrollHeight; }
 						})
 						.catch(function () { inFlight = false; });
@@ -310,11 +334,11 @@ final class WC_XPay_Logger_Admin {
 
 		$path = WC_XPay_Logger::current_log_path();
 		if ( $path && file_exists( $path ) ) {
-			@unlink( $path );
+			wp_delete_file( $path );
 		}
 		wp_safe_redirect( add_query_arg(
 			'xpay_logger_msg',
-			rawurlencode( __( 'Today\'s log cleared.', 'wc-gateway-xpay' ) ),
+			rawurlencode( __( 'Today\'s log cleared.', 'xpay-for-woocommerce' ) ),
 			admin_url( 'tools.php?page=' . self::PAGE_SLUG )
 		) );
 		exit;
@@ -328,7 +352,7 @@ final class WC_XPay_Logger_Admin {
 
 		$path = WC_XPay_Logger::current_log_path();
 		if ( ! $path || ! file_exists( $path ) ) {
-			wp_die( esc_html__( 'No log file to download.', 'wc-gateway-xpay' ) );
+			wp_die( esc_html__( 'No log file to download.', 'xpay-for-woocommerce' ) );
 		}
 
 		nocache_headers();
@@ -399,7 +423,7 @@ final class WC_XPay_Logger_Admin {
 
 		wp_safe_redirect( add_query_arg(
 			'xpay_logger_msg',
-			rawurlencode( __( 'Diagnostics snapshot written to log.', 'wc-gateway-xpay' ) ),
+			rawurlencode( __( 'Diagnostics snapshot written to log.', 'xpay-for-woocommerce' ) ),
 			admin_url( 'tools.php?page=' . self::PAGE_SLUG )
 		) );
 		exit;

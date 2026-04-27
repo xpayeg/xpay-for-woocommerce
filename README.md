@@ -1,4 +1,4 @@
-# WooCommerce XPay Gateway
+# XPay for WooCommerce
 
 Adds [XPay](https://xpay.app/) as a payment method on any WooCommerce store. Supports the classic shortcode checkout, the new block-based Cart/Checkout, and HPOS (High-Performance Order Storage). Includes a built-in diagnostic logger for troubleshooting.
 
@@ -24,7 +24,7 @@ Full walkthrough in [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md).
 | [Configuration reference](docs/CONFIGURATION.md) | What every setting does, where to find each value, what happens if it's wrong |
 | [Going live](docs/GOING_LIVE.md) | Migrating from staging to production, with a pre-flight checklist |
 | [Troubleshooting](docs/TROUBLESHOOTING.md) | Diagnosing checkout issues using the built-in logger; common symptoms and fixes |
-| [Compatibility](COMPATIBILITY.md) | Known interactions with WPFunnels, caching plugins, security plugins, themes, and managed hosts |
+| [Compatibility](docs/COMPATIBILITY.md) | Known interactions with WPFunnels, caching plugins, security plugins, themes, and managed hosts |
 | [Changelog](CHANGELOG.md) | Version history |
 
 ---

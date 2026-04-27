@@ -1,11 +1,23 @@
 <?php
 
+// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- WP core constant, not ours; required to skip theme loading on this bare-bones poll endpoint.
 define( 'WP_USE_THEMES', false ); // Don't load theme support functionality
 require( '../../../wp-load.php' );
 
+// Wrap the poll handler in an IIFE so all the variables it declares
+// (uuid, order_id, resp, etc.) stay function-local and don't leak into
+// PHP's global namespace — keeping this entry-point script PCP-clean for
+// the PrefixAllGlobals.NonPrefixedVariableFound rule.
+( function () {
 
-
+// This endpoint is the modal's status-poll target — called by the
+// customer's browser, not by an authenticated WP user, so it cannot
+// carry a WP nonce. The IDOR guard at trim((string) $order->get_meta(...))
+// !== trim($uuid) below is the actual security boundary. PCP can't model
+// that, so it flags the bare $_REQUEST reads. Suppress for this file.
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 $uuid     = isset($_REQUEST['trn_uuid']) ? sanitize_text_field(wp_unslash($_REQUEST['trn_uuid'])) : '';
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 $order_id = isset($_REQUEST['order_id']) ? absint($_REQUEST['order_id'])                          : 0;
 
 $check_started = microtime(true);
@@ -83,14 +95,29 @@ $url          = rtrim($wc_settings->get_option('iframe_base_url'), '/')
               . '/transactions/' . rawurlencode($uuid) . '/';
 // max_retries=0 — this is on the customer's interactive path and a
 // retry-on-429 would just amplify any rate-limit response.
-$resp = httpGet($url, $wc_settings->get_option('payment_api_key'), 'no', 0);
+$resp = xpay_http_get($url, $wc_settings->get_option('payment_api_key'), 'no', 0);
 $resp = json_decode($resp, true);
 
 $status_returned = isset($resp['data']['status']) ? trim((string) $resp['data']['status']) : '';
 
 if (is_array($resp) && 'SUCCESSFUL' === $status_returned) {
-    $order->payment_complete($uuid);
-    $order->add_order_note(sprintf(__('XPay payment confirmed via modal-close check (txn %s).', 'wc-gateway-xpay'), $uuid));
+    // Same lock used in update_order.php — when the webhook arrives at
+    // the same moment as this modal-close check, only one of them should
+    // call payment_complete to avoid double-firing woocommerce_payment_complete.
+    $lock_key = 'xpay_lock_' . $uuid;
+    if (false !== wp_cache_add($lock_key, 1, '', 30)) {
+        $order->payment_complete($uuid);
+        $order->add_order_note(sprintf(
+            /* translators: %s = XPay transaction UUID */
+            __('XPay payment confirmed via modal-close check (txn %s).', 'xpay-for-woocommerce'),
+            $uuid
+        ));
+    } else {
+        do_action('xpay_logger_event', 'check_transaction', array(
+            'order_id' => $order->get_id(),
+            'branch'   => 'lock_held',
+        ), 'check_transaction: skipped payment_complete (concurrent completion in progress)');
+    }
 }
 
 do_action('xpay_logger_event', 'check_transaction', array(
@@ -101,4 +128,6 @@ do_action('xpay_logger_event', 'check_transaction', array(
 ), 'check_transaction: upstream queried');
 
 echo isset($resp['data']['status']) ? esc_html(trim($resp['data']['status'])) : '';
+
+} )(); // end IIFE
 

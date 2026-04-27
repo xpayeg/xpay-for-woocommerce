@@ -179,7 +179,7 @@ jQuery(document).ready(function ($) {
         const currentAmount = paymentMethodsData[methodName]?.total_amount || paymentMethodsData.total_amount;
 
         return {
-            action: 'validate_xpay_promo_code',
+            action: 'xpay_validate_promo_code',
             security: xpayJSData.ajax.nonce,
             url: xpayJSData.promoCodeRequestData.iframe_base_url + "/api/promocodes/validate/",
             name: promoCode,
@@ -230,7 +230,7 @@ jQuery(document).ready(function ($) {
             type: 'POST',
             url: xpayJSData.ajax.ajax_url,
             data: {
-                action: 'store_promocode_details',
+                action: 'xpay_store_promo_details',
                 security: xpayJSData.ajax.nonce,
                 promocode_id: promocodeId,
                 discount_amount: discountAmount
@@ -302,7 +302,7 @@ jQuery(document).ready(function ($) {
                 type: 'POST',
                 url: xpayJSData.ajax.ajax_url,
                 data: {
-                    action: 'clear_promocode_details',
+                    action: 'xpay_clear_promo_details',
                     security: xpayJSData.ajax.nonce
                 },
                 success: function(response) {

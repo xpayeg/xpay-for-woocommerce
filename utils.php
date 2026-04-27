@@ -1,14 +1,39 @@
 <?php
 
+defined( 'ABSPATH' ) or exit;
+
+// error_log() calls in this file are intentional always-on diagnostics for
+// outbound XPay HTTP failures and circuit-breaker state changes. They run
+// independently of the opt-in diagnostic logger so a merchant can grep
+// their PHP error log for `[xpay]` and find issues even with the logger
+// disabled. Suppress PCP's blanket warning at file scope.
+// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log
+
 /**
  * Timeout for outbound XPay HTTP calls. Staging has been observed taking
  * up to 15s on the pay/variable-amount endpoint, so we leave 25s of
- * headroom. Combined with @set_time_limit(60) at the top of process_payment,
- * the worst-case (prepare 25 + 1s retry + 25 + pay 25 = 76s) exceeds the
- * default 30s PHP limit but is bounded by the 60s set_time_limit on hosts
- * that honor it. The pay call uses max_retries=0 to bound double-charge risk.
+ * headroom. The pay call uses max_retries=0 to bound double-charge risk.
+ *
+ * Prepare-amount is a lightweight call (compute fees, validate community)
+ * with a much tighter latency budget — give it its own shorter timeout
+ * and call it with max_retries=0 from process_payment so the worst-case
+ * checkout request budget stays under typical PHP-FPM request_terminate
+ * windows (30s) and one slow upstream cannot saturate the worker pool.
  */
-const XPAY_HTTP_TIMEOUT = 25;
+const XPAY_HTTP_TIMEOUT     = 25;
+const XPAY_PREPARE_TIMEOUT  = 20;
+
+/**
+ * Circuit breaker state. After XPAY_CB_FAILURE_THRESHOLD consecutive
+ * outbound failures, xpay_http_request fails fast for XPAY_CB_OPEN_SECONDS
+ * before allowing another upstream call. This prevents a sustained XPay
+ * outage from saturating PHP-FPM workers — without it, every checkout
+ * waits the full HTTP timeout before failing. State is stored in
+ * transients so it is shared across PHP-FPM workers.
+ */
+const XPAY_CB_FAILURE_THRESHOLD = 5;
+const XPAY_CB_OPEN_SECONDS      = 60;
+const XPAY_CB_FAILURE_WINDOW    = 300;
 
 /**
  * Browser-like User-Agent. The default WP_HTTP UA ("WordPress/X.X.X; ...")
@@ -81,11 +106,49 @@ function xpay_http_response_is_failure($response) {
 }
 
 /**
+ * Returns true while the circuit breaker is open (recent sustained
+ * failures observed). Callers should fail fast instead of issuing a new
+ * outbound request — this is what stops PHP-FPM saturation when XPay is
+ * degraded.
+ */
+function xpay_circuit_breaker_is_open() {
+    return (bool) get_transient('xpay_cb_open');
+}
+
+/**
+ * Record an outbound failure. After XPAY_CB_FAILURE_THRESHOLD consecutive
+ * failures within XPAY_CB_FAILURE_WINDOW seconds, open the breaker for
+ * XPAY_CB_OPEN_SECONDS. Any success resets the counter.
+ */
+function xpay_circuit_breaker_record_failure() {
+    $count = (int) get_transient('xpay_cb_failures');
+    $count++;
+    if ($count >= XPAY_CB_FAILURE_THRESHOLD) {
+        set_transient('xpay_cb_open', 1, XPAY_CB_OPEN_SECONDS);
+        delete_transient('xpay_cb_failures');
+        error_log('[xpay] circuit breaker opened — ' . XPAY_CB_FAILURE_THRESHOLD . ' consecutive failures');
+        return;
+    }
+    set_transient('xpay_cb_failures', $count, XPAY_CB_FAILURE_WINDOW);
+}
+
+function xpay_circuit_breaker_record_success() {
+    delete_transient('xpay_cb_failures');
+}
+
+/**
  * Calls wp_remote_post or wp_remote_get with up to $max_retries additional
  * attempts (1s backoff between) when the first attempt looks like a failure.
- * Returns the last response.
+ * Returns the last response. When the circuit breaker is open, returns a
+ * WP_Error immediately without making the upstream call.
  */
 function xpay_http_request($url, $args, $method, $max_retries = 1) {
+    if (xpay_circuit_breaker_is_open()) {
+        return new WP_Error(
+            'xpay_circuit_open',
+            __('XPay temporarily unavailable (circuit breaker open).', 'xpay-for-woocommerce')
+        );
+    }
     $callable = ($method === 'POST') ? 'wp_remote_post' : 'wp_remote_get';
     $response = $callable($url, $args);
     $attempts = 0;
@@ -94,31 +157,36 @@ function xpay_http_request($url, $args, $method, $max_retries = 1) {
         $response = $callable($url, $args);
         $attempts++;
     }
+    if (xpay_http_response_is_failure($response)) {
+        xpay_circuit_breaker_record_failure();
+    } else {
+        xpay_circuit_breaker_record_success();
+    }
     return $response;
 }
 
-function httpPost($url, $data, $api_key, $debug = 'no', $max_retries = 1) {
+function xpay_http_post($url, $data, $api_key, $debug = 'no', $max_retries = 1, $timeout = null) {
     $args = array(
         'headers'    => xpay_http_headers($api_key),
         'user-agent' => xpay_http_user_agent(),
         'body'       => $data,
-        'timeout'    => XPAY_HTTP_TIMEOUT,
+        'timeout'    => null !== $timeout ? (int) $timeout : XPAY_HTTP_TIMEOUT,
     );
     $response = xpay_http_request($url, $args, 'POST', $max_retries);
     if (is_wp_error($response)) {
         if ($debug === 'yes') {
-            error_log('[xpay] httpPost error: ' . $response->get_error_message());
+            error_log('[xpay] xpay_http_post error: ' . $response->get_error_message());
         }
         return null;
     }
     $body = wp_remote_retrieve_body($response);
     if ($debug === 'yes') {
-        error_log('[xpay] httpPost http=' . wp_remote_retrieve_response_code($response) . ' body=' . substr($body, 0, 400));
+        error_log('[xpay] xpay_http_post http=' . wp_remote_retrieve_response_code($response) . ' body=' . substr($body, 0, 400));
     }
     return $body;
 }
 
-function httpGet($url, $api_key, $debug = 'no', $max_retries = 1) {
+function xpay_http_get($url, $api_key, $debug = 'no', $max_retries = 1) {
     $args = array(
         'headers'    => xpay_http_headers($api_key),
         'user-agent' => xpay_http_user_agent(),
@@ -127,13 +195,13 @@ function httpGet($url, $api_key, $debug = 'no', $max_retries = 1) {
     $response = xpay_http_request($url, $args, 'GET', $max_retries);
     if (is_wp_error($response)) {
         if ($debug === 'yes') {
-            error_log('[xpay] httpGet error: ' . $response->get_error_message());
+            error_log('[xpay] xpay_http_get error: ' . $response->get_error_message());
         }
         return null;
     }
     $body = wp_remote_retrieve_body($response);
     if ($debug === 'yes') {
-        error_log('[xpay] httpGet http=' . wp_remote_retrieve_response_code($response) . ' body=' . substr($body, 0, 400));
+        error_log('[xpay] xpay_http_get http=' . wp_remote_retrieve_response_code($response) . ' body=' . substr($body, 0, 400));
     }
     return $body;
 }
@@ -189,26 +257,8 @@ function xpay_get_community_preferences($base_url, $community_id, $api_key, $deb
     return $fallback;
 }
 
-function jsprint($output, $is_alert=true, $with_script_tags = true) {
-    if (defined('DOING_AJAX') && DOING_AJAX) {
-        error_log(print_r($output, true));
-        return;
-    }
-
-    if($is_alert) {
-        $js_code = 'alert(' . json_encode($output, JSON_HEX_TAG) . ');';
-    } else {
-        $js_code = 'console.log(' . json_encode($output, JSON_HEX_TAG) . ');';
-    }
-    if ($with_script_tags) {
-        $js_code = '<script>' . $js_code . '</script>';
-    }
-    echo $js_code;
-}
-
-
-add_action('wp_ajax_fetch_installment_plans', 'fetch_installment_plans');
-add_action('wp_ajax_nopriv_fetch_installment_plans', 'fetch_installment_plans');
+add_action('wp_ajax_xpay_fetch_installment_plans', 'xpay_fetch_installment_plans');
+add_action('wp_ajax_nopriv_xpay_fetch_installment_plans', 'xpay_fetch_installment_plans');
 
 /**
  * AJAX: fetch installment plans for a given amount.
@@ -218,7 +268,7 @@ add_action('wp_ajax_nopriv_fetch_installment_plans', 'fetch_installment_plans');
  * $_POST, which leaked the api_key into the page source AND let any caller
  * use this endpoint as an open relay to XPay. Nonce is required.
  */
-function fetch_installment_plans() {
+function xpay_fetch_installment_plans() {
     check_ajax_referer('xpay-installments', 'nonce');
 
     $amount = isset($_POST['amount']) ? floatval(wp_unslash($_POST['amount'])) : 0;
@@ -247,7 +297,7 @@ function fetch_installment_plans() {
         'variable_amount_id'      => $variable_id,
     ));
 
-    $resp = httpPost($url, $payload, $api_key, $debug);
+    $resp = xpay_http_post($url, $payload, $api_key, $debug);
     // The inline JS in payment_fields() does JSON.parse(JSON.parse(response)).
     // Anything the inner JSON.parse can't decode (null, empty, HTML
     // challenge page, malformed JSON) would throw — actually json_decode

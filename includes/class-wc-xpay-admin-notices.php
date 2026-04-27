@@ -58,12 +58,12 @@ final class WC_XPay_Admin_Notices {
 		?>
 		<div class="notice notice-warning is-dismissible" style="position:relative;">
 			<p>
-				<strong><?php esc_html_e( 'XPay + WPFunnels:', 'wc-gateway-xpay' ); ?></strong>
+				<strong><?php esc_html_e( 'XPay + WPFunnels:', 'xpay-for-woocommerce' ); ?></strong>
 				<?php
 				echo wp_kses(
 					sprintf(
 						/* translators: %1$s = link to gateway settings */
-						__( 'WPFunnels is active and rewrites the post-payment redirect into its own funnel flow. Without a working upsell step (WPFunnels Pro), customers paying via XPay land on <code>/cart/</code> instead of a confirmation page even though the order is recorded correctly. <a href="%1$s">Enable the WPFunnels compatibility setting</a> to force the standard order-received page for XPay orders.', 'wc-gateway-xpay' ),
+						__( 'WPFunnels is active and rewrites the post-payment redirect into its own funnel flow. Without a working upsell step (WPFunnels Pro), customers paying via XPay land on <code>/cart/</code> instead of a confirmation page even though the order is recorded correctly. <a href="%1$s">Enable the WPFunnels compatibility setting</a> to force the standard order-received page for XPay orders.', 'xpay-for-woocommerce' ),
 						esc_url( $settings_url )
 					),
 					array( 'a' => array( 'href' => array() ), 'code' => array() )
@@ -71,9 +71,9 @@ final class WC_XPay_Admin_Notices {
 				?>
 			</p>
 			<p>
-				<a class="button button-primary" href="<?php echo esc_url( $settings_url ); ?>"><?php esc_html_e( 'Open XPay settings', 'wc-gateway-xpay' ); ?></a>
+				<a class="button button-primary" href="<?php echo esc_url( $settings_url ); ?>"><?php esc_html_e( 'Open XPay settings', 'xpay-for-woocommerce' ); ?></a>
 				&nbsp;
-				<a class="button" href="<?php echo esc_url( $dismiss_url ); ?>"><?php esc_html_e( 'Dismiss', 'wc-gateway-xpay' ); ?></a>
+				<a class="button" href="<?php echo esc_url( $dismiss_url ); ?>"><?php esc_html_e( 'Dismiss', 'xpay-for-woocommerce' ); ?></a>
 			</p>
 		</div>
 		<?php

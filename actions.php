@@ -1,9 +1,11 @@
 <?php
 
+defined( 'ABSPATH' ) or exit;
+
 // Register AJAX handlers for logged-in and guest users
-add_action('wp_ajax_validate_xpay_promo_code', 'handle_validate_xpay_promo_code');
-add_action('wp_ajax_nopriv_validate_xpay_promo_code', 'handle_validate_xpay_promo_code');
-function handle_validate_xpay_promo_code() {
+add_action('wp_ajax_xpay_validate_promo_code', 'xpay_handle_validate_promo_code');
+add_action('wp_ajax_nopriv_xpay_validate_promo_code', 'xpay_handle_validate_promo_code');
+function xpay_handle_validate_promo_code() {
     // Verify the security nonce to ensure the request is legitimate
     check_ajax_referer('validate-promo-code', 'security');
 
@@ -53,7 +55,7 @@ function handle_validate_xpay_promo_code() {
     ));
 
     // Make the API request to validate the promo code
-    $response = httpPost($api_url, $request_body, $api_key, $debug);
+    $response = xpay_http_post($api_url, $request_body, $api_key, $debug);
     $body = json_decode($response, true);
 
     // Handle error response
@@ -80,12 +82,12 @@ function handle_validate_xpay_promo_code() {
     // Check if response has data
     if (isset($body['data'])) {
         // SECURITY (C5): atomically store the server-validated discount in
-        // the session here. The legacy `store_promocode_details` AJAX handler
+        // the session here. The legacy `xpay_store_promo_details` AJAX handler
         // used to accept a discount_amount from $_POST and trust it
         // verbatim — anyone with a valid checkout-page nonce could set their
         // own discount. With this atomic-store, the session value is always
         // exactly what XPay's validate endpoint returned, and
-        // store_promocode_details no longer writes session at all.
+        // xpay_store_promo_details no longer writes session at all.
         if (function_exists('WC') && WC()->session) {
             $promo_id = isset($body['data']['promocode_id']) ? sanitize_text_field((string) $body['data']['promocode_id']) : '';
             $value    = isset($body['data']['value'])        ? (float) $body['data']['value']                              : 0.0;
@@ -101,13 +103,13 @@ function handle_validate_xpay_promo_code() {
 }
 
 // Update the action registration to match the function name
-add_action('wp_ajax_store_promocode_details', 'handle_store_promocode_details');
-add_action('wp_ajax_nopriv_store_promocode_details', 'handle_store_promocode_details');
-function handle_store_promocode_details() {
+add_action('wp_ajax_xpay_store_promo_details', 'xpay_handle_store_promo_details');
+add_action('wp_ajax_nopriv_xpay_store_promo_details', 'xpay_handle_store_promo_details');
+function xpay_handle_store_promo_details() {
     check_ajax_referer('validate-promo-code', 'security');
 
     // SECURITY (C5): the discount amount must come from XPay's server-side
-    // validate response (handle_validate_xpay_promo_code stores it in the
+    // validate response (xpay_handle_validate_promo_code stores it in the
     // session atomically on success). The legacy implementation of this
     // handler accepted $_POST['discount_amount'] and wrote it directly to
     // the session — anyone with a valid checkout-page nonce could set their
@@ -129,9 +131,9 @@ function handle_store_promocode_details() {
     ));
 }
 
-add_action('wp_ajax_clear_promocode_details', 'handle_clear_promocode_details');
-add_action('wp_ajax_nopriv_clear_promocode_details', 'handle_clear_promocode_details');
-function handle_clear_promocode_details() {
+add_action('wp_ajax_xpay_clear_promo_details', 'xpay_handle_clear_promo_details');
+add_action('wp_ajax_nopriv_xpay_clear_promo_details', 'xpay_handle_clear_promo_details');
+function xpay_handle_clear_promo_details() {
     check_ajax_referer('validate-promo-code', 'security');
     
     // Clear promo code data from session
@@ -182,7 +184,7 @@ function xpay_get_payment_methods_fees() {
         $payload['selected_payment_method'] = $selected_method;
     }
 
-    $response = httpPost($url, wp_json_encode($payload), $api_key, $xpay_gateway->get_option('debug'));
+    $response = xpay_http_post($url, wp_json_encode($payload), $api_key, $xpay_gateway->get_option('debug'));
     $resp     = json_decode($response, true);
 
     if (is_array($resp) && isset($resp['data'])) {

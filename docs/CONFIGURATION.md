@@ -96,14 +96,16 @@ These tell the plugin which XPay account to authenticate as. You get all three f
 
 - **Default:** Empty
 - **Format:** Any random string ≥ 32 characters. Generate with `openssl rand -hex 32` or any password manager.
-- **What it does:** When this is set on both sides (the plugin's setting AND XPay's "secret" field next to the callback URL), the plugin verifies an HMAC-SHA256 signature on every incoming webhook. Webhooks with no signature header or a mismatched signature are rejected with HTTP 401.
+- **What it does:** Enables HMAC-SHA256 signature verification on incoming webhooks. The exact behavior depends on whether the secret is set — see "Operating modes" below.
 - **Signature scheme:**
   - **Header name:** `X-XPay-Signature`
   - **Algorithm:** HMAC-SHA256
   - **Signed payload:** the raw JSON body of the request (byte-for-byte)
   - **Encoding:** hex (lowercase)
   - These three constants are at the top of [`update_order.php`](../update_order.php) — edit them if XPay changes its scheme.
-- **Fail-open behavior:** If either the secret or the signature header is missing, the plugin accepts the webhook and logs `[xpay] webhook accepted unsigned ...` to the WP debug log. This lets you set up the integration end-to-end before XPay starts signing. Once both sides are configured, every webhook MUST carry a valid signature.
+- **Operating modes:**
+  - **Legacy / unsigned (secret empty):** Every webhook is accepted without signature checks; the plugin writes `[xpay] webhook accepted unsigned (no secret configured)` to the WP debug log on each accepted webhook. Used by merchants who connected before XPay supported signing, and during initial integration testing.
+  - **Strict (secret set):** Every webhook must carry a valid `X-XPay-Signature` header. A missing header or a signature mismatch is rejected with HTTP 401 — there is no silent fallback to unsigned, since that would defeat the merchant's choice to enable verification. This is the recommended posture for real-money traffic.
 - **Strong recommendation:** Configure this before any real-money traffic. Without it, anyone who can guess a transaction UUID can mark orders paid by sending a crafted POST to the callback URL.
 
 ---

@@ -1,0 +1,26 @@
+# macOS
+.DS_Store
+._*
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Build / dependencies
+node_modules/
+vendor/
+composer.lock
+
+# Build outputs (produced by bin/build.sh — see docs/PACKAGING.md)
+dist/
+build/
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local

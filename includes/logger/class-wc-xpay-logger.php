@@ -14,6 +14,16 @@
 
 defined( 'ABSPATH' ) or exit;
 
+// The logger writes high-frequency payment-event lines using fopen + flock
+// + fwrite + fclose for atomic appends. WP_Filesystem doesn't expose flock
+// or any append-with-locking primitive, and re-initialising WP_Filesystem
+// per write would multiply the per-event overhead. We accept PCP's
+// AlternativeFunctions warnings on the file-IO calls inside this class as
+// a deliberate performance/architecture trade-off.
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fwrite
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+
 require_once __DIR__ . '/class-wc-xpay-logger-redactor.php';
 
 final class WC_XPay_Logger {
@@ -255,7 +265,7 @@ final class WC_XPay_Logger {
 		foreach ( $files as $file ) {
 			$mtime = @filemtime( $file );
 			if ( $mtime && $mtime < $cutoff ) {
-				@unlink( $file );
+				wp_delete_file( $file );
 			}
 		}
 	}

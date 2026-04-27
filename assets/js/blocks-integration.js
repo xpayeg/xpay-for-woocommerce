@@ -71,6 +71,17 @@
 				return;
 			}
 			var unsubscribe = props.eventRegistration.onPaymentSetup( function () {
+				// Block submission when installment is selected without a
+				// period — otherwise an empty xpay_selected_installment_plan
+				// reaches process_payment, the period match in the
+				// installment_fees loop fails silently, and the customer
+				// is charged with no installment plan applied.
+				if ( selected === 'installment' && ! installmentPlan ) {
+					return {
+						type: props.emitResponse.responseTypes.ERROR,
+						message: 'Please select an installment period before continuing.'
+					};
+				}
 				return {
 					type: props.emitResponse.responseTypes.SUCCESS,
 					meta: {

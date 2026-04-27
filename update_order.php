@@ -1,6 +1,18 @@
 <?php
+// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- WP core constant, not ours; required to skip theme loading on this bare-bones webhook entry point.
 define( 'WP_USE_THEMES', false );
 require( '../../../wp-load.php' );
+
+// Wrap the request handler in an IIFE so all the variables it declares
+// (transaction_id, signature_state, etc.) stay function-local and don't
+// leak into PHP's global namespace — keeping this entry-point script
+// PCP-clean for the PrefixAllGlobals.NonPrefixedVariableFound rule.
+//
+// error_log() calls below are intentional always-on diagnostic emissions
+// for webhook signature outcomes (separate from the bundled diagnostic
+// logger which is opt-in). Suppress PCP's blanket warning on this file.
+// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log
+( function () {
 
 header('Content-Type: application/json');
 
@@ -11,9 +23,9 @@ $data = json_decode($inputJSON, true);
 // Logger: webhook.received. Headers and IP only — payload-level fields are
 // emitted in webhook.lookup once we know which order it relates to.
 do_action('xpay_logger_event', 'webhook.received', array(
-    'remote_ip'        => isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : null,
-    'forwarded_for'    => isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : null,
-    'cf_ray'           => isset($_SERVER['HTTP_CF_RAY']) ? $_SERVER['HTTP_CF_RAY'] : null,
+    'remote_ip'        => isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : null,
+    'forwarded_for'    => isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_X_FORWARDED_FOR'])) : null,
+    'cf_ray'           => isset($_SERVER['HTTP_CF_RAY']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_CF_RAY'])) : null,
     'content_length'   => isset($_SERVER['CONTENT_LENGTH']) ? (int) $_SERVER['CONTENT_LENGTH'] : 0,
     'has_signature_hdr' => isset($_SERVER['HTTP_X_XPAY_SIGNATURE']),
     'json_parsed'      => is_array($data),
@@ -22,22 +34,24 @@ do_action('xpay_logger_event', 'webhook.received', array(
 ), 'webhook received');
 
 // ---------------------------------------------------------------------
-// Optional HMAC signature verification (fail-open during setup).
+// Optional HMAC signature verification.
 //
-// Configure 'webhook_secret' in the gateway settings AND paste the same
-// value into XPay staging's "secret" field. Once BOTH are set, every
-// webhook MUST carry a valid X-XPay-Signature header — invalid signatures
-// are rejected with 401.
+// Mode 1 — Legacy / unsigned (default): leave 'webhook_secret' empty in
+// the gateway settings. Webhooks are accepted without signature checks,
+// preserving compatibility with merchants who connected before XPay
+// supported signing.
 //
-// If either side is missing (no secret configured OR no signature header
-// arrived) we accept the request and log it. This lets testing proceed
-// before XPay is configured to sign, and it tolerates a transient gap if
-// the merchant rotates the secret.
+// Mode 2 — Strict: configure 'webhook_secret' in BOTH the gateway settings
+// AND XPay's webhook configuration. Every webhook MUST then carry a valid
+// X-XPay-Signature header. Missing or mismatched signatures are rejected
+// with 401. There is intentionally no silent fallback to unsigned once a
+// secret is configured — that would defeat the merchant's choice to
+// enable verification and create a downgrade attack surface.
 //
 // Header name and format below are guesses based on common conventions
 // (Stripe / GitHub / Shopify all use HMAC-SHA256 of the raw body in some
-// header). When XPay's actual scheme is observed in real traffic, update
-// the three constants at the top of this block.
+// header). Confirm with XPay's team and update the three constants when
+// the actual scheme is verified.
 // ---------------------------------------------------------------------
 $xpay_sig_header = 'HTTP_X_XPAY_SIGNATURE'; // PHP server-var form of X-XPay-Signature
 $xpay_sig_algo   = 'sha256';
@@ -45,10 +59,24 @@ $xpay_sig_format = 'hex'; // 'hex' or 'base64'
 
 $xpay_settings   = get_option('woocommerce_xpay_gateway_settings', array());
 $webhook_secret  = isset($xpay_settings['webhook_secret']) ? trim((string) $xpay_settings['webhook_secret']) : '';
-$received_sig    = isset($_SERVER[$xpay_sig_header]) ? trim((string) $_SERVER[$xpay_sig_header]) : '';
+$received_sig    = isset($_SERVER[$xpay_sig_header]) ? trim(sanitize_text_field(wp_unslash($_SERVER[$xpay_sig_header]))) : '';
 
 $signature_state = 'unsigned';
-if ('' !== $webhook_secret && '' !== $received_sig) {
+if ('' !== $webhook_secret) {
+    if ('' === $received_sig) {
+        // Secret configured but no signature header arrived. Reject rather
+        // than silently fall through to unsigned — a merchant who set the
+        // secret expects strict verification.
+        error_log('[xpay] webhook rejected: signature header missing while secret is configured');
+        do_action('xpay_logger_event', 'webhook.applied', array(
+            'branch'          => 'signature_missing',
+            'signature_state' => 'no_header_present',
+        ), 'webhook rejected: header missing while secret configured');
+        status_header(401);
+        wp_send_json_error([
+            'message' => 'Webhook signature required',
+        ]);
+    }
     $hmac     = hash_hmac($xpay_sig_algo, $inputJSON, $webhook_secret, 'base64' === $xpay_sig_format);
     $expected = ('base64' === $xpay_sig_format) ? base64_encode($hmac) : $hmac;
     if (!hash_equals($expected, $received_sig)) {
@@ -65,16 +93,12 @@ if ('' !== $webhook_secret && '' !== $received_sig) {
     error_log('[xpay] webhook signature verified');
     $signature_state = 'verified';
 } else {
-    error_log(sprintf(
-        '[xpay] webhook accepted unsigned (secret_configured=%d, signature_present=%d) — set both to enable strict verification',
-        '' !== $webhook_secret ? 1 : 0,
-        '' !== $received_sig ? 1 : 0
-    ));
-    $signature_state = ('' === $webhook_secret) ? 'no_secret_configured' : 'no_header_present';
+    error_log('[xpay] webhook accepted unsigned (no secret configured)');
+    $signature_state = 'no_secret_configured';
 }
 
-$transaction_id = isset($data["transaction_id"]) ? trim($data["transaction_id"]) : null;
-$transaction_status = isset($data["transaction_status"]) ? $data["transaction_status"] : null;
+$transaction_id = isset($data["transaction_id"]) ? trim((string) $data["transaction_id"]) : null;
+$transaction_status = isset($data["transaction_status"]) ? (string) $data["transaction_status"] : null;
 
 // Handle missing transaction_id. Return real 4xx so XPay's webhook layer
 // can retry (wp_send_json_error returns 200 by default).
@@ -98,8 +122,14 @@ if (!$transaction_id) {
 // with custom statuses from B2B / fraud-review / pre-order plugins. The
 // safety check (do not resurrect cancelled/refunded orders) is applied
 // per-branch below, after lookup.
+//
+// PCP flags meta_key/meta_value as a slow-query risk; for a webhook handler
+// that fires once per order completion this single lookup is acceptable
+// and there is no faster HPOS-aware alternative through the public API.
 $orders = wc_get_orders(array(
+    // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
     'meta_key'   => 'xpay_transaction_id',
+    // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
     'meta_value' => $transaction_id,
     'limit'      => 1,
     'orderby'    => 'date',
@@ -203,11 +233,38 @@ if ($transaction_status === "SUCCESSFUL") {
             'order_status' => $order->get_status(),
         ]);
     }
+    // Acquire a short-lived lock so the same transaction can't be
+    // completed twice concurrently. The race is real even with the
+    // has_status guard above: between this point and payment_complete's
+    // status save, a second webhook (or check_transaction.php firing on
+    // modal close) can pass the same has_status check on a still-pending
+    // order and double-fire woocommerce_payment_complete (double stock
+    // decrement, double new-order email, double affiliate commission).
+    //
+    // Effective on hosts with a persistent object cache (Redis/Memcached);
+    // on default WP without one, wp_cache_add is per-request, so the lock
+    // is best-effort across PHP-FPM workers. The has_status guard above
+    // still provides partial protection in that case.
+    $lock_key = 'xpay_lock_' . $transaction_id;
+    if (false === wp_cache_add($lock_key, 1, '', 30)) {
+        do_action('xpay_logger_event', 'webhook.applied', array(
+            'order_id' => $order->get_id(),
+            'branch'   => 'successful_lock_held',
+        ), 'webhook applied: skipped (concurrent completion in progress)');
+        wp_send_json_success([
+            'message'  => 'Concurrent completion in progress; treating as idempotent',
+            'order_id' => $order->get_id(),
+        ]);
+    }
     // payment_complete() handles stock reduction (if not already reduced),
     // status routing per product type, the canonical _transaction_id meta,
     // and triggers the woocommerce_payment_complete action.
     $order->payment_complete($transaction_id);
-    $order->add_order_note(sprintf(__('XPay payment confirmed (txn %s).', 'wc-gateway-xpay'), $transaction_id));
+    $order->add_order_note(sprintf(
+        /* translators: %s = XPay transaction UUID */
+        __('XPay payment confirmed (txn %s).', 'xpay-for-woocommerce'),
+        $transaction_id
+    ));
     do_action('xpay_logger_event', 'webhook.applied', array(
         'order_id'         => $order->get_id(),
         'branch'           => 'successful',
@@ -252,7 +309,7 @@ if ($transaction_status === "SUCCESSFUL") {
     // Restore stock only when stock was actually reduced; the helper
     // checks the per-item _reduced_stock meta and is a no-op otherwise.
     wc_increase_stock_levels($order->get_id());
-    $order->update_status('failed', __('Transaction failed', 'wc-gateway-xpay'));
+    $order->update_status('failed', __('Transaction failed', 'xpay-for-woocommerce'));
     do_action('xpay_logger_event', 'webhook.applied', array(
         'order_id'         => $order->get_id(),
         'branch'           => 'failed',
@@ -279,3 +336,5 @@ if ($transaction_status === "SUCCESSFUL") {
         'order_id'           => $order->get_id(),
     ]);
 }
+
+} )(); // end IIFE

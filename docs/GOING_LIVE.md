@@ -10,7 +10,7 @@ The actual switch is small (a few setting changes). Most of the work is the pre-
 
 Before you flip the environment to Production, confirm all of the following. Each failure here is something a real customer would experience as a broken payment.
 
-- [ ] **HTTPS is enabled** on your site, and the certificate is valid. The webhook callback URL must be reachable over HTTPS in production. Test with `curl -I https://your-domain/wp-content/plugins/woocommerce-xpay-plugin/update_order.php` — you should get back HTTP 405 (method not allowed) or similar, not a TLS error.
+- [ ] **HTTPS is enabled** on your site, and the certificate is valid. The webhook callback URL must be reachable over HTTPS in production. Test with `curl -i -X POST -H 'Content-Type: application/json' -d '{}' https://your-domain/wp-content/plugins/woocommerce-xpay-plugin/update_order.php` — you should get back HTTP 400 with a "Missing transaction_id" body. That confirms TLS works and the endpoint is alive. Any TLS error or 5xx means the URL is unreachable.
 - [ ] **Production credentials obtained** from XPay: production `community_id`, production `payment_api_key`, production `variable_amount_id`. These are different values from your staging credentials.
 - [ ] **Production webhook secret** generated (32+ random characters; `openssl rand -hex 32` works) and ready to paste into both XPay's production dashboard and the plugin's setting.
 - [ ] **Staging end-to-end verified** — at minimum, one successful payment with a test card, with the order moving from `pending` to `processing` automatically (proves the webhook reached your site and was processed).

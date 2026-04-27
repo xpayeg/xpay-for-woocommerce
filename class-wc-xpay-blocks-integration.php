@@ -43,7 +43,7 @@ final class WC_Xpay_Blocks_Integration extends AbstractPaymentMethodType {
 			$handle,
 			plugin_dir_url( __FILE__ ) . 'assets/js/blocks-integration.js',
 			array( 'wp-element', 'wp-i18n', 'wp-html-entities', 'wc-blocks-registry', 'wc-settings' ),
-			'1.0.0',
+			defined( 'WC_XPAY_VERSION' ) ? WC_XPAY_VERSION : '1.3.1',
 			true
 		);
 		return array( $handle );

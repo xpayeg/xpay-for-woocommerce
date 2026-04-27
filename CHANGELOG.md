@@ -4,6 +4,100 @@ All notable changes to this plugin are documented here. Format follows [Keep a C
 
 ---
 
+## [2.0.0] — 2026-04-27
+
+Major version: plugin renamed for WordPress.org plugin directory submission. Existing merchants on the legacy `woocommerce-xpay-plugin` directory should deactivate the old plugin and install this one — gateway settings carry over automatically because the underlying option key (`woocommerce_xpay_gateway_settings`) is unchanged.
+
+### Renamed (clean break, breaking for downstream callers)
+
+- **Plugin name:** "WooCommerce XPAY Gateway" → "XPay for WooCommerce" (avoids WP.org's "WooCommerce as prefix" rule).
+- **Plugin slug / directory:** `woocommerce-xpay-plugin` → `xpay-for-woocommerce` (matches WP.org slug rules).
+- **Text domain:** `wc-gateway-xpay` → `xpay-for-woocommerce` (must match slug per WP.org). All translatable strings updated.
+- **Global PHP functions** all renamed to the `xpay_` prefix:
+  - `httpPost` → `xpay_http_post`
+  - `httpGet` → `xpay_http_get`
+  - `generate_payment_modal` → `xpay_generate_payment_modal`
+  - `fetch_installment_plans` → `xpay_fetch_installment_plans`
+  - `enqueue_xpay_styles` → `xpay_enqueue_styles`
+  - `enqueue_checkout_scripts` → `xpay_enqueue_checkout_scripts`
+  - `wc_xpay_add_to_gateways` → `xpay_add_to_gateways`
+  - `wc_xpay_gateway_plugin_links` → `xpay_gateway_plugin_links`
+  - `handle_validate_xpay_promo_code` → `xpay_handle_validate_promo_code`
+  - `handle_store_promocode_details` → `xpay_handle_store_promo_details`
+  - `handle_clear_promocode_details` → `xpay_handle_clear_promo_details`
+- **AJAX action names** all renamed to the `xpay_` prefix:
+  - `validate_xpay_promo_code` → `xpay_validate_promo_code`
+  - `store_promocode_details` → `xpay_store_promo_details`
+  - `clear_promocode_details` → `xpay_clear_promo_details`
+  - `fetch_installment_plans` → `xpay_fetch_installment_plans`
+
+If any external code (theme, sibling plugin, custom mu-plugin) called the old function names or hooked the old AJAX actions, it must be updated.
+
+### Added
+
+- **`readme.txt`** with all WordPress.org-required headers (Stable tag, Tested up to, Requires at least, Requires PHP, Contributors, License, License URI, Tags, Description, Installation, FAQ, Changelog, Upgrade Notice).
+- **External services and Privacy disclosure sections** in `readme.txt` listing exactly what data is sent to XPay, when, why.
+- **`Text Domain` and `Domain Path` headers** in plugin file. Explicit `load_plugin_textdomain()` call on `init` so non-WP.org installs (manual / GitHub direct download) also pick up bundled `.mo` translations.
+- **`/languages/xpay-for-woocommerce.pot`** template — 114 strings, ready for translators.
+- **`License: GPL-2.0-or-later` / `License URI:`** in plugin header.
+- **`WC_XPAY_VERSION` plugin constant** used by all enqueue calls (replaces hardcoded `'1.3.0'` strings and stale "cache bust" comment).
+- **`.distignore` + `bin/build.sh`** packaging infrastructure for producing WP.org-ready ZIPs from source.
+- **`docs/PACKAGING.md`** with step-by-step build and submission instructions.
+- **`.gitignore`** at plugin root (covers `.DS_Store`, IDE folders, build outputs).
+
+### Security
+
+- **Webhook verification fail-closed when `webhook_secret` is configured.** Previously, if a merchant set the secret but XPay sent the webhook without an `X-XPay-Signature` header, the request silently fell through to the unsigned-accept branch — defeating the point of configuring the secret. Now: secret configured + missing/mismatched header → HTTP 401. Legacy unsigned mode (no secret configured) is unchanged.
+- **`wp_cache_add` lock around `payment_complete()`** in both `update_order.php` (webhook) and `check_transaction.php` (modal-close poll). Prevents `woocommerce_payment_complete` double-fire (double stock decrement, double new-order email, double affiliate commission) when XPay's webhook arrives at the same moment as the customer's modal-close poll. Effective on hosts with a persistent object cache; degrades gracefully on default WP.
+- **Defensive `(string)` casts** on re-extracted `$transaction_id` / `$transaction_status` in `update_order.php` so non-string payloads don't trigger PHP 8.1+ deprecation warnings.
+- **`wp_unslash()` + `sanitize_text_field()`** on the `$_SERVER` reads in the webhook receiver (`REMOTE_ADDR`, `HTTP_X_FORWARDED_FOR`, `HTTP_CF_RAY`, `HTTP_X_XPAY_SIGNATURE`).
+- **`esc_attr()`** on the dynamic `$checked` attribute in payment-method radio rendering.
+- **`esc_html__()`** wrapping for translatable strings echoed into HTML.
+
+### Performance / SRE
+
+- **Dedicated `XPAY_PREPARE_TIMEOUT = 20` seconds** for prepare-amount with `max_retries = 0`. Combined with the existing 25-second pay-call timeout, worst-case checkout request budget drops from 76 seconds to 45 seconds — under typical PHP-FPM `request_terminate_timeout` ceilings.
+- **Transient-backed circuit breaker** (`xpay_circuit_breaker_*`). After 5 consecutive outbound failures within 5 minutes, the breaker opens for 60 seconds and `xpay_http_request` returns `WP_Error` immediately without making the upstream call. Prevents PHP-FPM saturation when XPay is degraded — every checkout fails fast in milliseconds instead of waiting the full 25-second timeout.
+
+### UX / Accessibility
+
+- **Three reassurance-first error strings** replacing panic-inducing copy:
+  - "A previous payment attempt … is still being processed" → "Your previous payment attempt is still in progress. To prevent a double charge we are pausing new attempts for up to 10 minutes. If you do not see a confirmation email by then, contact support with order #N — your card will not be charged twice."
+  - "Payment processing failed. Please try again." → "We could not reach the payment provider. Please check your internet connection and try again. If the problem continues, try a different payment method or contact us."
+  - "Payment system error: the payment URL did not pass safety checks" → "We could not securely load the payment form. Your card has not been charged. Please contact support and quote order #N so we can complete this payment for you."
+- **Block checkout: installment without a period selected now blocks submission with an error notice** ("Please select an installment period before continuing.") instead of silently posting an empty plan that the gateway can't process.
+
+### Fixed
+
+- **WP_USE_THEMES define** in webhook + poll entry points marked phpcs:ignore (it's a WP core constant we don't own).
+- **`apply_filters('active_plugins', get_option('active_plugins'))`** WC-active check replaced with `is_plugin_active('woocommerce/woocommerce.php')` (loads `wp-admin/includes/plugin.php` on demand). Avoids invoking a non-prefixed core filter from plugin code.
+- **`unlink()` → `wp_delete_file()`** in logger and logger-admin.
+- **Removed the unused `apply_filters('woocommerce_offline_icon', '')` filter** (just `$this->icon = ''` directly).
+- **Removed the legacy `jsprint()` debug helper** (no callers in PHP).
+- **Removed the stale `Cache bust: 2025-12-08-07-45` comment** at the top of the plugin file.
+- **`COMPATIBILITY.md` moved from plugin root to `docs/`** so the WP.org-distributed root is markdown-clean.
+- **Soft-hyphen typo** in one text-domain literal (`'wc­gateway-xpay'` with U+00AD soft hyphen) corrected.
+- **Empty `__('', 'wc-gateway-xpay')` defaults** replaced with plain `''` (PCP `NoEmptyStrings`).
+- **Concatenated `__()` calls** for the callback-URL field title/default refactored to keep only the literal string inside the gettext call (PCP `NonSingularStringLiteralText`).
+- **Translators comments** added at every `sprintf(__('… %s …'))` site (PCP `MissingTranslatorsComment`).
+- **`Text Domain` argument added** to 4 environment-option `__()` calls that were missing it.
+- **Webhook handler and modal-close poll** now wrapped in IIFE so all locals stay function-scoped — eliminates 23 `NonPrefixedVariableFound` PCP warnings without renaming each variable.
+
+### Operation safety
+
+- Verified end-to-end against XPay staging: order placed via Block checkout, paid via card with 3DS, webhook + check_transaction.php both correctly resolved (single `payment_complete` per order, lock confirmed working).
+- All 13 PHP files lint clean (`php -l`).
+- WordPress Plugin Check (PCP) reduced from 239 findings to 3 remaining (the 2 intentional public webhook entry points + `.gitignore`, all unfixable in source).
+
+### Migration notes (1.3.x → 2.0.0)
+
+- **Settings carry over.** Gateway option key (`woocommerce_xpay_gateway_settings`) is unchanged. Community ID, API key, environment, webhook secret, debug flag, etc. are all preserved when a merchant deactivates the old plugin and activates the new one.
+- **The plugin DIRECTORY changes** from `wp-content/plugins/woocommerce-xpay-plugin/` to `wp-content/plugins/xpay-for-woocommerce/`. WordPress treats this as a different plugin — there is NO automatic update from 1.x to 2.0.0. Merchants must install 2.0.0 and deactivate (then optionally delete) 1.x.
+- **The "WooCommerce XPay Gateway" entry will remain visible in the Plugins list** until a merchant clicks Deactivate → Delete on the old slug. Their settings are not lost during this.
+- **Downstream code that called the old function names or hooked the old AJAX actions will break.** See "Renamed" section above for the mapping.
+
+---
+
 ## [1.3.1] — 2026-04-27
 
 ### Fixed
@@ -171,7 +265,7 @@ receiver, and ships a built-in diagnostic logger for debugging conflicts.
 - **No setting changes required** for existing merchants. Existing `community_id`, `payment_api_key`, `variable_amount_id`, and `iframe_base_url` values are preserved.
 - **The default for the new `webhook_secret` setting is empty**, which keeps the plugin in fail-open mode (same effective behavior as 1.1). Configure the secret to enable strict signature verification — see [docs/CONFIGURATION.md](docs/CONFIGURATION.md#webhook-secret).
 - **The diagnostic logger is OFF by default**. Existing merchants will not see any change in behavior. Enable it from the gateway settings while debugging an issue.
-- **WPFunnels merchants:** the plugin auto-detects WPFunnels and shows an admin notice nudging you to enable the compatibility setting if you don't have a working WPFunnels Pro upsell flow. See [COMPATIBILITY.md](COMPATIBILITY.md#wpfunnels-confirmed).
+- **WPFunnels merchants:** the plugin auto-detects WPFunnels and shows an admin notice nudging you to enable the compatibility setting if you don't have a working WPFunnels Pro upsell flow. See [COMPATIBILITY.md](docs/COMPATIBILITY.md#wpfunnels-confirmed).
 - **HPOS merchants:** no action needed. The plugin works on both HPOS-on and HPOS-off stores.
 
 ---
