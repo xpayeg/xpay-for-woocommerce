@@ -777,12 +777,27 @@ function wc_xpay_gateway_init() {
                 'method'      => $payment_method,
             ), 'prepare-amount call completed');
             if (!is_array($prepare) || !isset($prepare['data']['total_amount'])) {
+                $prepare_unreachable = (null === $prepare_body);
                 do_action('xpay_logger_event', 'process_payment.end', array(
                     'order_id'    => $order->get_id(),
-                    'branch'      => 'prepare_failed',
+                    'branch'      => $prepare_unreachable ? 'prepare_unreachable' : 'prepare_failed',
                     'duration_ms' => (int) ((microtime(true) - $process_started) * 1000),
-                ), 'prepare-amount returned no total_amount');
-                wc_add_notice(__('We could not reach the payment provider. Please check your internet connection and try again. If the problem continues, try a different payment method or contact us.', 'xpay-for-woocommerce'), 'error');
+                ), $prepare_unreachable ? 'prepare-amount: no response (transport failure)' : 'prepare-amount returned no total_amount');
+                if ($prepare_unreachable) {
+                    wc_add_notice(__("We couldn't reach the payment provider right now. This is usually temporary — please wait a moment and try again. If this keeps happening, please contact us.", 'xpay-for-woocommerce'), 'error');
+                } else {
+                    $prepare_user_errors = xpay_extract_user_errors($prepare);
+                    if (!empty($prepare_user_errors)) {
+                        foreach ($prepare_user_errors as $prepare_user_error) {
+                            wc_add_notice($prepare_user_error, 'error');
+                        }
+                    } else {
+                        $prepare_msg = is_array($prepare) && isset($prepare['status']['message'])
+                            ? $prepare['status']['message']
+                            : __('Payment processing failed.', 'xpay-for-woocommerce');
+                        wc_add_notice($prepare_msg, 'error');
+                    }
+                }
                 $order->update_status('failed', __('XPay prepare-amount call failed', 'xpay-for-woocommerce'));
                 return array('result' => 'failure');
             }
@@ -877,7 +892,7 @@ function wc_xpay_gateway_init() {
                 'method'        => $payment_method,
             ), 'pay/variable-amount call completed');
             if (!is_array($resp) || (isset($resp['status']['code']) ? $resp['status']['code'] : 0) !== 200) {
-                $msg = isset($resp['status']['message']) ? $resp['status']['message'] : __('Payment processing failed.', 'xpay-for-woocommerce');
+                $pay_unreachable = (null === $pay_body);
                 // If XPay returned a structured error (status.code set), the
                 // call cleanly failed with no charge ambiguity. Clear the
                 // in-flight fingerprint so the customer can retry immediately.
@@ -889,24 +904,29 @@ function wc_xpay_gateway_init() {
                 }
                 do_action('xpay_logger_event', 'process_payment.end', array(
                     'order_id'           => $order->get_id(),
-                    'branch'             => 'pay_failed',
+                    'branch'             => $pay_unreachable ? 'pay_unreachable' : 'pay_failed',
                     'upstream_status_code' => is_array($resp) && isset($resp['status']['code']) ? (int) $resp['status']['code'] : null,
                     'upstream_message'   => is_array($resp) && isset($resp['status']['message']) ? (string) $resp['status']['message'] : null,
                     'fingerprint_kept'   => !is_array($resp) || !isset($resp['status']['code']),
                     'duration_ms'        => (int) ((microtime(true) - $process_started) * 1000),
-                ), 'pay call did not return success');
-                $user_errors = xpay_extract_user_errors($resp);
-                if (!empty($user_errors)) {
-                    foreach ($user_errors as $user_error) {
-                        wc_add_notice($user_error, 'error');
-                    }
+                ), $pay_unreachable ? 'pay/variable-amount: no response (transport failure)' : 'pay call did not return success');
+                if ($pay_unreachable) {
+                    wc_add_notice(__("We couldn't reach the payment provider right now. This is usually temporary — please wait a moment and try again. If this keeps happening, please contact us.", 'xpay-for-woocommerce'), 'error');
                 } else {
-                    wc_add_notice($msg, 'error');
+                    $msg = isset($resp['status']['message']) ? $resp['status']['message'] : __('Payment processing failed.', 'xpay-for-woocommerce');
+                    $user_errors = xpay_extract_user_errors($resp);
+                    if (!empty($user_errors)) {
+                        foreach ($user_errors as $user_error) {
+                            wc_add_notice($user_error, 'error');
+                        }
+                    } else {
+                        wc_add_notice($msg, 'error');
+                    }
                 }
                 $order->update_status('failed', sprintf(
                     /* translators: %s = upstream error message returned by XPay */
                     __('XPay pay call failed: %s', 'xpay-for-woocommerce'),
-                    $msg
+                    is_array($resp) && isset($resp['status']['message']) ? $resp['status']['message'] : __('transport failure', 'xpay-for-woocommerce')
                 ));
                 return array('result' => 'failure');
             }
