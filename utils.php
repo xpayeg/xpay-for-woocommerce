@@ -106,6 +106,62 @@ function xpay_http_response_is_failure($response) {
 }
 
 /**
+ * After an xpay_http_* call, returns a label classifying any failure:
+ *   'pre_flight' — request definitely never reached XPay (breaker open,
+ *                  DNS resolution failed, connect refused, TLS handshake
+ *                  failure). Safe to retry without double-charge risk.
+ *   'ambiguous'  — request may or may not have been processed (read
+ *                  timeout, TLS error mid-stream, server returned 5xx,
+ *                  Cloudflare HTML challenge). Treat as potentially
+ *                  charged.
+ *   null         — no failure (last call succeeded), or no call yet.
+ *
+ * Pass an argument to set; call without arguments to read.
+ */
+function xpay_http_last_failure_type($set_to = '__noarg__') {
+    static $value = null;
+    if ($set_to !== '__noarg__') {
+        $value = $set_to;
+    }
+    return $value;
+}
+
+/**
+ * Classify a WP_Error from xpay_http_request as 'pre_flight' or
+ * 'ambiguous'. Uses the WP error code first, then parses cURL error
+ * numbers from the error message when present.
+ *
+ * Pre-flight cURL codes (definitely no bytes sent to XPay):
+ *   6  CURLE_COULDNT_RESOLVE_HOST
+ *   7  CURLE_COULDNT_CONNECT
+ *   35 CURLE_SSL_CONNECT_ERROR
+ *   51 CURLE_PEER_FAILED_VERIFICATION
+ *   60 CURLE_SSL_CACERT
+ *
+ * Ambiguous cURL codes (request bytes may have reached XPay):
+ *   28 CURLE_OPERATION_TIMEDOUT (could be DNS timeout but conservatively ambiguous)
+ *   55 CURLE_SEND_ERROR
+ *   56 CURLE_RECV_ERROR
+ */
+function xpay_classify_wp_error($wp_error) {
+    if (!is_wp_error($wp_error)) {
+        return 'ambiguous';
+    }
+    if ($wp_error->get_error_code() === 'xpay_circuit_open') {
+        return 'pre_flight';
+    }
+    $msg = $wp_error->get_error_message();
+    if (preg_match('/cURL error (\d+)/', $msg, $m)) {
+        $cerr = (int) $m[1];
+        if (in_array($cerr, array(6, 7, 35, 51, 60), true)) {
+            return 'pre_flight';
+        }
+        // 28, 55, 56 and unknowns: keep ambiguous (safer default)
+    }
+    return 'ambiguous';
+}
+
+/**
  * Returns true while the circuit breaker is open (recent sustained
  * failures observed). Callers should fail fast instead of issuing a new
  * outbound request — this is what stops PHP-FPM saturation when XPay is
@@ -143,7 +199,12 @@ function xpay_circuit_breaker_record_success() {
  * WP_Error immediately without making the upstream call.
  */
 function xpay_http_request($url, $args, $method, $max_retries = 1) {
+    // Reset the side-channel at the top of every request so stale values
+    // from a previous call in the same PHP process never bleed through.
+    xpay_http_last_failure_type(null);
+
     if (xpay_circuit_breaker_is_open()) {
+        xpay_http_last_failure_type('pre_flight');
         return new WP_Error(
             'xpay_circuit_open',
             __('XPay temporarily unavailable (circuit breaker open).', 'xpay-for-woocommerce')
@@ -159,8 +220,16 @@ function xpay_http_request($url, $args, $method, $max_retries = 1) {
     }
     if (xpay_http_response_is_failure($response)) {
         xpay_circuit_breaker_record_failure();
+        if (is_wp_error($response)) {
+            xpay_http_last_failure_type(xpay_classify_wp_error($response));
+        } else {
+            // HTTP failure code (5xx/403/429) or non-JSON body: request
+            // reached a server, so we cannot rule out a charge.
+            xpay_http_last_failure_type('ambiguous');
+        }
     } else {
         xpay_circuit_breaker_record_success();
+        // Success: side-channel stays null (already reset at the top).
     }
     return $response;
 }

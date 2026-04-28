@@ -97,6 +97,14 @@ require_once plugin_dir_path( __FILE__ ) . 'actions.php';
 const XPAY_PROMO_FEE_NAME = 'XPay promo discount';
 
 /**
+ * How long (in seconds) to block concurrent payment retries after an
+ * ambiguous upstream failure. Pre-flight failures (breaker open, DNS,
+ * connect refused) clear the fingerprint immediately; only genuinely
+ * ambiguous failures hold the customer here.
+ */
+const XPAY_CONCURRENT_RETRY_BLOCK_SECONDS = 2 * MINUTE_IN_SECONDS;
+
+/**
  * Apply the XPay promo discount as a negative WC cart fee, so the discount
  * appears on the cart preview, in the checkout summary, in the resulting
  * order's totals, and on customer-facing emails. Without this, WC reports
@@ -657,7 +665,7 @@ function wc_xpay_gateway_init() {
             $started_at = $order->get_meta('xpay_pay_started_at');
             if ($started_at) {
                 $started_ts = strtotime($started_at . ' UTC');
-                if ($started_ts && (time() - $started_ts) < 10 * MINUTE_IN_SECONDS && empty($existing_txn)) {
+                if ($started_ts && (time() - $started_ts) < XPAY_CONCURRENT_RETRY_BLOCK_SECONDS && empty($existing_txn)) {
                     do_action('xpay_logger_event', 'process_payment.end', array(
                         'order_id'        => $order->get_id(),
                         'branch'          => 'concurrent_attempt_blocked',
@@ -666,7 +674,7 @@ function wc_xpay_gateway_init() {
                     ), 'blocked: previous attempt still in flight');
                     wc_add_notice(sprintf(
                         /* translators: %d is the order number */
-                        __('Your previous payment attempt is still in progress. To prevent a double charge we are pausing new attempts for up to 10 minutes. If you do not see a confirmation email by then, contact support with order #%d — your card will not be charged twice.', 'xpay-for-woocommerce'),
+                        __('Your previous payment attempt is still in progress. To prevent a double charge we are pausing new attempts for up to 2 minutes. If you do not see a confirmation email by then, contact support with order #%d — your card will not be charged twice.', 'xpay-for-woocommerce'),
                         (int) $order->get_id()
                     ), 'error');
                     return array('result' => 'failure');
@@ -893,22 +901,32 @@ function wc_xpay_gateway_init() {
             ), 'pay/variable-amount call completed');
             if (!is_array($resp) || (isset($resp['status']['code']) ? $resp['status']['code'] : 0) !== 200) {
                 $pay_unreachable = (null === $pay_body);
-                // If XPay returned a structured error (status.code set), the
-                // call cleanly failed with no charge ambiguity. Clear the
-                // in-flight fingerprint so the customer can retry immediately.
-                // If status.code is missing (timeout / null response), keep
-                // the fingerprint to block retries inside the 10-min window.
-                if (is_array($resp) && isset($resp['status']['code'])) {
+                $pay_failure_type = function_exists('xpay_http_last_failure_type') ? xpay_http_last_failure_type() : 'ambiguous';
+
+                // Clear the in-flight fingerprint when we're CONFIDENT no charge
+                // could have happened. Three cases:
+                //   1. XPay returned a structured response (status.code set): clean
+                //      4xx/5xx, no charge ambiguity.
+                //   2. xpay_http_post returned null AND the failure type is
+                //      'pre_flight' (breaker open, DNS fail, connect refused, TLS
+                //      handshake failure): no bytes reached XPay.
+                //   3. Otherwise (ambiguous): keep the fingerprint so the
+                //      concurrent-attempt guard prevents double-charge on retry.
+                $can_clear_fingerprint = (is_array($resp) && isset($resp['status']['code']))
+                                         || ($pay_unreachable && $pay_failure_type === 'pre_flight');
+                if ($can_clear_fingerprint) {
                     $order->delete_meta_data('xpay_pay_started_at');
                     $order->save();
                 }
+
                 do_action('xpay_logger_event', 'process_payment.end', array(
-                    'order_id'           => $order->get_id(),
-                    'branch'             => $pay_unreachable ? 'pay_unreachable' : 'pay_failed',
+                    'order_id'             => $order->get_id(),
+                    'branch'               => $pay_unreachable ? 'pay_unreachable' : 'pay_failed',
+                    'pay_failure_type'     => $pay_failure_type,
+                    'fingerprint_cleared'  => $can_clear_fingerprint,
                     'upstream_status_code' => is_array($resp) && isset($resp['status']['code']) ? (int) $resp['status']['code'] : null,
-                    'upstream_message'   => is_array($resp) && isset($resp['status']['message']) ? (string) $resp['status']['message'] : null,
-                    'fingerprint_kept'   => !is_array($resp) || !isset($resp['status']['code']),
-                    'duration_ms'        => (int) ((microtime(true) - $process_started) * 1000),
+                    'upstream_message'     => is_array($resp) && isset($resp['status']['message']) ? (string) $resp['status']['message'] : null,
+                    'duration_ms'          => (int) ((microtime(true) - $process_started) * 1000),
                 ), $pay_unreachable ? 'pay/variable-amount: no response (transport failure)' : 'pay call did not return success');
                 if ($pay_unreachable) {
                     wc_add_notice(__("We couldn't reach the payment provider right now. This is usually temporary — please wait a moment and try again. If this keeps happening, please contact us.", 'xpay-for-woocommerce'), 'error');
