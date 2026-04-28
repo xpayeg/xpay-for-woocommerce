@@ -107,7 +107,7 @@ Without a webhook secret, the plugin runs in **fail-open** mode — it accepts a
 2. In XPay's staging dashboard, paste the secret into the field labelled **Secret** next to the callback URL.
 3. In the plugin settings (WC → Settings → Payments → Xpay), paste the same secret into **Webhook secret**, save.
 
-When both sides have a secret AND XPay starts signing webhooks, the plugin verifies an HMAC-SHA256 signature on every incoming webhook and rejects mismatches with HTTP 401. See [CONFIGURATION.md](CONFIGURATION.md#webhook-secret) for details on the signature scheme.
+When both sides have a secret configured, the plugin verifies the `secret_key` echoed in every incoming webhook body using a constant-time compare against the saved `webhook_secret` and rejects mismatches with HTTP 401. See [CONFIGURATION.md](CONFIGURATION.md#webhook-secret) for details on the verification scheme.
 
 ---
 

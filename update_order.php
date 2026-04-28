@@ -101,6 +101,7 @@ if ('' !== $webhook_secret) {
         wp_send_json_error([
             'message' => 'Webhook secret required',
         ]);
+        return;
     }
     if (!hash_equals($webhook_secret, $body_secret)) {
         error_log('[xpay] webhook rejected: secret_key mismatch');
@@ -112,6 +113,7 @@ if ('' !== $webhook_secret) {
         wp_send_json_error([
             'message' => 'Invalid webhook secret',
         ]);
+        return;
     }
     error_log('[xpay] webhook secret verified');
     $signature_state = 'verified';
@@ -134,6 +136,16 @@ if (!$transaction_id) {
         'message'          => 'Missing transaction_id in payload',
         'received_payload' => $data,
     ]);
+    return;
+}
+
+if (!preg_match('/^[A-Za-z0-9_\-]{1,64}$/', $transaction_id)) {
+    do_action('xpay_logger_event', 'webhook.applied', array(
+        'branch' => 'invalid_transaction_id_format',
+    ), 'webhook applied: 400 returned');
+    status_header(400);
+    wp_send_json_error(['message' => 'Invalid transaction_id format']);
+    return;
 }
 
 // HPOS-compatible lookup. wc_get_orders routes to wp_postmeta or
@@ -176,6 +188,7 @@ if (empty($orders)) {
         'message'        => 'Transaction ID not found',
         'transaction_id' => $transaction_id,
     ]);
+    return;
 }
 
 $order = $orders[0];
@@ -203,6 +216,7 @@ if ($order->get_meta('xpay_transaction_id') !== $transaction_id) {
         'transaction_id' => $transaction_id,
         'order_id'       => $order->get_id(),
     ]);
+    return;
 }
 
 // Defensively verify this is actually an XPay order before completing it.
@@ -221,6 +235,7 @@ if ('xpay_gateway' !== $order->get_payment_method()) {
         'order_id'       => $order->get_id(),
         'payment_method' => $order->get_payment_method(),
     ]);
+    return;
 }
 
 // Update order status based on transaction result
@@ -239,6 +254,7 @@ if ($transaction_status === "SUCCESSFUL") {
             'message'  => 'Order already paid; no-op',
             'order_id' => $order->get_id(),
         ]);
+        return;
     }
     // Refuse to resurrect explicitly closed orders. Without this, a
     // customer who pays in the iframe after the merchant cancels the
@@ -255,6 +271,7 @@ if ($transaction_status === "SUCCESSFUL") {
             'order_id'     => $order->get_id(),
             'order_status' => $order->get_status(),
         ]);
+        return;
     }
     // Acquire a short-lived lock so the same transaction can't be
     // completed twice concurrently. The race is real even with the
@@ -278,6 +295,7 @@ if ($transaction_status === "SUCCESSFUL") {
             'message'  => 'Concurrent completion in progress; treating as idempotent',
             'order_id' => $order->get_id(),
         ]);
+        return;
     }
     // payment_complete() handles stock reduction (if not already reduced),
     // status routing per product type, the canonical _transaction_id meta,
@@ -297,6 +315,7 @@ if ($transaction_status === "SUCCESSFUL") {
         'message'  => 'Order updated via payment_complete',
         'order_id' => $order->get_id(),
     ]);
+    return;
 } elseif ($transaction_status === "FAILED") {
     // If the order is already paid (e.g. a SUCCESSFUL webhook arrived
     // first and a stale FAILED arrives later), do NOT increase stock
@@ -312,6 +331,7 @@ if ($transaction_status === "SUCCESSFUL") {
             'message'  => 'Order already paid; ignoring FAILED webhook',
             'order_id' => $order->get_id(),
         ]);
+        return;
     }
     // Don't overwrite a merchant's deliberate cancellation/refund with a
     // 'failed' status when a stale FAILED webhook arrives. Mirrors the
@@ -328,6 +348,7 @@ if ($transaction_status === "SUCCESSFUL") {
             'order_id'     => $order->get_id(),
             'order_status' => $order->get_status(),
         ]);
+        return;
     }
     // Restore stock only when stock was actually reduced; the helper
     // checks the per-item _reduced_stock meta and is a no-op otherwise.
@@ -342,6 +363,7 @@ if ($transaction_status === "SUCCESSFUL") {
         'message'  => 'Order updated to failed',
         'order_id' => $order->get_id(),
     ]);
+    return;
 } else {
     // Unknown status — return a real 4xx so XPay's webhook layer retries
     // (wp_send_json_error returns 200 by default, which most webhook
@@ -358,6 +380,7 @@ if ($transaction_status === "SUCCESSFUL") {
         'transaction_id'     => $transaction_id,
         'order_id'           => $order->get_id(),
     ]);
+    return;
 }
 
 } )(); // end IIFE

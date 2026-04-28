@@ -97,16 +97,15 @@ These tell the plugin which XPay account to authenticate as. You get all three f
 
 - **Default:** Empty
 - **Format:** Any random string ≥ 32 characters. Generate with `openssl rand -hex 32` or any password manager.
-- **What it does:** Enables HMAC-SHA256 signature verification on incoming webhooks. The exact behavior depends on whether the secret is set — see "Operating modes" below.
-- **Signature scheme:**
-  - **Header name:** `X-XPay-Signature`
-  - **Algorithm:** HMAC-SHA256
-  - **Signed payload:** the raw JSON body of the request (byte-for-byte)
-  - **Encoding:** hex (lowercase)
-  - These three constants are at the top of [`update_order.php`](../update_order.php) — edit them if XPay changes its scheme.
+- **What it does:** Enables constant-time secret verification on incoming webhooks. The exact behavior depends on whether the secret is set — see "Operating modes" below.
+- **Verification scheme:**
+  - **Field name in body:** `secret_key` (top-level, with `extra_details.secret_key` accepted as fallback)
+  - **Compare method:** constant-time compare using `hash_equals()` against configured `webhook_secret`
+  - **Encoding:** plain-text (the merchant configures their secret in the XPay dashboard; XPay echoes that value back in every webhook body)
+  - These constants and fallback paths are implemented in [`update_order.php`](../update_order.php).
 - **Operating modes:**
-  - **Legacy / unsigned (secret empty):** Every webhook is accepted without signature checks; the plugin writes `[xpay] webhook accepted unsigned (no secret configured)` to the WP debug log on each accepted webhook. Used by merchants who connected before XPay supported signing, and during initial integration testing.
-  - **Strict (secret set):** Every webhook must carry a valid `X-XPay-Signature` header. A missing header or a signature mismatch is rejected with HTTP 401 — there is no silent fallback to unsigned, since that would defeat the merchant's choice to enable verification. This is the recommended posture for real-money traffic.
+  - **Unsigned (secret empty):** Every webhook is accepted without secret checks; the plugin logs `no_secret_configured` to the diagnostic logger. Used by merchants during initial integration testing or if XPay has not sent a secret.
+  - **Strict (secret set):** Every webhook must carry a matching `secret_key` in the request body. A missing secret or a mismatch is rejected with HTTP 401 — there is no silent fallback to unsigned, since that would defeat the merchant's choice to enable verification. This is the recommended posture for real-money traffic. The logger reports `verified`, `secret_missing_in_body`, or `secret_mismatch` accordingly.
 - **Strong recommendation:** Configure this before any real-money traffic. Without it, anyone who can guess a transaction UUID can mark orders paid by sending a crafted POST to the callback URL.
 
 ---

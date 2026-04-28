@@ -83,7 +83,7 @@ WP Admin → **Tools → XPay Logger**. You should see:
 - A `process_payment.start` → `.prepare` → `.pay` → `.end` chain for your test order
 - A `webhook.received` and `webhook.applied` entry showing `signature_state: verified` (proving your webhook secret is working) and `branch: successful`
 
-If `signature_state` says `no_secret_configured`, `no_header_present`, or `mismatch`, **stop and fix this before any more orders flow**. Anyone could mark random orders paid by sending crafted POSTs to your callback URL.
+If `signature_state` says `no_secret_configured`, `secret_missing_in_body`, or `secret_mismatch`, **stop and fix this before any more orders flow**. Anyone could mark random orders paid by sending crafted POSTs to your callback URL.
 
 ---
 
@@ -91,7 +91,7 @@ If `signature_state` says `no_secret_configured`, `no_header_present`, or `misma
 
 Keep the diagnostic logger on. Check it at least once per day for:
 
-- **Any `webhook.applied` entries with `signature_state` other than `verified`** — every webhook should be signed in production. Anything else is either XPay misconfiguration or a hostile probe.
+- **Any `webhook.applied` entries with `signature_state` other than `verified`** — every webhook in production should carry the configured `secret_key` in the body and verify successfully (`signature_state: verified`). Anything else is either XPay misconfiguration or a hostile probe.
 - **`process_payment.pay` entries with `duration_ms` over 20000** — sustained slowness from XPay. If frequent, raise it with XPay support.
 - **`process_payment.end` entries with `branch: pay_failed` and `upstream_status_code: null`** — pay-call timeouts. The plugin keeps the concurrent-attempt fingerprint to block retries; affected customers will see "A previous payment attempt is still being processed" until the 10-minute window expires.
 - **`webhook.applied` entries with `branch: order_not_found`** — webhook arrived for a transaction the plugin doesn't know about. Could indicate a race (webhook before process_payment finished saving) or, in very rare cases, hostile probing.

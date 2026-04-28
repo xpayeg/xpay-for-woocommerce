@@ -20,8 +20,9 @@ function xpay_handle_validate_promo_code() {
     $server_community   = $gateway->get_option('community_id');
     $server_variable_id = $gateway->get_option('variable_amount_id');
 
-    if (!$api_key || !$base_url || !$server_community) {
+    if (!$api_key || !$base_url || !$server_community || !$server_variable_id) {
         wp_send_json_error(array('message' => 'XPay gateway is not configured'));
+        return;
     }
 
     $name         = isset($_POST['name'])         ? sanitize_text_field(wp_unslash($_POST['name']))         : '';
@@ -44,7 +45,7 @@ function xpay_handle_validate_promo_code() {
     }
 
     // Prepare the API request payload
-    $request_body = json_encode(array(
+    $request_body = wp_json_encode(array(
         'name' => $name,
         'community_id' => $community_id,
         'amount' => $amount,

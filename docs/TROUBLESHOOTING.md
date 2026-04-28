@@ -63,9 +63,9 @@ Filter to one order: `grep "order=39" log-file.log`. Filter to one request: `gre
 | `modal.client_event` | Browser-side events from the modal | `event` (modal_shown / poll_response / countdown_started / redirect_initiated / modal_hidden_manual / js_error), `jq` (jQuery version), `details` |
 | `check_transaction` | Modal-poll endpoint hit | `result` (PENDING / SUCCESSFUL / FAILED / INVALID), `reason` if short-circuited |
 | `check_transaction.http` | Outbound transaction-status call | HTTP code, response time |
-| `webhook.received` | Top of webhook receiver | Source IP, `has_signature_hdr`, `transaction_id`, `transaction_status` |
-| `webhook.lookup` | After order lookup | `order_id` (or null), `signature_state` (verified / no_secret_configured / no_header_present / mismatch) |
-| `webhook.applied` | End of webhook | `branch` (successful / failed / order_not_found / signature_mismatch / wrong_gateway / closed-status / already-paid / unknown_status), `order_status_out` |
+| `webhook.received` | Top of webhook receiver | Source IP, `has_body_secret`, `transaction_id`, `transaction_status` |
+| `webhook.lookup` | After order lookup | `order_id` (or null), `signature_state` (verified / no_secret_configured / secret_missing_in_body / secret_mismatch) |
+| `webhook.applied` | End of webhook | `branch` (successful / failed / order_not_found / secret_missing_in_body / secret_mismatch / wrong_gateway / closed-status / already-paid / unknown_status), `order_status_out` |
 | `wpfunnels.url_override` | When the WPFunnels compat shim restored a standard URL | `wpfunnels_url` (rejected), `restored_url` (used) |
 | `diagnostics.snapshot` | "Run diagnostics" button click | One-shot env dump |
 
@@ -82,12 +82,12 @@ Filter to one order: `grep "order=39" log-file.log`. Filter to one request: `gre
 2. Search for `webhook.received` entries with the same `transaction_id` (visible in `process_payment.pay` context as `has_txn_uuid: true`, or check the order's `xpay_transaction_id` meta).
 3. **No `webhook.received` entries** → XPay never sent the webhook OR your site never received it.
 4. **`webhook.received` exists but `webhook.applied branch: order_not_found`** → race condition (webhook arrived before process_payment finished). The order should be retried automatically by XPay; check after a minute.
-5. **`webhook.applied branch: signature_mismatch`** → secret mismatch between plugin and XPay dashboard.
+5. **`webhook.applied branch: secret_mismatch`** → secret mismatch between plugin and XPay dashboard. Or **`branch: secret_missing_in_body`** → plugin has a secret configured but XPay didn't include one in the body.
 
 **Fix:**
 - Open WC → Settings → Payments → Xpay → Manage and copy the exact **Callback URL** the plugin shows (it's computed from the plugin's install path, so it's always correct). Confirm the value on your XPay dashboard matches it byte-for-byte (HTTPS, correct domain, exact path).
 - Confirm no security plugin (Wordfence, Sucuri, etc.) is blocking the URL — see [COMPATIBILITY.md](COMPATIBILITY.md#wordfence--sucuri--ithemes-security).
-- Test the URL is reachable from outside: `curl -I <THE_CALLBACK_URL_FROM_SETTINGS>` should NOT return 403/404. (It returns 405 Method Not Allowed because GET is not implemented — that's fine; it proves the URL is reachable.)
+- Test the URL is reachable from outside: `curl -i -X POST -d '{}' <THE_CALLBACK_URL_FROM_SETTINGS>` should NOT return 403/404. (It returns HTTP 400 with "Missing transaction_id" because the body carries no `transaction_id` — that's fine; it proves the URL is reachable and TLS is working.)
 
 **Manual recovery for a stuck order:**
 - WP Admin → WooCommerce → Orders → click the order → change status to **Processing** manually. The customer paid; the order is real.
@@ -208,16 +208,17 @@ This is a WC core message, not from our plugin. It appears at checkout when WC a
 
 ### Webhook returns 401
 
-**Cause:** signature mismatch between the plugin's secret and what XPay is signing with.
+**Cause:** the `webhook_secret` configured in the plugin doesn't match the `secret_key` value XPay echoes back in the webhook body. XPay only echoes `secret_key` in the body when the merchant has configured a secret in the XPay community dashboard.
 
 **Diagnose:**
-1. Find the `webhook.received` entry. `has_signature_hdr: true` → XPay is signing.
-2. Find the `webhook.applied` entry. `branch: signature_mismatch` confirms.
+1. Find the `webhook.received` entry. `has_body_secret: true` means XPay sent a `secret_key` field in the webhook body.
+2. Find the `webhook.applied` entry:
+   - `branch: secret_missing_in_body` → the plugin has a secret configured but the webhook body carried none. Confirm the merchant has saved the secret on the XPay community dashboard — XPay only echoes the value back when it is configured there.
+   - `branch: secret_mismatch` → both sides have a secret but they differ.
 
 **Fix:**
-- The two secrets MUST be byte-for-byte identical.
-- Re-paste both from a single source (a password manager works well).
-- If the secrets match but the verification still fails, the signature scheme may have changed on XPay's side. The plugin currently expects `X-XPay-Signature` header, HMAC-SHA256, hex-encoded — see [`update_order.php`](../update_order.php) lines 29-31. If XPay changed any of these, update the constants and reload.
+- The two secrets MUST be byte-for-byte identical. Re-paste both from a single source (a password manager works well).
+- If the body genuinely never carries `secret_key` (you see `has_body_secret: false` repeatedly), confirm the merchant has saved the secret in the XPay community dashboard settings — XPay only echoes the value back when it is configured there.
 
 ---
 

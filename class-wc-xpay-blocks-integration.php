@@ -82,7 +82,7 @@ final class WC_Xpay_Blocks_Integration extends AbstractPaymentMethodType {
 		), 'block-checkout payment-method data assembled' );
 
 		return array(
-			'title'       => isset( $this->settings['title'] )       ? $this->settings['title']       : 'XPay Payment',
+			'title'       => isset( $this->settings['title'] )       ? $this->settings['title']       : __( 'XPay Payment', 'xpay-for-woocommerce' ),
 			'description' => isset( $this->settings['description'] ) ? $this->settings['description'] : '',
 			'methods'     => $methods,
 			'supports'    => $this->get_supported_features(),

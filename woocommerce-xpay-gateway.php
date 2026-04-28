@@ -290,8 +290,6 @@ function wc_xpay_gateway_init() {
                 $receipt_action_registered = true;
             }
 
-            // Hook into the payment fields display
-            add_action('woocommerce_credit_card_form_start', array($this, 'payment_fields'));
         }
 
         /**
@@ -805,6 +803,10 @@ function wc_xpay_gateway_init() {
                 wc_add_notice(__('Unknown payment method.', 'xpay-for-woocommerce'), 'error');
                 return array('result' => 'failure');
             }
+            if (!empty($promocode_id) && $payment_method === 'installment') {
+                wc_add_notice(__('Promo codes cannot be combined with installment payments. Please remove the promo code or choose a different payment method.', 'xpay-for-woocommerce'), 'error');
+                return array('result' => 'failure');
+            }
             $payload = array_merge($base_payload, $payment_config[$payment_method]);
 
             // Pre-save the payment-attempt fingerprint BEFORE the pay call so
@@ -865,6 +867,18 @@ function wc_xpay_gateway_init() {
                     __('XPay pay call failed: %s', 'xpay-for-woocommerce'),
                     $msg
                 ));
+                return array('result' => 'failure');
+            }
+
+            if (empty($resp['data']['iframe_url']) && empty($resp['data']['transaction_uuid'])) {
+                do_action('xpay_logger_event', 'process_payment.empty_artifacts', array(
+                    'order_id'             => $order->get_id(),
+                    'upstream_status_code' => 200,
+                ), 'pay/variable-amount returned 200 but no iframe_url or transaction_uuid');
+                $order->delete_meta_data('xpay_pay_started_at');
+                $order->save();
+                wc_add_notice(__('Payment provider returned an empty response. Please try again.', 'xpay-for-woocommerce'), 'error');
+                $order->update_status('failed', __('XPay returned 200 but no payment artifacts.', 'xpay-for-woocommerce'));
                 return array('result' => 'failure');
             }
 
@@ -1129,9 +1143,12 @@ function xpay_enqueue_checkout_scripts() {
     if (is_admin() || ! xpay_is_checkout_context()) {
         return;
     }
+    if ( ! function_exists('WC') || ! WC()->cart || ! WC()->session ) {
+        return;
+    }
     // Get WooCommerce settings
-    $xpay_gateway = new WC_Gateway_Xpay();
-    
+    $settings = get_option('woocommerce_xpay_gateway_settings', array());
+
     // Retrieve prepareAmount Data from WooCommerce session
     $total_amount = WC()->session->get('xpay_total_amount', 0);
     $xpay_fees_amount = WC()->session->get('xpay_fees_amount', 0);
@@ -1161,11 +1178,11 @@ function xpay_enqueue_checkout_scripts() {
 
     // Fetch settings from the payment gateway
     $promoCodeRequestData = array(
-        'iframe_base_url'   => $xpay_gateway->get_option('iframe_base_url'),
-        'community_id'      => $xpay_gateway->get_option('community_id'),
+        'iframe_base_url'   => $settings['iframe_base_url'] ?? '',
+        'community_id'      => $settings['community_id'] ?? '',
         'amount'            => $total_amount,
         'currency'          => get_option('woocommerce_currency'), // WooCommerce setting
-        'variable_amount_id'=> $xpay_gateway->get_option('variable_amount_id')
+        'variable_amount_id'=> $settings['variable_amount_id'] ?? '',
     );
 
 
