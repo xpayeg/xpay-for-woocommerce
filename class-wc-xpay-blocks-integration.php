@@ -34,7 +34,8 @@ final class WC_Xpay_Blocks_Integration extends AbstractPaymentMethodType {
 		// option that is guaranteed to error.
 		return ! empty( $this->settings['payment_api_key'] )
 			&& ! empty( $this->settings['community_id'] )
-			&& ! empty( $this->settings['iframe_base_url'] );
+			&& ! empty( $this->settings['iframe_base_url'] )
+			&& ! empty( $this->settings['variable_amount_id'] );
 	}
 
 	public function get_payment_method_script_handles() {

@@ -57,7 +57,7 @@ function xpay_handle_validate_promo_code() {
 
     // Make the API request to validate the promo code
     $response = xpay_http_post($api_url, $request_body, $api_key, $debug);
-    $body = json_decode($response, true);
+    $body = is_string($response) ? json_decode($response, true) : null;
 
     // Handle error response
     if (!isset($body['status']['code']) || $body['status']['code'] !== 200) {
@@ -211,7 +211,7 @@ function xpay_get_payment_methods_fees() {
     }
 
     $response = xpay_http_post($url, wp_json_encode($payload), $api_key, $xpay_gateway->get_option('debug'));
-    $resp     = json_decode($response, true);
+    $resp     = is_string($response) ? json_decode($response, true) : null;
 
     if (is_array($resp) && isset($resp['data'])) {
         set_transient($cache_key, $resp['data'], MINUTE_IN_SECONDS);

@@ -273,8 +273,7 @@ function xpay_fetch_installment_plans() {
 
     $amount = isset($_POST['amount']) ? floatval(wp_unslash($_POST['amount'])) : 0;
     if ($amount <= 0) {
-        echo wp_json_encode(null);
-        wp_die();
+        wp_send_json_error(null);
     }
 
     $settings     = get_option('woocommerce_xpay_gateway_settings', array());
@@ -285,8 +284,7 @@ function xpay_fetch_installment_plans() {
     $debug        = isset($settings['debug'])              ? $settings['debug']              : 'no';
 
     if (!$api_key || !$community_id || !$base_url) {
-        echo wp_json_encode(null);
-        wp_die();
+        wp_send_json_error(null);
     }
 
     $url     = $base_url . '/api/v1/payments/prepare-amount/';
@@ -298,21 +296,14 @@ function xpay_fetch_installment_plans() {
     ));
 
     $resp = xpay_http_post($url, $payload, $api_key, $debug);
-    // The inline JS in payment_fields() does JSON.parse(JSON.parse(response)).
-    // Anything the inner JSON.parse can't decode (null, empty, HTML
-    // challenge page, malformed JSON) would throw — actually json_decode
-    // the body here; if it doesn't decode to a value, collapse to null so
-    // the JS lands on its existing failure-alert path.
     if (!is_string($resp) || '' === $resp) {
-        $resp = null;
-    } else {
-        json_decode($resp);
-        if (JSON_ERROR_NONE !== json_last_error()) {
-            $resp = null;
-        }
+        wp_send_json_error(null);
     }
-    echo wp_json_encode($resp);
-    wp_die();
+    $decoded = json_decode($resp, true);
+    if (JSON_ERROR_NONE !== json_last_error() || !is_array($decoded)) {
+        wp_send_json_error(null);
+    }
+    wp_send_json_success($decoded);
 }
 
 ?>

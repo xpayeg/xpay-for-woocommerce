@@ -64,8 +64,8 @@ Filter to one order: `grep "order=39" log-file.log`. Filter to one request: `gre
 | `check_transaction` | Modal-poll endpoint hit | `result` (PENDING / SUCCESSFUL / FAILED / INVALID), `reason` if short-circuited |
 | `check_transaction.http` | Outbound transaction-status call | HTTP code, response time |
 | `webhook.received` | Top of webhook receiver | Source IP, `has_body_secret`, `transaction_id`, `transaction_status` |
-| `webhook.lookup` | After order lookup | `order_id` (or null), `signature_state` (verified / no_secret_configured / secret_missing_in_body / secret_mismatch) |
-| `webhook.applied` | End of webhook | `branch` (successful / failed / order_not_found / secret_missing_in_body / secret_mismatch / wrong_gateway / closed-status / already-paid / unknown_status), `order_status_out` |
+| `webhook.lookup` | After order lookup | `order_id` (or null), `signature_state` (verified / no_secret_configured) |
+| `webhook.applied` | End of webhook | `branch` (secret_missing_in_body, secret_mismatch, missing_transaction_id, invalid_transaction_id_format, order_not_found, meta_mismatch, wrong_gateway, successful_already_paid, successful_closed_status, successful_lock_held, successful, failed_already_paid, failed_closed_status, failed, unknown_status), `order_status_out` |
 | `wpfunnels.url_override` | When the WPFunnels compat shim restored a standard URL | `wpfunnels_url` (rejected), `restored_url` (used) |
 | `diagnostics.snapshot` | "Run diagnostics" button click | One-shot env dump |
 

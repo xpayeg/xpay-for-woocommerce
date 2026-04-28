@@ -495,6 +495,7 @@ function wc_xpay_gateway_init() {
                             $.ajax({
                                 url: <?php echo wp_json_encode( admin_url( 'admin-ajax.php' ) ); ?>,
                                 method: 'POST',
+                                dataType: 'json',
                                 data: {
                                     action: 'xpay_fetch_installment_plans',
                                     amount: <?php echo wp_json_encode( $cart_total ); ?>,
@@ -502,10 +503,9 @@ function wc_xpay_gateway_init() {
                                 },
                                 success: function(response) {
                                     $('#installment_options').show();
-                                    const data = JSON.parse(JSON.parse(response));
-                                    if (data && data.data && data.data.installment_fees) {
+                                    if (response && response.success && response.data && response.data.data && response.data.data.installment_fees) {
                                         const cartAmount = <?php echo wp_json_encode( $cart_total ); ?>;
-                                        const installmentPlans = data.data.installment_fees;
+                                        const installmentPlans = response.data.data.installment_fees;
                                         const labels = <?php echo wp_json_encode(array(
                                             'months'         => __('Months', 'xpay-for-woocommerce'),
                                             'totalInterest'  => __('Total Interest:', 'xpay-for-woocommerce'),
