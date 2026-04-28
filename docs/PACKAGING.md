@@ -138,7 +138,7 @@ cd wporg-svn
 
 # 1. Sync the freshly-built plugin into trunk/
 rm -rf trunk/*
-unzip -d trunk/.. ../woocommerce-xpay-plugin/dist/xpay-for-woocommerce-2.0.0.zip
+unzip -d trunk/.. ../xpay-for-woocommerce/dist/xpay-for-woocommerce-2.0.0.zip
 # (the unzip puts xpay-for-woocommerce/ into trunk/.., which becomes trunk/)
 
 # 2. svn add any new files, svn rm any deletions
