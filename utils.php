@@ -207,6 +207,52 @@ function xpay_http_get($url, $api_key, $debug = 'no', $max_retries = 1) {
 }
 
 /**
+ * Walks an XPay error payload and returns a flat array of human-readable
+ * "Field: message" strings suitable for wc_add_notice. Returns an empty
+ * array when no structured errors are present.
+ *
+ * Handles XPay's nested error shape:
+ *   {"status":{"code":400,"message":"...","errors":[{"billing_data":{"phone_number":["This field may not be blank."]}}]}}
+ *
+ * @param mixed $resp Decoded JSON response (array) or null.
+ * @return array<int, string>
+ */
+function xpay_extract_user_errors($resp) {
+    if (!is_array($resp) || empty($resp['status']['errors']) || !is_array($resp['status']['errors'])) {
+        return array();
+    }
+    $out = array();
+    foreach ($resp['status']['errors'] as $err) {
+        if (!is_array($err)) {
+            if (is_string($err) && '' !== trim($err)) {
+                $out[] = $err;
+            }
+            continue;
+        }
+        foreach ($err as $section_key => $section_value) {
+            // section_value can be either a list of messages, or another nested
+            // associative array of field => list of messages.
+            if (is_array($section_value)) {
+                foreach ($section_value as $field_key => $field_value) {
+                    if (is_array($field_value)) {
+                        foreach ($field_value as $msg) {
+                            if (is_string($msg) && '' !== $msg) {
+                                $out[] = ucfirst(str_replace('_', ' ', (string) $field_key)) . ': ' . $msg;
+                            }
+                        }
+                    } elseif (is_string($field_value) && '' !== $field_value) {
+                        $out[] = ucfirst(str_replace('_', ' ', (string) $field_key)) . ': ' . $field_value;
+                    }
+                }
+            } elseif (is_string($section_value) && '' !== $section_value) {
+                $out[] = ucfirst(str_replace('_', ' ', (string) $section_key)) . ': ' . $section_value;
+            }
+        }
+    }
+    return array_values(array_unique($out));
+}
+
+/**
  * Fetches /api/communities/preferences/ with caching and a default-methods
  * fallback. Cache is keyed by every parameter that affects the response so
  * environment switches and api-key changes never serve stale data. Failures

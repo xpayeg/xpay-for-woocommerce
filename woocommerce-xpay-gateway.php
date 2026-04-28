@@ -711,6 +711,40 @@ function wc_xpay_gateway_init() {
                 }
             }
 
+            // Pre-validate required billing fields before making any XPay
+            // HTTP call. XPay returns HTTP 400 with structured errors when
+            // these are blank; catching them here gives the customer an
+            // actionable notice and avoids a doomed upstream request.
+            $required_billing = array(
+                'first_name' => __('First name', 'xpay-for-woocommerce'),
+                'last_name'  => __('Last name', 'xpay-for-woocommerce'),
+                'email'      => __('Email address', 'xpay-for-woocommerce'),
+                'phone'      => __('Phone number', 'xpay-for-woocommerce'),
+            );
+            $missing = array();
+            foreach ($required_billing as $key => $label) {
+                $getter = 'get_billing_' . $key;
+                $value  = method_exists($order, $getter) ? trim((string) $order->$getter()) : '';
+                if ('' === $value) {
+                    $missing[] = $label;
+                }
+            }
+            if (!empty($missing)) {
+                do_action('xpay_logger_event', 'process_payment.invalid_billing', array(
+                    'order_id'       => $order->get_id(),
+                    'missing_fields' => $missing,
+                ), 'pre-validation: required billing fields are blank');
+                wc_add_notice(
+                    sprintf(
+                        /* translators: %s = comma-separated list of field labels */
+                        __('Please complete the following before paying with XPay: %s.', 'xpay-for-woocommerce'),
+                        implode(', ', $missing)
+                    ),
+                    'error'
+                );
+                return array('result' => 'failure');
+            }
+
             // Step 1: prepare-amount. Tight timeout + no retry — prepare is
             // a lightweight fee/community lookup, and this runs on the
             // customer's interactive checkout submission. Letting it run
@@ -861,7 +895,14 @@ function wc_xpay_gateway_init() {
                     'fingerprint_kept'   => !is_array($resp) || !isset($resp['status']['code']),
                     'duration_ms'        => (int) ((microtime(true) - $process_started) * 1000),
                 ), 'pay call did not return success');
-                wc_add_notice($msg, 'error');
+                $user_errors = xpay_extract_user_errors($resp);
+                if (!empty($user_errors)) {
+                    foreach ($user_errors as $user_error) {
+                        wc_add_notice($user_error, 'error');
+                    }
+                } else {
+                    wc_add_notice($msg, 'error');
+                }
                 $order->update_status('failed', sprintf(
                     /* translators: %s = upstream error message returned by XPay */
                     __('XPay pay call failed: %s', 'xpay-for-woocommerce'),
