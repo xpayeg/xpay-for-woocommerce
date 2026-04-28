@@ -283,6 +283,16 @@ final class WC_XPay_Logger {
 		if ( self::$boot_logged ) {
 			return;
 		}
+		// Skip self-noise: the live-tail AJAX poll (every 5s) and WP heartbeat
+		// (every ~60s) both fire wp_loaded with no payment-related work, so
+		// snapshotting them produces a stream of identical boot events that
+		// drowns out interesting traffic in the log viewer. This is a routing
+		// check on the action name, not form processing — no nonce required.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$ajax_action = isset( $_REQUEST['action'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['action'] ) ) : '';
+		if ( wp_doing_ajax() && in_array( $ajax_action, array( 'xpay_logger_tail', 'heartbeat' ), true ) ) {
+			return;
+		}
 		self::$boot_logged = true;
 
 		$active = self::active_plugins_with_versions();
