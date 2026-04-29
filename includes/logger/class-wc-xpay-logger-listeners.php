@@ -22,6 +22,13 @@ final class WC_XPay_Logger_Listeners {
 		// Nonce-checked, admin-AJAX so logged-in or guest browsers can post.
 		add_action( 'wp_ajax_xpay_log_modal_event',        array( __CLASS__, 'ajax_log_modal_event' ) );
 		add_action( 'wp_ajax_nopriv_xpay_log_modal_event', array( __CLASS__, 'ajax_log_modal_event' ) );
+
+		// Sibling endpoint for the block-checkout integration JS. Same nonce
+		// shape, separate emission key (`blocks.client_event`) so log
+		// consumers filtering by event source can distinguish modal traffic
+		// from block-checkout traffic.
+		add_action( 'wp_ajax_xpay_log_blocks_event',        array( __CLASS__, 'ajax_log_blocks_event' ) );
+		add_action( 'wp_ajax_nopriv_xpay_log_blocks_event', array( __CLASS__, 'ajax_log_blocks_event' ) );
 	}
 
 	/**
@@ -166,6 +173,48 @@ final class WC_XPay_Logger_Listeners {
 		}
 
 		do_action( 'xpay_logger_event', 'modal.client_event', $context, 'client event ' . $event_name );
+
+		wp_send_json_success( array( 'logged' => true ) );
+	}
+
+	/**
+	 * AJAX endpoint for client-side block-checkout events. Mirrors
+	 * ajax_log_modal_event in nonce shape and payload caps, but emits under
+	 * a distinct key so log filters can separate the two surfaces.
+	 */
+	public static function ajax_log_blocks_event() {
+		if ( ! WC_XPay_Logger::is_enabled() ) {
+			wp_send_json_success( array( 'logged' => false ) );
+		}
+
+		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+		if ( ! wp_verify_nonce( $nonce, 'xpay_log_blocks_event' ) ) {
+			wp_send_json_success( array( 'logged' => false ) );
+		}
+
+		$event_name = isset( $_POST['event'] )
+			? sanitize_text_field( wp_unslash( $_POST['event'] ) )
+			: 'unknown';
+
+		$context = array(
+			'event'    => $event_name,
+			'ua'       => isset( $_SERVER['HTTP_USER_AGENT'] )
+				? substr( sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ), 0, 240 )
+				: '',
+			'href'     => isset( $_POST['href'] )
+				? esc_url_raw( wp_unslash( $_POST['href'] ) )
+				: '',
+		);
+
+		if ( isset( $_POST['details'] ) ) {
+			$details = wp_strip_all_tags( wp_unslash( $_POST['details'] ) );
+			if ( strlen( $details ) > 512 ) {
+				$details = substr( $details, 0, 512 ) . '…';
+			}
+			$context['details'] = $details;
+		}
+
+		do_action( 'xpay_logger_event', 'blocks.client_event', $context, 'block-checkout client event ' . $event_name );
 
 		wp_send_json_success( array( 'logged' => true ) );
 	}

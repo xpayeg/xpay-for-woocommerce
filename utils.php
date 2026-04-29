@@ -75,6 +75,27 @@ function xpay_allowed_method_keys() {
     return array('card', 'kiosk', 'fawry', 'apple', 'valu', 'wallets', 'installment');
 }
 
+/**
+ * Single source of truth for promo-code UI labels. Read by the classic
+ * checkout template (promo_code_section.php) and serialized into the
+ * block-checkout payment data so the React component renders the same
+ * copy. Keeping the strings here means a translator only updates them
+ * once.
+ */
+function xpay_promo_strings() {
+    return array(
+        'show'        => __( 'Have Xpay Promo Code?', 'xpay-for-woocommerce' ),
+        'hide'        => __( 'Hide Promo Code', 'xpay-for-woocommerce' ),
+        'placeholder' => __( 'Enter promo code', 'xpay-for-woocommerce' ),
+        'apply'       => __( 'Apply', 'xpay-for-woocommerce' ),
+        'applying'    => __( 'Validating...', 'xpay-for-woocommerce' ),
+        'applied'     => __( 'Promocode applied successfully', 'xpay-for-woocommerce' ),
+        'invalid'     => __( 'Invalid promo code', 'xpay-for-woocommerce' ),
+        'empty'       => __( 'Please enter a promo code', 'xpay-for-woocommerce' ),
+        'phone_first' => __( 'Enter your billing phone number first.', 'xpay-for-woocommerce' ),
+    );
+}
+
 function xpay_http_headers($api_key) {
     return array(
         'Accept'          => 'application/json',

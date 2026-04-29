@@ -168,8 +168,9 @@ jQuery(document).ready(function ($) {
     }
 
     function toggleButtonState(isLoading = false) {
+        const labels = (xpayJSData && xpayJSData.promo_strings) || {};
         $('#apply_promo_code').prop('disabled', isLoading)
-            .text(isLoading ? 'Validating...' : 'Apply');
+            .text(isLoading ? (labels.applying || 'Validating...') : (labels.apply || 'Apply'));
     }
 
     // Prepare promo code validation data
@@ -213,7 +214,8 @@ jQuery(document).ready(function ($) {
                 if (response.success) {
                     handleSuccessfulPromo(response);
                 } else {
-                    displayMessage(response.data ? response.data.message : 'Invalid promo code');
+                    const labels = (xpayJSData && xpayJSData.promo_strings) || {};
+                    displayMessage(response.data ? response.data.message : (labels.invalid || 'Invalid promo code'));
                     // $('.discount').remove();
                     // $('.order-total th').text('Total');
                     // $('.order-total .woocommerce-Price-amount bdi').text(`${originalTotal.toFixed(2)} ${currency}`);
@@ -244,8 +246,8 @@ jQuery(document).ready(function ($) {
     // Handle successful promo code application
     function handleSuccessfulPromo(response) {
         const formattedAmount = parseFloat(response.data.value).toFixed(2);
-        // const message = `Promo Code Applied! New total: ${formattedAmount} ${response.data.currency}`;
-        const message = "Promocode applied successfully"
+        const labels = (xpayJSData && xpayJSData.promo_strings) || {};
+        const message = labels.applied || 'Promocode applied successfully';
         displayMessage(message, true);
 
         // Get the current selected payment method's total
@@ -267,7 +269,8 @@ jQuery(document).ready(function ($) {
         e.preventDefault();
         const promoCode = $('#xpay_promo_code').val();
         if (!promoCode) {
-            displayMessage('Please enter a promo code');
+            const labels = (xpayJSData && xpayJSData.promo_strings) || {};
+            displayMessage(labels.empty || 'Please enter a promo code');
             return;
         }
         validatePromoCode(promoCode);
@@ -284,7 +287,8 @@ jQuery(document).ready(function ($) {
             $('.discount').remove();
             $('.order-total th').text('Total');
             $('#promo_code_input_container').hide();
-            $('#show_promo_code').text('Have Xpay Promo Code?');
+            const labels = (xpayJSData && xpayJSData.promo_strings) || {};
+            $('#show_promo_code').text(labels.show || 'Have Xpay Promo Code?');
             
             // Clear stored promo code data from session via AJAX
             $.ajax({

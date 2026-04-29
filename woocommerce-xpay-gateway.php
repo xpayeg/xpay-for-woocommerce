@@ -1270,6 +1270,7 @@ function xpay_enqueue_checkout_scripts() {
         'ajax' => $sharedData,
         'promoCodeRequestData' => $promoCodeRequestData,
         'initialData' => $initialData,
+        'promo_strings' => xpay_promo_strings(),
     ));
 }
 
