@@ -54,6 +54,22 @@ final class WC_XPay_Logger_Admin {
 		$enabled       = WC_XPay_Logger::is_enabled();
 		$log_path      = WC_XPay_Logger::current_log_path();
 		$file_size     = ( $log_path && file_exists( $log_path ) ) ? size_format( (int) filesize( $log_path ), 1 ) : '0 B';
+
+		// Detect which checkout flavor is wired up on this store. WC stores
+		// the checkout page id in wc_get_page_id('checkout'); has_block()
+		// reads the page's post_content and returns true when the
+		// woocommerce/checkout block markup is present (the block-based
+		// checkout). When false, the page uses the [woocommerce_checkout]
+		// shortcode (the classic checkout). Reading once at page render is
+		// cheap (one DB read for the page row) and matches what payment_fields
+		// will actually run on the customer's session.
+		$checkout_flavor = 'unknown';
+		if ( function_exists( 'wc_get_page_id' ) ) {
+			$checkout_page_id = (int) wc_get_page_id( 'checkout' );
+			if ( $checkout_page_id > 0 && function_exists( 'has_block' ) ) {
+				$checkout_flavor = has_block( 'woocommerce/checkout', $checkout_page_id ) ? 'blocks' : 'classic';
+			}
+		}
 		$settings_url  = admin_url( 'admin.php?page=wc-settings&tab=checkout&section=xpay_gateway' );
 		$clear_url     = wp_nonce_url(
 			admin_url( 'admin-post.php?action=xpay_logger_clear' ),
@@ -180,6 +196,17 @@ final class WC_XPay_Logger_Admin {
 						}
 						?>
 						&nbsp;|&nbsp;
+						<strong><?php esc_html_e( 'Checkout', 'xpay-for-woocommerce' ); ?>:</strong>
+						<?php
+						if ( 'blocks' === $checkout_flavor ) {
+							echo '<span title="' . esc_attr__( 'Customer-facing /checkout page renders the woocommerce/checkout block. XPay UI runs from class-wc-xpay-blocks-integration.php + assets/js/blocks-integration.js.', 'xpay-for-woocommerce' ) . '">' . esc_html__( 'Blocks', 'xpay-for-woocommerce' ) . '</span>';
+						} elseif ( 'classic' === $checkout_flavor ) {
+							echo '<span title="' . esc_attr__( 'Customer-facing /checkout page uses the [woocommerce_checkout] shortcode. XPay UI runs from WC_Gateway_Xpay::payment_fields() in woocommerce-xpay-gateway.php.', 'xpay-for-woocommerce' ) . '">' . esc_html__( 'Classic (shortcode)', 'xpay-for-woocommerce' ) . '</span>';
+						} else {
+							echo '<span style="color:#888;">' . esc_html__( 'unknown', 'xpay-for-woocommerce' ) . '</span>';
+						}
+						?>
+						&nbsp;|&nbsp;
 						<strong><?php esc_html_e( 'Today\'s log', 'xpay-for-woocommerce' ); ?>:</strong>
 						<?php echo esc_html( $log_path ? str_replace( ABSPATH, '', $log_path ) : __( '(not yet created)', 'xpay-for-woocommerce' ) ); ?>
 						(<?php echo esc_html( $file_size ); ?>)
@@ -275,6 +302,43 @@ final class WC_XPay_Logger_Admin {
 				// Format: [iso-ts] [req-id] [stage] [order=ID|-] message {json}
 				var LINE_RE = /^\[([^\]]+)\] \[([^\]]+)\] \[([^\]]+)\] \[order=([^\]]+)\] ?(.*)/;
 
+				// Logs are written server-side as UTC ISO 8601 (gmdate Z-suffixed)
+				// so they're comparable across PHP-FPM workers regardless of host
+				// timezone. For display, convert to the viewing browser's local
+				// time so "14:35" in the UI matches what the merchant sees on
+				// their own clock — no mental UTC-offset arithmetic.
+				function pad2(n) { n = String(n); return n.length < 2 ? '0' + n : n; }
+
+				// Deterministic short hash (DJB2). Used to build stable DOM ids
+				// for JSON <details> blocks so the open state survives the live
+				// tail's 5-second innerHTML rewrite. Random-uid'd ids would get
+				// new identifiers every render → opened JSON appears to "snap
+				// shut" on the customer because the new DOM has no matching id.
+				function stableHash(str) {
+					var h = 5381;
+					var s = String(str || '');
+					for (var i = 0; i < s.length; i++) {
+						h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+					}
+					// Convert to unsigned, then base36 — keeps the id short and
+					// CSS-selector-safe. Collisions are tolerable: two events
+					// with identical ts/reqid/stage/json have identical content,
+					// so collapsing their open state is the right behavior.
+					return ((h >>> 0)).toString(36);
+				}
+				function localTime(isoUtc) {
+					if (!isoUtc) { return ''; }
+					var d = new Date(isoUtc);
+					if (isNaN(d.getTime())) {
+						// Defensive fallback: if Date can't parse the input
+						// (corrupt log line / unexpected format), surface the
+						// raw HH:MM:SS slice rather than an empty string so
+						// the row still has a time column.
+						return String(isoUtc).slice(11, 19);
+					}
+					return pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
+				}
+
 				function parseLine(raw) {
 					var m = raw.match(LINE_RE);
 					if (!m) { return null; }
@@ -289,8 +353,8 @@ final class WC_XPay_Logger_Admin {
 						try { jsonObj = JSON.parse(jsonStr); } catch(e) {}
 					}
 					return {
-						ts:        m[1],           // full ISO timestamp
-						time:      m[1].slice(11, 19), // HH:MM:SS
+						ts:        m[1],           // full ISO timestamp (UTC, used for sort/group)
+						time:      localTime(m[1]), // HH:MM:SS in viewer's local timezone
 						reqId:     m[2],
 						stage:     m[3],
 						orderId:   m[4] === '-' ? null : m[4],
@@ -416,7 +480,12 @@ final class WC_XPay_Logger_Admin {
 				}
 
 				/* ── Render a single event row ───────────────────────────── */
-				function renderEvent(ev) {
+				// jsonOpenSet is captured before the innerHTML rewrite (see
+				// render() below) so we can mark previously-open JSON blocks
+				// open in the new DOM. Without this the live-tail re-render
+				// closes any json the merchant opened, which they reported
+				// as the panel "crashing shut".
+				function renderEvent(ev, jsonOpenSet) {
 					var isErr    = isErrorEvent(ev);
 					var headline = makeHeadline(ev);
 					var badgeCls = stageBadgeClass(ev.stage);
@@ -437,13 +506,19 @@ final class WC_XPay_Logger_Admin {
 					if (ev.jsonStr) {
 						var pretty = '';
 						try { pretty = JSON.stringify(ev.jsonObj, null, 2); } catch(e) { pretty = ev.jsonStr; }
-						var uid = 'xj-' + Math.random().toString(36).slice(2);
-						jsonToggle = '<span class="xpay-json-toggle" data-target="' + uid + '">' + h(I18N.showJson) + '</span>';
-						jsonBlock  = '<details class="xpay-json-block" id="' + uid + '"><summary style="display:none;"></summary><pre>' + h(pretty) + '</pre></details>';
+						// Stable uid: deterministic from event content. Survives
+						// the 5-second live-tail innerHTML rewrite so the saved
+						// open-state map can match new <details> ids.
+						var uid = 'xj-' + stableHash(ev.ts + '|' + ev.reqId + '|' + ev.stage + '|' + ev.jsonStr);
+						var wasOpen = jsonOpenSet && jsonOpenSet[uid];
+						var openAttr = wasOpen ? ' open' : '';
+						var label = wasOpen ? I18N.hideJson : I18N.showJson;
+						jsonToggle = '<span class="xpay-json-toggle" data-target="' + uid + '">' + h(label) + '</span>';
+						jsonBlock  = '<details class="xpay-json-block" id="' + uid + '"' + openAttr + '><summary style="display:none;"></summary><pre>' + h(pretty) + '</pre></details>';
 					}
 
 					return '<li class="xpay-event' + errCls + '"' + diagAttr + '>'
-						+ '<span class="xpay-event-time">' + h(ev.time) + '</span>'
+						+ '<span class="xpay-event-time" title="' + h(ev.ts) + ' (UTC)">' + h(ev.time) + '</span>'
 						+ '<span class="xpay-badge ' + badgeCls + '">' + h(ev.stage) + '</span>'
 						+ orderBit
 						+ '<span class="xpay-event-headline">' + h(headline) + '</span>'
@@ -454,25 +529,26 @@ final class WC_XPay_Logger_Admin {
 				}
 
 				/* ── Render a request group ──────────────────────────────── */
-				function renderGroup(group, open) {
+				function renderGroup(group, open, jsonOpenSet) {
 					var dom  = dominantStage(group);
 					var bcls = stageBadgeClass(dom);
 					var shortId = group.reqId.slice(-6);
-					var timeRange = group.firstTs.slice(11,19);
+					var timeRange = localTime(group.firstTs);
 					if (group.firstTs !== group.lastTs) {
-						timeRange += ' – ' + group.lastTs.slice(11,19);
+						timeRange += ' – ' + localTime(group.lastTs);
 					}
 					var hasError = group.events.some(function(ev) { return isErrorEvent(ev); });
 					var errMark  = hasError ? ' <span style="color:#ef4444;">✖</span>' : '';
 
-					var evHtml = group.events.map(renderEvent).join('');
+					var evHtml = group.events.map(function (ev) { return renderEvent(ev, jsonOpenSet); }).join('');
 
+					var rangeUtc = group.firstTs + (group.firstTs !== group.lastTs ? ' – ' + group.lastTs : '') + ' (UTC)';
 					return '<details class="xpay-group" data-reqid="' + h(group.reqId) + '"'
 						+ (open ? ' open' : '') + '>'
 						+ '<summary>'
 						+ '<span class="xpay-group-req">' + h(shortId) + '</span>'
 						+ '<span class="xpay-badge ' + bcls + '">' + h(dom) + '</span>'
-						+ '<span class="xpay-group-meta">' + h(timeRange) + errMark + '</span>'
+						+ '<span class="xpay-group-meta" title="' + h(rangeUtc) + '">' + h(timeRange) + errMark + '</span>'
 						+ '<span class="xpay-group-count">' + group.events.length + '</span>'
 						+ '</summary>'
 						+ '<ul class="xpay-events">' + evHtml + '</ul>'
@@ -496,11 +572,27 @@ final class WC_XPay_Logger_Admin {
 					});
 				}
 
+				// Snapshot which JSON detail blocks are currently expanded so
+				// the next render can re-emit them with `open` set. Keyed by
+				// the deterministic uid stableHash() produces from event
+				// content — stable across live-tail polls.
+				function saveJsonOpenState() {
+					var open = {};
+					$view.querySelectorAll('.xpay-json-block[open]').forEach(function(el) {
+						if (el.id) { open[el.id] = true; }
+					});
+					return open;
+				}
+
 				/* ── Apply visibility (filter + diag toggle) ─────────────── */
 				function matchesFilter(ev, grep, stagePrefix) {
 					if (stagePrefix && ev.stage.indexOf(stagePrefix) !== 0) { return false; }
 					if (!grep) { return true; }
-					var haystack = [ev.ts, ev.reqId, ev.stage, ev.orderId || '', ev.message, makeHeadline(ev)]
+					// Include ev.time so the filter matches the local-time
+					// string the user sees on screen (e.g. typing "14:35"
+					// finds entries at 14:35 in their timezone), in addition
+					// to the underlying UTC ts which still works.
+					var haystack = [ev.ts, ev.time, ev.reqId, ev.stage, ev.orderId || '', ev.message, makeHeadline(ev)]
 						.join(' ').toLowerCase();
 					return haystack.indexOf(grep) !== -1;
 				}
@@ -520,6 +612,7 @@ final class WC_XPay_Logger_Admin {
 							var reqId   = evEl.dataset.reqid   || '';
 							var orderId = evEl.dataset.order   || '';
 							var tsText  = evEl.dataset.ts      || '';
+							var timeText = evEl.dataset.time   || '';
 							var hl      = evEl.querySelector('.xpay-event-headline');
 							var hlText  = hl ? hl.textContent : '';
 							var evName  = evEl.querySelector('.xpay-badge');
@@ -539,7 +632,7 @@ final class WC_XPay_Logger_Admin {
 
 							// Text filter
 							if (grep) {
-								var haystack = [tsText, reqId, stage, orderId, hlText, evNameText]
+								var haystack = [tsText, timeText, reqId, stage, orderId, hlText, evNameText]
 									.join(' ').toLowerCase();
 								if (haystack.indexOf(grep) === -1) {
 									evEl.classList.add('xpay-hidden');
@@ -579,8 +672,9 @@ final class WC_XPay_Logger_Admin {
 						return;
 					}
 
-					var groups     = groupEvents(events);
-					var savedOpen  = saveOpenState();
+					var groups        = groupEvents(events);
+					var savedOpen     = saveOpenState();
+					var savedJsonOpen = saveJsonOpenState();
 
 					// Auto-open the last 2 groups; restore previously-opened ones
 					var defaultOpen = {};
@@ -598,7 +692,7 @@ final class WC_XPay_Logger_Admin {
 						var grp  = groups[gi];
 						var open = defaultOpen[grp.reqId] || savedOpen[grp.reqId] || false;
 						// Inject data-* onto event <li> elements via a post-processing step
-						html += renderGroup(grp, open);
+						html += renderGroup(grp, open, savedJsonOpen);
 					}
 					html += '<p class="xpay-empty" style="color:#888;padding:12px;display:none;">' + h(I18N.noEntries) + '</p>';
 
@@ -618,6 +712,7 @@ final class WC_XPay_Logger_Admin {
 							el.dataset.reqid  = ev.reqId;
 							el.dataset.order  = ev.orderId || '';
 							el.dataset.ts     = ev.ts;
+							el.dataset.time   = ev.time;
 						}
 					}
 
