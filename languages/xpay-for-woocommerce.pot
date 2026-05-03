@@ -2,14 +2,14 @@
 # This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: XPay for WooCommerce 2.0.0\n"
+"Project-Id-Version: XPay for WooCommerce 2.0.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/xpay-for-woocommerce\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-04-27T19:00:22+00:00\n"
+"POT-Creation-Date: 2026-05-03T14:03:51+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: xpay-for-woocommerce\n"
@@ -45,6 +45,10 @@ msgstr ""
 msgid "XPay payment confirmed via modal-close check (txn %s)."
 msgstr ""
 
+#: class-wc-xpay-blocks-integration.php:92
+msgid "XPay Payment"
+msgstr ""
+
 #: includes/class-wc-xpay-admin-notices.php:61
 msgid "XPay + WPFunnels:"
 msgstr ""
@@ -65,7 +69,7 @@ msgstr ""
 
 #: includes/logger/class-wc-xpay-logger-admin.php:41
 #: includes/logger/class-wc-xpay-logger-admin.php:42
-#: includes/logger/class-wc-xpay-logger-admin.php:74
+#: includes/logger/class-wc-xpay-logger-admin.php:90
 msgid "XPay Logger"
 msgstr ""
 
@@ -74,439 +78,537 @@ msgid "You do not have permission to view this page."
 msgstr ""
 
 #. translators: %s = link to gateway settings
-#: includes/logger/class-wc-xpay-logger-admin.php:83
+#: includes/logger/class-wc-xpay-logger-admin.php:99
 #, php-format
 msgid "The logger is currently <strong>disabled</strong>. Enable it from the <a href=\"%s\">XPay gateway settings</a> to start recording. While disabled the logger has zero runtime cost — no listeners are attached."
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:116
+#: includes/logger/class-wc-xpay-logger-admin.php:190
 msgid "Status"
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:119
+#: includes/logger/class-wc-xpay-logger-admin.php:193
 msgid "Live"
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:121
+#: includes/logger/class-wc-xpay-logger-admin.php:195
 msgid "Paused"
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:125
+#: includes/logger/class-wc-xpay-logger-admin.php:199
+msgid "Checkout"
+msgstr ""
+
+#: includes/logger/class-wc-xpay-logger-admin.php:202
+msgid "Customer-facing /checkout page renders the woocommerce/checkout block. XPay UI runs from class-wc-xpay-blocks-integration.php + assets/js/blocks-integration.js."
+msgstr ""
+
+#: includes/logger/class-wc-xpay-logger-admin.php:202
+msgid "Blocks"
+msgstr ""
+
+#: includes/logger/class-wc-xpay-logger-admin.php:204
+msgid "Customer-facing /checkout page uses the [woocommerce_checkout] shortcode. XPay UI runs from WC_Gateway_Xpay::payment_fields() in woocommerce-xpay-gateway.php."
+msgstr ""
+
+#: includes/logger/class-wc-xpay-logger-admin.php:204
+msgid "Classic (shortcode)"
+msgstr ""
+
+#: includes/logger/class-wc-xpay-logger-admin.php:206
+msgid "unknown"
+msgstr ""
+
+#: includes/logger/class-wc-xpay-logger-admin.php:210
 msgid "Today's log"
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:126
+#: includes/logger/class-wc-xpay-logger-admin.php:211
 msgid "(not yet created)"
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:131
+#: includes/logger/class-wc-xpay-logger-admin.php:216
 msgid "Run diagnostics snapshot"
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:132
+#: includes/logger/class-wc-xpay-logger-admin.php:217
 msgid "Download today's log"
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:133
+#: includes/logger/class-wc-xpay-logger-admin.php:218
 msgid "Delete today's log file? This cannot be undone."
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:133
+#: includes/logger/class-wc-xpay-logger-admin.php:218
 msgid "Clear today's log"
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:139
+#: includes/logger/class-wc-xpay-logger-admin.php:224
 msgid "Live tail (auto-refresh every 5s)"
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:142
+#: includes/logger/class-wc-xpay-logger-admin.php:228
+msgid "Show diagnostic events (boot.hooks_inventory etc.)"
+msgstr ""
+
+#: includes/logger/class-wc-xpay-logger-admin.php:231
 msgid "Filter by text (e.g. order=42, webhook, error)"
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:144
+#: includes/logger/class-wc-xpay-logger-admin.php:234
 msgid "All stages"
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:159
+#: includes/logger/class-wc-xpay-logger-admin.php:248
 msgid "Loading…"
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:165
+#: includes/logger/class-wc-xpay-logger-admin.php:254
 msgid "Stages reference"
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:167
+#: includes/logger/class-wc-xpay-logger-admin.php:256
 msgid "Per-request snapshot of versions, theme, conflicting plugins."
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:168
+#: includes/logger/class-wc-xpay-logger-admin.php:257
 msgid "Non-XPay callbacks attached to checkout hooks."
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:169
+#: includes/logger/class-wc-xpay-logger-admin.php:258
 msgid "Community preferences API call (methods, promo flag)."
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:170
+#: includes/logger/class-wc-xpay-logger-admin.php:259
 msgid "Gateway radios rendered (classic checkout context)."
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:171
+#: includes/logger/class-wc-xpay-logger-admin.php:260
 msgid "Server-side payment lifecycle, with HTTP timings."
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:172
+#: includes/logger/class-wc-xpay-logger-admin.php:261
 msgid "Inbound webhook from XPay; signature state, branch taken."
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:173
+#: includes/logger/class-wc-xpay-logger-admin.php:262
 msgid "Modal poll endpoint hits; returned status."
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:174
+#: includes/logger/class-wc-xpay-logger-admin.php:263
 msgid "Browser-side events (modal shown/hidden, JS errors)."
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:175
+#: includes/logger/class-wc-xpay-logger-admin.php:264
 msgid "On-demand environment dump (run from button above)."
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:178
+#: includes/logger/class-wc-xpay-logger-admin.php:267
 msgid "Secrets and PII are redacted at write time. Logs older than 30 days are pruned automatically."
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:251
+#: includes/logger/class-wc-xpay-logger-admin.php:277
 msgid "No matching entries."
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:341
+#: includes/logger/class-wc-xpay-logger-admin.php:278
+msgid "show JSON"
+msgstr ""
+
+#: includes/logger/class-wc-xpay-logger-admin.php:279
+msgid "hide JSON"
+msgstr ""
+
+#: includes/logger/class-wc-xpay-logger-admin.php:856
 msgid "Today's log cleared."
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:355
+#: includes/logger/class-wc-xpay-logger-admin.php:870
 msgid "No log file to download."
 msgstr ""
 
-#: includes/logger/class-wc-xpay-logger-admin.php:426
+#: includes/logger/class-wc-xpay-logger-admin.php:941
 msgid "Diagnostics snapshot written to log."
 msgstr ""
 
-#: promo_code_section.php:40
-#: promo_code_section.php:59
-#: promo_code_section.php:61
-msgid "Have Xpay Promo Code?"
-msgstr ""
-
-#: promo_code_section.php:46
-msgid "Enter promo code"
-msgstr ""
-
-#: promo_code_section.php:48
-msgid "Apply"
-msgstr ""
-
-#: promo_code_section.php:60
-msgid "Hide Promo Code"
-msgstr ""
-
 #. translators: %s = XPay transaction UUID
-#: update_order.php:265
+#: update_order.php:306
 #, php-format
 msgid "XPay payment confirmed (txn %s)."
 msgstr ""
 
-#: update_order.php:312
+#: update_order.php:356
 msgid "Transaction failed"
 msgstr ""
 
-#: utils.php:149
+#: utils.php:87
+msgid "Have Xpay Promo Code?"
+msgstr ""
+
+#: utils.php:88
+msgid "Hide Promo Code"
+msgstr ""
+
+#: utils.php:89
+msgid "Enter promo code"
+msgstr ""
+
+#: utils.php:90
+msgid "Apply"
+msgstr ""
+
+#: utils.php:91
+msgid "Validating..."
+msgstr ""
+
+#: utils.php:92
+msgid "Promocode applied successfully"
+msgstr ""
+
+#: utils.php:93
+msgid "Invalid promo code"
+msgstr ""
+
+#: utils.php:94
+msgid "Please enter a promo code"
+msgstr ""
+
+#: utils.php:95
+msgid "Enter your billing phone number first."
+msgstr ""
+
+#: utils.php:272
 msgid "XPay temporarily unavailable (circuit breaker open)."
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:171
+#: woocommerce-xpay-gateway.php:179
 msgid "Configure"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:235
+#: woocommerce-xpay-gateway.php:243
 msgid "Please enter a valid phone number. International format is accepted (e.g., +1 123 456 7890)."
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:265
+#: woocommerce-xpay-gateway.php:273
 msgid "Xpay"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:266
+#: woocommerce-xpay-gateway.php:274
 msgid "Xpay gateway allow online payment"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:303
+#: woocommerce-xpay-gateway.php:309
 msgid "Enable/Disable"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:305
+#: woocommerce-xpay-gateway.php:311
 msgid "Enable Xpay Payment"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:309
+#: woocommerce-xpay-gateway.php:315
 msgid "Title"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:311
+#: woocommerce-xpay-gateway.php:317
 msgid "This controls the title for the payment method the customer sees during checkout."
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:312
-#: woocommerce-xpay-gateway.php:1047
+#: woocommerce-xpay-gateway.php:318
+#: woocommerce-xpay-gateway.php:1149
 msgid "Xpay Payment"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:316
+#: woocommerce-xpay-gateway.php:322
 msgid "Description"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:318
+#: woocommerce-xpay-gateway.php:324
 msgid "Payment method description that the customer will see on your checkout."
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:319
+#: woocommerce-xpay-gateway.php:325
 msgid "Please remit payment to Store Name upon pickup or delivery."
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:323
+#: woocommerce-xpay-gateway.php:329
 msgid "Instructions"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:325
+#: woocommerce-xpay-gateway.php:331
 msgid "Instructions that will be added to the thank you page and emails."
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:330
+#: woocommerce-xpay-gateway.php:336
 msgid "Community ID"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:332
+#: woocommerce-xpay-gateway.php:338
 msgid "This is the ID of your community you get form Xpay"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:337
+#: woocommerce-xpay-gateway.php:343
 msgid "Variable Amount Template ID"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:339
+#: woocommerce-xpay-gateway.php:345
 msgid "This is the ID of your variable amount object you created on Xpay"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:344
+#: woocommerce-xpay-gateway.php:350
 msgid "XPAY payment API key"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:346
+#: woocommerce-xpay-gateway.php:352
 msgid "This is the API key you get from Xpay"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:351
+#: woocommerce-xpay-gateway.php:357
 msgid "Environment"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:355
+#: woocommerce-xpay-gateway.php:361
 msgid "Local"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:356
+#: woocommerce-xpay-gateway.php:362
 msgid "Development"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:357
+#: woocommerce-xpay-gateway.php:363
 msgid "Staging"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:358
+#: woocommerce-xpay-gateway.php:364
 msgid "Production"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:363
+#: woocommerce-xpay-gateway.php:369
 msgid "Callback URL"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:365
+#: woocommerce-xpay-gateway.php:371
 msgid "This is callback url that you will add in your api payment on xpay dashboard"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:370
+#: woocommerce-xpay-gateway.php:376
 msgid "Webhook secret (optional)"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:372
-msgid "Paste the same secret here that you saved in XPay's \"secret\" field next to the callback URL. When this AND a signature header are both present on an incoming webhook, the plugin verifies a hex HMAC-SHA256 of the raw body and rejects mismatches with HTTP 401. Leave empty to accept unsigned webhooks during setup."
-msgstr ""
-
-#: woocommerce-xpay-gateway.php:377
-msgid "Debug"
-msgstr ""
-
-#: woocommerce-xpay-gateway.php:379
-msgid "Enable debug alert messages"
+#: woocommerce-xpay-gateway.php:378
+msgid "Paste the same secret here that you saved in your XPay community settings. When set, every incoming webhook must carry the same value as <code>secret_key</code> in the JSON body; missing or mismatched values are rejected with HTTP 401. Leave empty to accept webhooks without verification (suitable for initial setup, before you configure a secret in your XPay community)."
 msgstr ""
 
 #: woocommerce-xpay-gateway.php:383
-msgid "Diagnostic logger"
+msgid "Debug"
 msgstr ""
 
 #: woocommerce-xpay-gateway.php:385
+msgid "Enable debug alert messages"
+msgstr ""
+
+#: woocommerce-xpay-gateway.php:389
+msgid "Diagnostic logger"
+msgstr ""
+
+#: woocommerce-xpay-gateway.php:391
 msgid "Enable XPay flow logger"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:386
+#: woocommerce-xpay-gateway.php:392
 msgid "When enabled, every step of the XPay flow is recorded to <code>wp-content/uploads/xpay-logs/</code> with secrets redacted. View the live tail under <strong>Tools → XPay Logger</strong>. Off by default — turn on while reproducing an issue, then disable. Logs are pruned after 30 days."
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:390
+#: woocommerce-xpay-gateway.php:396
 msgid "WPFunnels compatibility"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:392
+#: woocommerce-xpay-gateway.php:398
 msgid "Force standard order-received page after payment"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:393
+#: woocommerce-xpay-gateway.php:399
 msgid "Only relevant when WPFunnels is active. After a successful XPay payment, WPFunnels rewrites the post-payment URL to route through its own funnel flow. On WPFunnels Free (no upsell wired up), the customer ends up on <code>/cart/</code> instead of a thank-you page even though the payment succeeded. Enable this to force the standard WooCommerce order-received page for XPay orders. Leave OFF if you have a configured WPFunnels Pro upsell flow you want XPay orders to enter."
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:423
+#: woocommerce-xpay-gateway.php:429
 msgid "Card"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:424
+#: woocommerce-xpay-gateway.php:430
 msgid "Fawry"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:425
+#: woocommerce-xpay-gateway.php:431
 msgid "Apple Pay"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:426
+#: woocommerce-xpay-gateway.php:432
 msgid "valU"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:427
+#: woocommerce-xpay-gateway.php:433
 msgid "Wallets"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:428
+#: woocommerce-xpay-gateway.php:434
 msgid "NBE Installments"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:440
+#: woocommerce-xpay-gateway.php:446
 msgid "Payment Method"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:478
+#: woocommerce-xpay-gateway.php:484
 msgid "Installment Plans"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:512
+#: woocommerce-xpay-gateway.php:518
 msgid "Months"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:513
+#: woocommerce-xpay-gateway.php:519
 msgid "Total Interest:"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:514
+#: woocommerce-xpay-gateway.php:520
 msgid "Monthly Payment:"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:515
+#: woocommerce-xpay-gateway.php:521
 msgid "EGP"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:541
+#: woocommerce-xpay-gateway.php:547
 msgid "Failed to fetch installment plans. Please try again."
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:545
+#: woocommerce-xpay-gateway.php:551
 msgid "Failed to load installment plans. Please try again."
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:615
+#: woocommerce-xpay-gateway.php:621
 msgid "Order not found."
 msgstr ""
 
 #. translators: %d is the order number
-#: woocommerce-xpay-gateway.php:671
+#: woocommerce-xpay-gateway.php:677
 #, php-format
-msgid "Your previous payment attempt is still in progress. To prevent a double charge we are pausing new attempts for up to 10 minutes. If you do not see a confirmation email by then, contact support with order #%d — your card will not be charged twice."
+msgid "Your previous payment attempt is still in progress. To prevent a double charge we are pausing new attempts for up to 2 minutes. If you do not see a confirmation email by then, contact support with order #%d — your card will not be charged twice."
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:691
+#: woocommerce-xpay-gateway.php:697
 msgid "Please select a valid payment method."
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:753
-msgid "We could not reach the payment provider. Please check your internet connection and try again. If the problem continues, try a different payment method or contact us."
+#: woocommerce-xpay-gateway.php:727
+msgid "First name"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:754
-msgid "XPay prepare-amount call failed"
+#: woocommerce-xpay-gateway.php:728
+msgid "Last name"
+msgstr ""
+
+#: woocommerce-xpay-gateway.php:729
+msgid "Email address"
+msgstr ""
+
+#: woocommerce-xpay-gateway.php:730
+msgid "Phone number"
+msgstr ""
+
+#. translators: %s = comma-separated list of field labels
+#: woocommerce-xpay-gateway.php:748
+#, php-format
+msgid "Please complete the following before paying with XPay: %s."
+msgstr ""
+
+#: woocommerce-xpay-gateway.php:795
+#: woocommerce-xpay-gateway.php:932
+msgid "We couldn't reach the payment provider right now. This is usually temporary — please wait a moment and try again. If this keeps happening, please contact us."
 msgstr ""
 
 #: woocommerce-xpay-gateway.php:805
-msgid "Unknown payment method."
-msgstr ""
-
-#: woocommerce-xpay-gateway.php:844
+#: woocommerce-xpay-gateway.php:934
 msgid "Payment processing failed."
 msgstr ""
 
+#: woocommerce-xpay-gateway.php:809
+msgid "XPay prepare-amount call failed"
+msgstr ""
+
+#: woocommerce-xpay-gateway.php:860
+msgid "Unknown payment method."
+msgstr ""
+
+#: woocommerce-xpay-gateway.php:864
+msgid "Promo codes cannot be combined with installment payments. Please remove the promo code or choose a different payment method."
+msgstr ""
+
 #. translators: %s = upstream error message returned by XPay
-#: woocommerce-xpay-gateway.php:865
+#: woocommerce-xpay-gateway.php:946
 #, php-format
 msgid "XPay pay call failed: %s"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:886
+#: woocommerce-xpay-gateway.php:947
+msgid "transport failure"
+msgstr ""
+
+#: woocommerce-xpay-gateway.php:959
+msgid "Payment provider returned an empty response. Please try again."
+msgstr ""
+
+#: woocommerce-xpay-gateway.php:960
+msgid "XPay returned 200 but no payment artifacts."
+msgstr ""
+
+#: woocommerce-xpay-gateway.php:979
 msgid "Awaiting XPay payment"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:935
+#: woocommerce-xpay-gateway.php:1028
 msgid "Please complete your payment in the popup window. If it did not open, "
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:936
+#: woocommerce-xpay-gateway.php:1029
 msgid "click here"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:947
+#: woocommerce-xpay-gateway.php:1040
 msgid "Your payment is being processed. You will receive a confirmation shortly."
 msgstr ""
 
 #. translators: %d is the order number
-#: woocommerce-xpay-gateway.php:1011
+#: woocommerce-xpay-gateway.php:1113
 #, php-format
 msgid "We could not securely load the payment form. Your card has not been charged. Please contact support and quote order #%d so we can complete this payment for you."
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:1046
-#: woocommerce-xpay-gateway.php:1064
+#: woocommerce-xpay-gateway.php:1148
+#: woocommerce-xpay-gateway.php:1169
 msgid "Close"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:1048
+#: woocommerce-xpay-gateway.php:1150
 msgid "Don't close the popup until you finish payment"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:1052
+#: woocommerce-xpay-gateway.php:1154
 msgid "Payment confirmed."
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:1053
+#: woocommerce-xpay-gateway.php:1155
 msgid "Redirecting in"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:1055
+#: woocommerce-xpay-gateway.php:1157
 msgid "seconds…"
 msgstr ""
 
-#: woocommerce-xpay-gateway.php:1059
+#: woocommerce-xpay-gateway.php:1160
+msgid "Payment was not completed. Your card has not been charged. Please close this window and try again, or contact support if this keeps happening."
+msgstr ""
+
+#: woocommerce-xpay-gateway.php:1164
 msgid "XPay secure payment"
 msgstr ""

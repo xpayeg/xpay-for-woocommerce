@@ -36,6 +36,7 @@
     var pollTimer      = null;
     var countdownTimer = null;
     var redirected     = false;
+    var terminated     = false;
 
     /* ------------------------------------------------------------------
      * Logger helper — posts to the xpay_log_modal_event admin-ajax handler.
@@ -179,7 +180,27 @@
         }
     }
 
+    function showFailureAndStop(status) {
+        if (terminated || redirected) { return; }
+        terminated = true;
+        stopPolling();
+        xpayLog('terminal_state', status);
+
+        if (!backdrop.classList.contains('is-open')) {
+            // Customer already left the modal. The order page will reflect
+            // status on next load; nothing useful to show now.
+            return;
+        }
+        var iframe = modal.querySelector('.xpay-iframe');
+        if (iframe) { iframe.style.display = 'none'; }
+        var warning = modal.querySelector('.xpay-modal-warning');
+        if (warning) { warning.style.display = 'none'; }
+        var banner = document.getElementById('xpay_failure_banner');
+        if (banner) { banner.classList.add('is-visible'); }
+    }
+
     function checkAndMaybeRedirect() {
+        if (terminated || redirected) { return; }
         if (!data.checkUrl) { return; }
         var uuidEl = document.getElementById('xpay_trn_uuid');
         var uuid   = uuidEl ? uuidEl.value : '';
@@ -194,10 +215,15 @@
                 xpayLog('poll_response', trimmed);
                 if (trimmed === 'SUCCESSFUL') {
                     showSuccessAndCountdown();
+                    return;
                 }
-                // Any other status (FAILED, PENDING, INVALID, empty) is
-                // ignored — the modal stays open and polling continues
-                // until the customer closes it.
+                // Allowlist of terminal states only — anything else
+                // (PENDING, empty, unknown future statuses) keeps polling
+                // so XPay can introduce new intermediate states without
+                // false-failing the modal.
+                if (trimmed === 'FAILED' || trimmed === 'INVALID') {
+                    showFailureAndStop(trimmed);
+                }
             })
             .catch(function () {
                 // Network error during poll — try again on the next tick.

@@ -5,7 +5,7 @@
  * Description: Accept Card, Fawry, valU, Apple Pay, Wallets, and NBE Installments on your WooCommerce store via XPay (Egypt).
  * Author: XPAY
  * Author URI: https://xpay.app/
- * Version: 2.0.0
+ * Version: 2.0.1
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * License: GPL-2.0-or-later
@@ -19,7 +19,7 @@ defined( 'ABSPATH' ) or exit;
 // Plugin version constant. Bumped in lockstep with the Version header above
 // so every enqueued asset carries the same cache-busting version string and
 // no cache-bust comment lines are ever needed in this file again.
-defined( 'WC_XPAY_VERSION' ) || define( 'WC_XPAY_VERSION', '2.0.0' );
+defined( 'WC_XPAY_VERSION' ) || define( 'WC_XPAY_VERSION', '2.0.1' );
 
 // Translations. WP.org-hosted plugins get auto-loading from the slug since
 // WP 4.6, but call load_plugin_textdomain explicitly so non-WP.org installs
@@ -1155,6 +1155,9 @@ if (!function_exists("xpay_generate_payment_modal")) {
                         <?php esc_html_e('Redirecting in', 'xpay-for-woocommerce'); ?>
                         <span id="xpay_redirect_countdown">5</span>
                         <?php esc_html_e('seconds…', 'xpay-for-woocommerce'); ?>
+                    </div>
+                    <div id="xpay_failure_banner" class="xpay-failure-banner" role="alert" aria-live="assertive">
+                        <?php esc_html_e('Payment was not completed. Your card has not been charged. Please close this window and try again, or contact support if this keeps happening.', 'xpay-for-woocommerce'); ?>
                     </div>
                     <iframe src="<?php echo esc_url($iframe_url); ?>"
                             class="xpay-iframe no-lazy skip-lazy"

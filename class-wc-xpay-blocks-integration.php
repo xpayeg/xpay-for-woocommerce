@@ -53,7 +53,7 @@ final class WC_Xpay_Blocks_Integration extends AbstractPaymentMethodType {
 			// instantiated by the blocks registry. The fallback exists only
 			// to keep wp_register_script from being called with `false` if
 			// some unforeseen execution order ever skips the constant.
-			defined( 'WC_XPAY_VERSION' ) ? WC_XPAY_VERSION : '2.0.0',
+			defined( 'WC_XPAY_VERSION' ) ? WC_XPAY_VERSION : '2.0.1',
 			true
 		);
 		return array( $handle );

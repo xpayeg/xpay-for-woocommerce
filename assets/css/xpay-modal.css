@@ -141,6 +141,27 @@
 }
 
 /**
+ * In-modal failure banner. Shown when check_transaction returns a terminal
+ * state (FAILED or INVALID). Mirrors the success-banner shape but in red and
+ * without an auto-redirect — the customer decides whether to close and retry.
+ */
+.xpay-failure-banner {
+    display: none;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: 500;
+}
+
+.xpay-failure-banner.is-visible {
+    display: block;
+}
+
+/**
  * When the modal is open, lock body scroll so background content doesn't
  * scroll behind the iframe. Restored when the modal closes.
  */

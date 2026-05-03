@@ -4,7 +4,7 @@ Tags: woocommerce, payments, payment gateway, egypt, fawry
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 2.0.0
+Stable tag: 2.0.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -136,6 +136,10 @@ Yes. The gateway settings option key (`woocommerce_xpay_gateway_settings`) is un
 
 == Changelog ==
 
+= 2.0.1 =
+* Fixed: payment modal now stops polling and shows a clear failure message when the upstream transaction returns FAILED or when the order is no longer payable (cancelled, refunded, or invalid). Previously the modal polled silently every 10 seconds for as long as the customer left the page open — observed cases polled for 2+ hours after the order was auto-cancelled by WooCommerce, with the customer never seeing why the payment was not progressing. Polling continues unchanged for PENDING and unknown intermediate statuses.
+* Added: new client log event `terminal_state` (under `modal.client_event`) so the diagnostic log records when the modal stops on a terminal status.
+
 = 2.0.0 =
 * Renamed plugin from "WooCommerce XPAY Gateway" to "XPay for WooCommerce" for WordPress.org plugin directory compliance.
 * New plugin slug: `xpay-for-woocommerce` (was `woocommerce-xpay-plugin`).
@@ -182,6 +186,9 @@ Yes. The gateway settings option key (`woocommerce_xpay_gateway_settings`) is un
 For older versions and full release notes, see the bundled `CHANGELOG.md` in the source repository.
 
 == Upgrade Notice ==
+
+= 2.0.1 =
+Bug fix: the payment modal now handles failed and cancelled-order states correctly instead of polling silently forever. Recommended for all merchants.
 
 = 2.0.0 =
 Plugin renamed to XPay for WooCommerce. Merchants on the old `woocommerce-xpay-plugin` directory: deactivate the old plugin and install this one. Gateway settings carry over automatically. Includes security and reliability improvements; see the changelog for details.

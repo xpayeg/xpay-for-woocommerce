@@ -4,6 +4,22 @@ All notable changes to this plugin are documented here. Format follows [Keep a C
 
 ---
 
+## [2.0.1] — 2026-05-03
+
+### Fixed
+
+- **Payment modal terminal-state handling.** The modal previously only acted on `SUCCESSFUL` poll responses; `FAILED` and `INVALID` (the latter covering IDOR mismatch, missing order, and order in `cancelled`/`refunded`/`trash`) were explicitly ignored, leaving the modal polling silently every 10 seconds until the customer manually closed it. Diagnostic logs from a production merchant showed cases polling for 2+ hours after the WooCommerce hold-stock cron auto-cancelled the order — every poll returning `INVALID (closed_status)`, never surfaced to the customer. The modal now treats `FAILED` and `INVALID` as terminal: polling stops, the iframe and "don't close the popup" warning are hidden, and a red in-modal banner explains the customer should close and try again. No auto-redirect on failure (unlike success) — the customer decides what to do next. `PENDING`, empty responses, and any unknown future status names continue to poll (allowlist of terminal states only — does not fail-close on unknowns so XPay can introduce new intermediate states without breaking the modal).
+
+### Added
+
+- New client log event `terminal_state` (under `modal.client_event`) records the terminal status string so the diagnostic log shows when the new behavior fires.
+
+### Notes
+
+- Does not address upstream Cloudflare WAF challenges that intermittently 403-block `prepare-amount` and `pay/variable-amount` calls — that is a server-side configuration on `community.xpay.app` and requires a WAF rule change there, not a plugin change. This release only stops the secondary "stuck modal" symptom that compounded the WAF-induced failures in observed merchant logs.
+
+---
+
 ## [2.0.0] — 2026-04-27
 
 Major version: plugin renamed for WordPress.org plugin directory submission. Existing merchants on the legacy `woocommerce-xpay-plugin` directory should deactivate the old plugin and install this one — gateway settings carry over automatically because the underlying option key (`woocommerce_xpay_gateway_settings`) is unchanged.
