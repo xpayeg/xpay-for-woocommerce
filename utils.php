@@ -109,6 +109,11 @@ function xpay_http_headers($api_key) {
  * Treats a response as a failure if it is a WP_Error, an HTTP failure
  * (403/429/5xx), or a body that does not look like JSON (e.g. Cloudflare's
  * HTML challenge page).
+ *
+ * NOTE: this predicate drives circuit-breaker accounting and the prefs
+ * cache decision — it deliberately marks 403/429 as failure so sustained
+ * blocks open the breaker. For "should I retry this?" use
+ * xpay_http_response_should_retry instead, which is stricter.
  */
 function xpay_http_response_is_failure($response) {
     if (is_wp_error($response)) {
@@ -124,6 +129,34 @@ function xpay_http_response_is_failure($response) {
         return true;
     }
     return false;
+}
+
+/**
+ * Subset of xpay_http_response_is_failure() — responses that are worth
+ * retrying. Distinct from is_failure() because is_failure() also drives
+ * the circuit breaker and prefs cache, and we want 403/429 to count toward
+ * those (sustained WAF blocks SHOULD open the breaker) without triggering
+ * an immediate retry.
+ *
+ * 403 and 429 are server-says-stop signals: an immediate identical retry
+ * cannot succeed (WAF still blocks; rate-limit window unchanged) and adds
+ * load that worsens both — Cloudflare attack-score scoring in particular
+ * treats a deterministic retry as a strong bot signal. Let the breaker
+ * handle sustained cases instead.
+ */
+function xpay_http_response_should_retry($response) {
+    if (!xpay_http_response_is_failure($response)) {
+        return false;
+    }
+    if (is_wp_error($response)) {
+        // Transport-level (pre_flight or ambiguous) — both retryable.
+        return true;
+    }
+    $code = wp_remote_retrieve_response_code($response);
+    if ($code === 403 || $code === 429) {
+        return false;
+    }
+    return true;
 }
 
 /**
@@ -215,9 +248,17 @@ function xpay_circuit_breaker_record_success() {
 
 /**
  * Calls wp_remote_post or wp_remote_get with up to $max_retries additional
- * attempts (1s backoff between) when the first attempt looks like a failure.
- * Returns the last response. When the circuit breaker is open, returns a
- * WP_Error immediately without making the upstream call.
+ * attempts when the first attempt looks like a retryable failure.
+ *
+ * Retry decision uses xpay_http_response_should_retry, which excludes
+ * 403/429 (server-says-stop signals) so we don't amplify WAF attack-score
+ * or rate-limit pressure. Backoff is jittered (~500–1500ms, doubled per
+ * attempt) — a fixed metronomic 1.000s gap is itself a bot-detection
+ * signal on scoring WAFs. Circuit-breaker accounting still uses the
+ * broader is_failure predicate so sustained 403/429s open the breaker.
+ *
+ * Returns the last response. When the circuit breaker is open, returns
+ * a WP_Error immediately without making the upstream call.
  */
 function xpay_http_request($url, $args, $method, $max_retries = 1) {
     // Reset the side-channel at the top of every request so stale values
@@ -234,8 +275,12 @@ function xpay_http_request($url, $args, $method, $max_retries = 1) {
     $callable = ($method === 'POST') ? 'wp_remote_post' : 'wp_remote_get';
     $response = $callable($url, $args);
     $attempts = 0;
-    while (xpay_http_response_is_failure($response) && $attempts < $max_retries) {
-        usleep(1000000);
+    while (xpay_http_response_should_retry($response) && $attempts < $max_retries) {
+        // Jittered exponential backoff. The (1 << $attempts) factor only
+        // matters if a caller passes max_retries > 1 (today nobody does);
+        // for the common max_retries=1 case this is a single 500–1500ms
+        // jittered sleep.
+        usleep(wp_rand(500000, 1500000) * (1 << $attempts));
         $response = $callable($url, $args);
         $attempts++;
     }
