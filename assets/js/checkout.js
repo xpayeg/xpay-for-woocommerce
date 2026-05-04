@@ -105,7 +105,12 @@ jQuery(document).ready(function ($) {
             dataType: 'json',
             data: {
                 action: 'xpay_get_payment_methods_fees',
-                payment_method: paymentMethod
+                payment_method: paymentMethod,
+                // WPFunnels and other non-standard checkouts may have an
+                // empty WC cart in the AJAX context, so forward the amount
+                // captured at page render via xpayJSData.initialData.
+                amount: xpayJSData.initialData && xpayJSData.initialData.subtotal_amount,
+                nonce: xpayJSData.ajax.fees_nonce
             },
             beforeSend: function () {
                 $("#xpay_total_amount").text("Updating...");
@@ -163,8 +168,9 @@ jQuery(document).ready(function ($) {
     }
 
     function toggleButtonState(isLoading = false) {
+        const labels = (xpayJSData && xpayJSData.promo_strings) || {};
         $('#apply_promo_code').prop('disabled', isLoading)
-            .text(isLoading ? 'Validating...' : 'Apply');
+            .text(isLoading ? (labels.applying || 'Validating...') : (labels.apply || 'Apply'));
     }
 
     // Prepare promo code validation data
@@ -174,7 +180,7 @@ jQuery(document).ready(function ($) {
         const currentAmount = paymentMethodsData[methodName]?.total_amount || paymentMethodsData.total_amount;
 
         return {
-            action: 'validate_xpay_promo_code',
+            action: 'xpay_validate_promo_code',
             security: xpayJSData.ajax.nonce,
             url: xpayJSData.promoCodeRequestData.iframe_base_url + "/api/promocodes/validate/",
             name: promoCode,
@@ -208,7 +214,8 @@ jQuery(document).ready(function ($) {
                 if (response.success) {
                     handleSuccessfulPromo(response);
                 } else {
-                    displayMessage(response.data ? response.data.message : 'Invalid promo code');
+                    const labels = (xpayJSData && xpayJSData.promo_strings) || {};
+                    displayMessage(response.data ? response.data.message : (labels.invalid || 'Invalid promo code'));
                     // $('.discount').remove();
                     // $('.order-total th').text('Total');
                     // $('.order-total .woocommerce-Price-amount bdi').text(`${originalTotal.toFixed(2)} ${currency}`);
@@ -225,7 +232,7 @@ jQuery(document).ready(function ($) {
             type: 'POST',
             url: xpayJSData.ajax.ajax_url,
             data: {
-                action: 'store_promocode_details',
+                action: 'xpay_store_promo_details',
                 security: xpayJSData.ajax.nonce,
                 promocode_id: promocodeId,
                 discount_amount: discountAmount
@@ -239,8 +246,8 @@ jQuery(document).ready(function ($) {
     // Handle successful promo code application
     function handleSuccessfulPromo(response) {
         const formattedAmount = parseFloat(response.data.value).toFixed(2);
-        // const message = `Promo Code Applied! New total: ${formattedAmount} ${response.data.currency}`;
-        const message = "Promocode applied successfully"
+        const labels = (xpayJSData && xpayJSData.promo_strings) || {};
+        const message = labels.applied || 'Promocode applied successfully';
         displayMessage(message, true);
 
         // Get the current selected payment method's total
@@ -254,30 +261,20 @@ jQuery(document).ready(function ($) {
         storePromocode(response.data.promocode_id, response.data.value);
     }
 
-    // 6. Initialization Functions
-        function initPromoCodeFunctionality() {
-            // Initially hide promo code input section
-            $('.promo-code-input-section').hide();
-            
-            // Handle "Have Xpay Promo Code?" click
-            $('.promo-code-toggle').on('click', function(e) {
-                e.preventDefault();
-                $('.promo-code-input-section').slideToggle();
-                $(this).toggleClass('active');
-            });
-    
-            $('#apply_promo_code').on('click', function(e) {
-                e.preventDefault();
-                const promoCode = $('#xpay_promo_code').val();
-                
-                if (!promoCode) {
-                    displayMessage('Please enter a promo code');
-                    return;
-                }
-                
-                validatePromoCode(promoCode);
-            });
+    // Delegated click handler for the Apply button. Bound once on the body
+    // so it survives WooCommerce's checkout-review fragment replacement on
+    // every `updated_checkout` event without needing to be rebound (which
+    // could stack on partial re-renders triggered by some funnel plugins).
+    $(document.body).on('click', '#apply_promo_code', function (e) {
+        e.preventDefault();
+        const promoCode = $('#xpay_promo_code').val();
+        if (!promoCode) {
+            const labels = (xpayJSData && xpayJSData.promo_strings) || {};
+            displayMessage(labels.empty || 'Please enter a promo code');
+            return;
         }
+        validatePromoCode(promoCode);
+    });
         
         // Detect payment method change
         $(document).on('change', '.xpay-payment-radio', function () {
@@ -290,14 +287,15 @@ jQuery(document).ready(function ($) {
             $('.discount').remove();
             $('.order-total th').text('Total');
             $('#promo_code_input_container').hide();
-            $('#show_promo_code').text('Have Xpay Promo Code?');
+            const labels = (xpayJSData && xpayJSData.promo_strings) || {};
+            $('#show_promo_code').text(labels.show || 'Have Xpay Promo Code?');
             
             // Clear stored promo code data from session via AJAX
             $.ajax({
                 type: 'POST',
                 url: xpayJSData.ajax.ajax_url,
                 data: {
-                    action: 'clear_promocode_details',
+                    action: 'xpay_clear_promo_details',
                     security: xpayJSData.ajax.nonce
                 },
                 success: function(response) {
@@ -308,11 +306,12 @@ jQuery(document).ready(function ($) {
             // OrderBreakdown(selectedPaymentMethod);
         });
 
-    $(document.body).on('updated_checkout', function() {
-        getPaymentMethodsFees();      
+    // Refresh the per-method fee breakdown whenever WC re-renders the order
+    // review. The PHP-side AJAX handler caches identical (amount, currency,
+    // method) lookups for 60s via a transient, so repeated fires during a
+    // single checkout flow no longer trigger an upstream prepare-amount
+    // call each time.
+    $(document.body).on('updated_checkout', function () {
+        getPaymentMethodsFees();
     });
-
-     initPromoCodeFunctionality();
-    // Initialize promo code functionality once
-    $(document.body).on('updated_checkout', initPromoCodeFunctionality);
 });

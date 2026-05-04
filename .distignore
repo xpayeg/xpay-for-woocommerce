@@ -1,0 +1,67 @@
+# Files and directories EXCLUDED from the WP.org distribution ZIP.
+# Any pattern here is interpreted as an rsync --exclude rule (also
+# compatible with `wp dist-archive` from wp-cli/dist-archive-command).
+#
+# Anything NOT matched here is included in the ZIP.
+
+# --- Version control ---
+.git/
+.gitignore
+.gitattributes
+.github/
+.svn/
+.distignore
+
+# --- Editor / IDE ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# --- OS ---
+.DS_Store
+._*
+Thumbs.db
+
+# --- Build / dependency manifests ---
+node_modules/
+vendor/
+composer.json
+composer.lock
+package.json
+package-lock.json
+yarn.lock
+Makefile
+
+# --- Build outputs ---
+dist/
+build/
+bin/
+
+# --- Tests ---
+tests/
+phpunit.xml
+phpunit.xml.dist
+phpcs.xml
+phpcs.xml.dist
+.phpunit.result.cache
+
+# --- Repo-only documentation (WP.org uses readme.txt + the bundled
+#     `== Changelog ==` section instead) ---
+README.md
+CHANGELOG.md
+docs/
+
+# --- Repo-only screenshots folder. WP.org screenshots live in the
+#     SVN /assets/ directory (uploaded separately, not in the plugin ZIP). ---
+screenshots/
+
+# --- WP.org plugin-page assets (banner, icon, screenshots). These ship
+#     to wordpress.org via SVN /assets/, NOT in the plugin ZIP. ---
+wporg-assets/
+
+# --- Logs / temp ---
+*.log
+*.tmp
+*.bak

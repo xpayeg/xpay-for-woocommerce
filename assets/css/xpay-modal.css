@@ -1,0 +1,184 @@
+/**
+ * XPay payment modal — minimal vanilla styling.
+ *
+ * Replaces the Bootstrap 3 dependency that previously rendered this modal.
+ * Design constraints:
+ *   - All selectors are scoped under `.xpay-modal*` so we cannot collide
+ *     with theme or other-plugin styles.
+ *   - No animations or transforms beyond a short opacity fade — keeps the
+ *     modal predictable on themes that aggressively reset transitions.
+ *   - Works without JS for the structural layout (visibility is the only
+ *     thing JS toggles).
+ *   - Themes can override visual aspects via higher-specificity selectors
+ *     in their stylesheet without touching the structural rules.
+ */
+
+.xpay-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 99998;
+    display: none;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.xpay-modal-backdrop.is-open {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 24px 12px;
+}
+
+.xpay-modal {
+    background: #fff;
+    color: #222;
+    border-radius: 6px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    width: 100%;
+    max-width: 520px;
+    margin: auto;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.xpay-modal-header {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid #e5e5e5;
+    position: relative;
+}
+
+.xpay-modal-title {
+    margin: 0 24px 0 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #222;
+}
+
+.xpay-modal-warning {
+    margin: 6px 0 0;
+    color: #b30000;
+    font-size: 13px;
+}
+
+.xpay-modal-close {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    background: transparent;
+    border: 0;
+    color: #555;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 3px;
+}
+
+.xpay-modal-close:hover,
+.xpay-modal-close:focus {
+    color: #000;
+    background: #f0f0f0;
+    outline: none;
+}
+
+.xpay-modal-body {
+    padding: 14px 16px;
+}
+
+.xpay-modal-footer {
+    padding: 10px 16px 14px;
+    border-top: 1px solid #e5e5e5;
+    text-align: right;
+}
+
+.xpay-modal-footer .xpay-btn {
+    display: inline-block;
+    padding: 6px 16px;
+    border: 1px solid #c0c0c0;
+    background: #f5f5f5;
+    color: #222;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.xpay-modal-footer .xpay-btn:hover {
+    background: #ebebeb;
+}
+
+.xpay-iframe {
+    display: block;
+    width: 100% !important;
+    height: 450px !important;
+    border: 0;
+    background: #fff;
+}
+
+/**
+ * In-modal "payment confirmed → redirecting" success banner. Only visible
+ * once the polled check_transaction returns SUCCESSFUL; the countdown
+ * value is updated via JS.
+ */
+.xpay-success-banner {
+    display: none;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: 500;
+}
+
+.xpay-success-banner.is-visible {
+    display: block;
+}
+
+/**
+ * In-modal failure banner. Shown when check_transaction returns a terminal
+ * state (FAILED or INVALID). Mirrors the success-banner shape but in red and
+ * without an auto-redirect — the customer decides whether to close and retry.
+ */
+.xpay-failure-banner {
+    display: none;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: 500;
+}
+
+.xpay-failure-banner.is-visible {
+    display: block;
+}
+
+/**
+ * When the modal is open, lock body scroll so background content doesn't
+ * scroll behind the iframe. Restored when the modal closes.
+ */
+body.xpay-modal-open {
+    overflow: hidden;
+}
+
+/**
+ * Small-screen tweaks. We intentionally do NOT make the modal full-screen
+ * on phones — the iframe carries its own responsive layout from XPay and
+ * gets enough room at 520px max-width with the surrounding chrome.
+ */
+@media (max-width: 600px) {
+    .xpay-modal {
+        max-width: 100%;
+    }
+    .xpay-iframe {
+        height: 520px !important;
+    }
+}
