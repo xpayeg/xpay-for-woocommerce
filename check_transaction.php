@@ -70,11 +70,10 @@ if ($order->has_status(array('processing', 'completed'))) {
     exit;
 }
 
-// Refuse to resurrect orders the merchant has explicitly closed. Without
-// this, a customer with the modal still open could pay in the iframe
-// after the merchant cancels the order, and payment_complete would flip
-// the status back to processing silently.
-if ($order->has_status(array('cancelled', 'refunded', 'trash'))) {
+// Refuse refunded/trashed orders. Cancelled is allowed: matches
+// update_order.php — WC may auto-cancel pending orders; XPay success
+// should still complete payment.
+if ($order->has_status(array('refunded', 'trash'))) {
     do_action('xpay_logger_event', 'check_transaction', array(
         'order_id'        => $order->get_id(),
         'result'          => 'INVALID',

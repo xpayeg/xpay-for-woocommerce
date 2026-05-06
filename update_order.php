@@ -155,8 +155,10 @@ if (!preg_match('/^[A-Za-z0-9_\-]{1,64}$/', $transaction_id)) {
 //
 // We don't restrict status at the query level — that would break stores
 // with custom statuses from B2B / fraud-review / pre-order plugins. The
-// safety check (do not resurrect cancelled/refunded orders) is applied
-// per-branch below, after lookup.
+// safety check (do not resurrect refunded/trashed orders) is applied
+// per-branch below, after lookup. Cancelled is allowed for SUCCESSFUL —
+// stores often auto-cancel unpaid orders after a hold (e.g. ~24h); XPay
+// remains source of truth once payment actually succeeds.
 //
 // PCP flags meta_key/meta_value as a slow-query risk; for a webhook handler
 // that fires once per order completion this single lookup is acceptable
@@ -256,10 +258,11 @@ if ($transaction_status === "SUCCESSFUL") {
         ]);
         return;
     }
-    // Refuse to resurrect explicitly closed orders. Without this, a
-    // customer who pays in the iframe after the merchant cancels the
-    // order would silently flip the status back to processing.
-    if ($order->has_status(array('cancelled', 'refunded', 'trash'))) {
+    // Refuse to resurrect terminal orders where payment must not be
+    // re-opened (refund / trash). Cancelled is not blocked: WooCommerce
+    // may auto-cancel pending orders after inactivity while XPay still
+    // completes payment — webhook is source of truth for payment outcome.
+    if ($order->has_status(array('refunded', 'trash'))) {
         do_action('xpay_logger_event', 'webhook.applied', array(
             'order_id'        => $order->get_id(),
             'branch'          => 'successful_closed_status',
@@ -333,10 +336,9 @@ if ($transaction_status === "SUCCESSFUL") {
         ]);
         return;
     }
-    // Don't overwrite a merchant's deliberate cancellation/refund with a
-    // 'failed' status when a stale FAILED webhook arrives. Mirrors the
-    // closed-status guard in the SUCCESSFUL branch above.
-    if ($order->has_status(array('cancelled', 'refunded', 'trash'))) {
+    // Don't overwrite refunded/trashed orders. Cancelled is allowed — WC
+    // may auto-cancel pending orders; XPay FAILED remains source of truth.
+    if ($order->has_status(array('refunded', 'trash'))) {
         do_action('xpay_logger_event', 'webhook.applied', array(
             'order_id'        => $order->get_id(),
             'branch'          => 'failed_closed_status',
