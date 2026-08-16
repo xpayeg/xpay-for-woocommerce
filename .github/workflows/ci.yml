@@ -1,0 +1,53 @@
+# CI gates for every push and pull request.
+#
+# All three jobs are required: the conventions study found the monorepo's
+# `turbo test` task defined but never wired into CI — a gap this repo
+# deliberately does not repeat. A check that doesn't run doesn't exist.
+name: CI
+
+on:
+  push:
+    branches: [ v3, main, master ]
+  pull_request:
+
+jobs:
+  phpcs:
+    name: PHPCS (WordPress-Extra)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+          tools: composer
+      - run: composer install --no-progress --no-interaction
+      - run: composer lint
+
+  phpunit:
+    name: PHPUnit (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # 7.4 is the plugin's floor; 8.3 the current mainstream. Both must pass.
+        php: [ '7.4', '8.3' ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: composer
+      - run: composer install --no-progress --no-interaction
+      - run: composer test
+
+  plugin-check:
+    name: WordPress Plugin Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Runs the same Plugin Check (PCP) that wordpress.org executes on
+      # submission — an error here is a guaranteed review blocker there.
+      - uses: wordpress/plugin-check-action@v1
+        with:
+          exclude-directories: 'vendor,tests,docs,bin,wporg-assets,screenshots'

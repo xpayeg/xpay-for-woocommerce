@@ -65,3 +65,14 @@ wporg-assets/
 *.log
 *.tmp
 *.bak
+
+# --- Development tooling (v3): never ships in the WP.org ZIP ---
+AGENTS.md
+composer.json
+composer.lock
+vendor/
+phpcs.xml
+phpunit.xml.dist
+tests/
+.github/
+.phpcs.xml.dist

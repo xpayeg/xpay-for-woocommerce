@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<ruleset name="XPay for WooCommerce">
+	<description>Coding standard for the XPay for WooCommerce plugin: WordPress-Extra plus i18n and PHP 7.4+ compatibility.</description>
+
+	<file>.</file>
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+	<exclude-pattern>*/node_modules/*</exclude-pattern>
+	<exclude-pattern>*/dist/*</exclude-pattern>
+	<exclude-pattern>*/tests/*</exclude-pattern>
+	<exclude-pattern>*/languages/*</exclude-pattern>
+
+	<arg value="sp"/>
+	<arg name="extensions" value="php"/>
+	<arg name="parallel" value="8"/>
+
+	<config name="minimum_supported_wp_version" value="6.0"/>
+	<config name="testVersion" value="7.4-"/>
+
+	<rule ref="WordPress-Extra">
+		<!-- Filenames follow WP's class-file convention already; the sniff
+		     mis-fires on the constants files holding two tiny status classes
+		     (one registry file per concern beats two 8-line files). -->
+		<exclude name="Generic.Files.OneObjectStructurePerFile.MultipleFound"/>
+		<!-- Exception messages here are constant English strings with no
+		     request data (enforced by the AGENTS.md rule that IDs stay in
+		     log context, never in messages), and every render site escapes:
+		     WC_Admin_Settings and order notes escape on output. Escaping at
+		     throw time would also break the WP-free unit-test suite for the
+		     pure classes (XPay_Signature, XPay_Money). -->
+		<exclude name="WordPress.Security.EscapeOutput.ExceptionNotEscaped"/>
+	</rule>
+
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="xpay-for-woocommerce"/>
+			</property>
+		</properties>
+	</rule>
+
+	<rule ref="PHPCompatibilityWP"/>
+</ruleset>
