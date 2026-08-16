@@ -30,6 +30,7 @@ XPay for WooCommerce connects your store to [XPay](https://xpay.app/), the Egypt
 * Arabic and English payment window, following your store language.
 * Separate test and live modes with separate keys, so you can test safely before going live.
 * Redacted diagnostic logging: card numbers, keys and secrets are stripped before anything is written to disk.
+* Built-in log viewer (WooCommerce → XPay Log) with a one-click debug report for support, plus an XPay panel on every order showing its payment events.
 
 = Requirements =
 

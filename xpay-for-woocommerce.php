@@ -54,6 +54,25 @@ add_action(
 	}
 );
 
+/*
+ * Activation/deactivation must not depend on WooCommerce being loaded, so
+ * the log store is required directly rather than via the plugin loader.
+ */
+register_activation_hook(
+	__FILE__,
+	function () {
+		require_once XPAY_WC_PLUGIN_DIR . 'includes/logger/class-xpay-log-store.php';
+		XPay_Log_Store::install();
+	}
+);
+register_deactivation_hook(
+	__FILE__,
+	function () {
+		require_once XPAY_WC_PLUGIN_DIR . 'includes/logger/class-xpay-log-store.php';
+		XPay_Log_Store::unschedule();
+	}
+);
+
 add_action(
 	'plugins_loaded',
 	function () {

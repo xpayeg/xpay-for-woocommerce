@@ -26,6 +26,10 @@ final class XPay_Redactor {
 	private static $secret_keys = array(
 		'payment_api_key',
 		'api_key',
+		'test_api_key',
+		'live_api_key',
+		'test_webhook_secret',
+		'live_webhook_secret',
 		'x-api-key',
 		'apikey',
 		'webhook_secret',

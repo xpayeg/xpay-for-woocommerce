@@ -68,16 +68,23 @@ final class XPay_Logger {
 			self::$wc_logger = wc_get_logger();
 		}
 
+		$redacted_context = XPay_Redactor::redact( is_array( $context ) ? $context : array() );
+		$scrubbed_message = '' !== $message ? XPay_Redactor::scrub_string( (string) $message ) : '';
+
 		$entry = array(
 			'request_id' => self::request_id(),
 			'stage'      => (string) $stage,
-			'context'    => XPay_Redactor::redact( is_array( $context ) ? $context : array() ),
+			'context'    => $redacted_context,
 		);
-		if ( '' !== $message ) {
-			$entry['message'] = XPay_Redactor::scrub_string( (string) $message );
+		if ( '' !== $scrubbed_message ) {
+			$entry['message'] = $scrubbed_message;
 		}
 
+		// Dual write: WC_Logger is the raw stream for developers; the store
+		// row powers the in-admin viewer and per-order panel. Both receive
+		// only redacted data.
 		self::$wc_logger->info( wp_json_encode( $entry ), array( 'source' => 'xpay' ) );
+		XPay_Log_Store::insert( (string) $stage, is_array( $redacted_context ) ? $redacted_context : array(), $scrubbed_message, self::request_id() );
 	}
 
 	public static function request_id(): string {

@@ -16,6 +16,7 @@ Major version: complete rebuild against the XPay v3 platform (Checkout Sessions,
 - **Cart & Checkout Blocks** integration and **HPOS** compatibility declaration (`before_woocommerce_init`).
 - **Money helper** doing string-based minor-unit conversion (no float arithmetic on amounts; 3-decimal currencies handled).
 - **Redacting logger** rebuilt on `WC_Logger` with the v2 two-tier taxonomy plus a value-shape PAN scrub and v3 key-prefix patterns (`sk_`/`rk_`/`pk_`/`whsec_`).
+- **In-admin log viewer** (WooCommerce → XPay Log): filterable tail of a bounded custom table (14-day / 10k-row retention, daily prune), a one-click redacted **Copy debug report** for support tickets, a per-order XPay panel on the order screen showing that order's payment story, and a nonce-guarded Clear action. Rows are redacted at write time and nothing is ever transmitted anywhere — the merchant pastes manually.
 - **Standards tooling**: AGENTS.md engineering standard, PHPCS (WordPress-Extra + PHPCompatibilityWP), PHPUnit suite for the pure classes (37 tests), and CI that gates every PR on phpcs + Plugin Check + PHPUnit.
 
 ### Removed

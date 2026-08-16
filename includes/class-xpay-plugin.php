@@ -41,7 +41,12 @@ final class XPay_Plugin {
 
 		// Logging (loaded before anything that logs).
 		require_once $dir . 'logger/class-xpay-redactor.php';
+		require_once $dir . 'logger/class-xpay-log-store.php';
 		require_once $dir . 'logger/class-xpay-logger.php';
+
+		// Admin surfaces (log viewer, order panel).
+		require_once $dir . 'admin/class-xpay-log-viewer.php';
+		require_once $dir . 'admin/class-xpay-order-panel.php';
 
 		// API layer.
 		require_once $dir . 'api/class-xpay-api-exception.php';
@@ -73,6 +78,18 @@ final class XPay_Plugin {
 		// trusting the redirect. Webhook remains the authoritative writer;
 		// this closes the gap when the shopper outruns the webhook.
 		add_action( 'woocommerce_before_thankyou', array( 'XPay_Order_Sync', 'verify_on_thankyou' ) );
+
+		// Prune runs from WP-Cron (any request context, not just admin).
+		add_action( XPay_Log_Store::CRON_HOOK, array( 'XPay_Log_Store', 'prune' ) );
+
+		if ( is_admin() ) {
+			// Covers plugin updates that skip the activation hook: install()
+			// early-returns on a matching schema version, so this is one
+			// cached option read on admin loads.
+			add_action( 'admin_init', array( 'XPay_Log_Store', 'install' ) );
+			add_action( 'admin_menu', array( 'XPay_Log_Viewer', 'register_menu' ) );
+			add_action( 'add_meta_boxes', array( 'XPay_Order_Panel', 'register' ) );
+		}
 
 		XPay_Logger::init();
 	}
