@@ -85,9 +85,12 @@ final class XPay_Constants {
 	const WEBHOOK_ENDPOINT = 'xpay_webhook';
 
 	/**
-	 * True when a URL's host is one of ours (exact match or subdomain of
-	 * xpay.app). Localhost is allowed only when the API base itself was
-	 * overridden for local development.
+	 * True when a URL is HTTPS and its host is one of ours (exact match or
+	 * subdomain of xpay.app). The scheme check is deliberate: esc_url()
+	 * allows http, and every URL passing this gate is browser-bound —
+	 * a downgraded scheme is as untrusted as a foreign host. Localhost
+	 * (http allowed) only when the API base itself was overridden for
+	 * local development.
 	 *
 	 * @param string $url URL returned by the XPay API.
 	 */
@@ -98,8 +101,17 @@ final class XPay_Constants {
 		}
 		$host = strtolower( $host );
 
-		if ( defined( 'XPAY_WC_API_BASE' ) && in_array( $host, array( 'localhost', '127.0.0.1' ), true ) ) {
-			return true;
+		$scheme = wp_parse_url( $url, PHP_URL_SCHEME );
+		$scheme = is_string( $scheme ) ? strtolower( $scheme ) : '';
+
+		// '[::1]' because wp_parse_url() keeps the brackets on IPv6 hosts.
+		$local_hosts = array( 'localhost', '127.0.0.1', '[::1]' );
+		if ( defined( 'XPAY_WC_API_BASE' ) && in_array( $host, $local_hosts, true ) ) {
+			return 'https' === $scheme || 'http' === $scheme;
+		}
+
+		if ( 'https' !== $scheme ) {
+			return false;
 		}
 		foreach ( self::ALLOWED_XPAY_HOSTS as $allowed ) {
 			$suffix = '.' . $allowed;

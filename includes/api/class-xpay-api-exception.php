@@ -75,8 +75,13 @@ class XPay_Api_Exception extends Exception {
 	 * @param int   $http_status Response status.
 	 */
 	public static function from_api_response( array $error_body, int $http_status ): self {
-		$code    = isset( $error_body['code'] ) && is_string( $error_body['code'] ) ? $error_body['code'] : XPay_Error_Codes::API_ERROR;
-		$message = isset( $error_body['message'] ) && is_string( $error_body['message'] ) ? $error_body['message'] : 'XPay API request failed';
+		// Trimmed-empty fields count as missing: a blank code would defeat
+		// every code comparison downstream, and a blank message defeats
+		// alert grouping.
+		$code    = isset( $error_body['code'] ) && is_string( $error_body['code'] ) ? trim( $error_body['code'] ) : '';
+		$code    = '' !== $code ? $code : XPay_Error_Codes::API_ERROR;
+		$message = isset( $error_body['message'] ) && is_string( $error_body['message'] ) ? trim( $error_body['message'] ) : '';
+		$message = '' !== $message ? $message : 'XPay API request failed';
 		$doc_url = isset( $error_body['doc_url'] ) && is_string( $error_body['doc_url'] ) ? $error_body['doc_url'] : '';
 		$param   = isset( $error_body['param'] ) && is_string( $error_body['param'] ) ? $error_body['param'] : '';
 		return new self( $message, $code, $http_status, $doc_url, $param );
@@ -104,11 +109,20 @@ class XPay_Api_Exception extends Exception {
 
 	/**
 	 * The API accepted the refund request but the refund object came back in
-	 * a non-accepted state (FAILED/CANCELED, or an unrecognized status). The
+	 * a non-completed state (FAILED/CANCELED, or an unrecognized status). The
 	 * actual status belongs in log context, not here — messages are alert
 	 * grouping keys.
 	 */
 	public static function refund_rejected(): self {
-		return new self( 'XPay did not return an accepted refund state', XPay_Error_Codes::REFUND_REJECTED );
+		return new self( 'XPay did not return a completed refund state', XPay_Error_Codes::REFUND_REJECTED );
+	}
+
+	/**
+	 * The refund is accepted but still in flight (PENDING/REQUIRES_ACTION).
+	 * WooCommerce must not record it as completed, and the admin must not
+	 * resubmit it.
+	 */
+	public static function refund_pending(): self {
+		return new self( 'XPay accepted the refund but it is still processing', XPay_Error_Codes::REFUND_PENDING );
 	}
 }

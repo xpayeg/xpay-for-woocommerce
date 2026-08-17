@@ -78,14 +78,17 @@ class XPay_Refund_Service {
 			// request replay safely; a second deliberate refund is a new key.
 			$refund = $this->client->create_refund( $body, 'wcref_' . str_replace( '-', '', wp_generate_uuid4() ) );
 
-			// A 2xx create can still carry FAILED/CANCELED — the processor's
-			// synchronous decline is copied into the refund object, not
-			// turned into an HTTP error. Gate on the accepted set before
-			// recording anything in WooCommerce.
+			// A 2xx create can still carry a non-completed status — the
+			// processor's synchronous decline (FAILED) is copied into the
+			// refund object, not turned into an HTTP error. Only SUCCEEDED
+			// may reach WooCommerce: returning true from process_refund()
+			// records a COMPLETED refund, so an in-flight state (unused by
+			// current adapters, reserved for future processors) must fail
+			// closed with a "do not resubmit" message instead.
 			$status = isset( $refund['status'] ) && is_string( $refund['status'] ) ? $refund['status'] : '';
-			if ( ! in_array( $status, XPay_Refund_Status::ACCEPTED, true ) ) {
+			if ( XPay_Refund_Status::SUCCEEDED !== $status ) {
 				XPay_Logger::event(
-					'refund.rejected',
+					'refund.not_completed',
 					array(
 						'order_id'  => $order->get_id(),
 						'intent_id' => $intent_id,
@@ -93,6 +96,9 @@ class XPay_Refund_Service {
 						'status'    => $status,
 					)
 				);
+				if ( in_array( $status, XPay_Refund_Status::IN_FLIGHT, true ) ) {
+					throw XPay_Api_Exception::refund_pending();
+				}
 				throw XPay_Api_Exception::refund_rejected();
 			}
 
@@ -137,6 +143,8 @@ class XPay_Refund_Service {
 				return __( 'Another refund for this payment is still processing. Wait a few seconds and try again.', 'xpay-for-woocommerce' );
 			case XPay_Error_Codes::REFUND_REJECTED:
 				return __( 'XPay accepted the request but did not complete the refund. Check the payment in your XPay dashboard before retrying.', 'xpay-for-woocommerce' );
+			case XPay_Error_Codes::REFUND_PENDING:
+				return __( 'XPay accepted this refund and is still processing it. Do not submit it again — check the payment in your XPay dashboard and record the refund here once it completes.', 'xpay-for-woocommerce' );
 			case XPay_Error_Codes::API_RESOURCE_INVALID_STATE:
 				return __( 'XPay cannot refund this payment in its current state. Check the payment in your XPay dashboard.', 'xpay-for-woocommerce' );
 			default:

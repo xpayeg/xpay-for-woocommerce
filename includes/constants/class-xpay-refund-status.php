@@ -22,12 +22,13 @@ final class XPay_Refund_Status {
 	const CANCELED        = 'CANCELED';
 
 	/**
-	 * States in which the platform has accepted the refund: money settled
-	 * (SUCCEEDED) or in flight (PENDING / REQUIRES_ACTION). A 2xx create
-	 * response can still carry FAILED or CANCELED — the processor's
-	 * synchronous decline is copied into the refund object, not turned into
-	 * an HTTP error — and recording a WooCommerce refund for one of those
-	 * would misstate money truth.
+	 * Money accepted but not yet settled. Every current platform adapter
+	 * answers a create synchronously with SUCCEEDED or FAILED — these two
+	 * exist for future processors. WooCommerce's process_refund() contract
+	 * treats `true` as a COMPLETED synchronous refund, so an in-flight
+	 * state must not be recorded as one; it surfaces as an explicit
+	 * "still processing, do not resubmit" error until the plugin
+	 * subscribes to refund.* webhooks and can reconcile asynchronously.
 	 */
-	const ACCEPTED = array( self::SUCCEEDED, self::PENDING, self::REQUIRES_ACTION );
+	const IN_FLIGHT = array( self::PENDING, self::REQUIRES_ACTION );
 }
