@@ -182,7 +182,7 @@ class XPay_Webhook_Controller {
 			return null;
 		}
 		$order = wc_get_order( $order_id );
-		if ( ! $order instanceof WC_Order || XPay_Constants::GATEWAY_ID !== $order->get_payment_method() ) {
+		if ( ! $order instanceof WC_Order || ! XPay_Constants::is_xpay_gateway( (string) $order->get_payment_method() ) ) {
 			return null;
 		}
 

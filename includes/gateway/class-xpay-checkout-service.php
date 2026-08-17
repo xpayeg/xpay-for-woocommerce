@@ -32,14 +32,24 @@ class XPay_Checkout_Service {
 	/**
 	 * Return an OPEN session for this order, creating one if needed.
 	 *
-	 * @param WC_Order $order Order awaiting payment.
+	 * @param WC_Order   $order        Order awaiting payment.
+	 * @param array|null $pinned_types Restrict the session to these method
+	 *                                 types (per-method rows); null = the
+	 *                                 merchant's full method list.
 	 * @return array Session object (id, url, clientSecret, …).
 	 * @throws XPay_Api_Exception
 	 */
-	public function get_or_create_session( WC_Order $order ): array {
+	public function get_or_create_session( WC_Order $order, ?array $pinned_types = null ): array {
+		$pin         = null === $pinned_types ? '' : XPay_Payment_Methods::normalize_pin( $pinned_types );
 		$existing_id = (string) $order->get_meta( XPay_Constants::META_SESSION_ID );
+		$stored_pin  = (string) $order->get_meta( XPay_Constants::META_METHOD_PIN );
 
-		if ( '' !== $existing_id ) {
+		// A session is only reusable for the SAME restriction it was minted
+		// with: the shopper who went back and picked the valU row must not
+		// land in a session pinned to card. Compared locally (the pin is
+		// stored at creation) — the API response cannot distinguish "pinned
+		// to the full list" from "not pinned at all".
+		if ( '' !== $existing_id && $stored_pin === $pin ) {
 			try {
 				$session = $this->client->get_checkout_session( $existing_id );
 				if ( $this->is_reusable( $session, $order ) ) {
@@ -58,7 +68,7 @@ class XPay_Checkout_Service {
 			}
 		}
 
-		return $this->create_session( $order );
+		return $this->create_session( $order, $pinned_types, $pin );
 	}
 
 	/**
@@ -78,11 +88,13 @@ class XPay_Checkout_Service {
 	}
 
 	/**
-	 * @param WC_Order $order Order awaiting payment.
+	 * @param WC_Order   $order        Order awaiting payment.
+	 * @param array|null $pinned_types Method restriction, null for the full list.
+	 * @param string     $pin          Normalized form of $pinned_types (stored on the order).
 	 * @return array Newly created session.
 	 * @throws XPay_Api_Exception
 	 */
-	private function create_session( WC_Order $order ): array {
+	private function create_session( WC_Order $order, ?array $pinned_types = null, string $pin = '' ): array {
 		$attempt  = (int) $order->get_meta( XPay_Constants::META_ATTEMPT ) + 1;
 		$currency = strtoupper( $order->get_currency() );
 
@@ -119,6 +131,10 @@ class XPay_Checkout_Service {
 			),
 		);
 
+		if ( null !== $pinned_types && array() !== $pinned_types ) {
+			$body['paymentMethodTypes'] = array_values( $pinned_types );
+		}
+
 		$body = $this->apply_customer_fields( $body, $order );
 
 		try {
@@ -130,12 +146,18 @@ class XPay_Checkout_Service {
 				sprintf( 'wc_%d_a%d', $order->get_id(), $attempt )
 			);
 		} catch ( XPay_Api_Exception $e ) {
-			// A stored customer id can go stale (deleted in the XPay
-			// dashboard). Recover instead of blocking checkout: drop the
-			// dead link and retry once as a fresh customer. The retry uses a
-			// suffixed idempotency key — same key + different body would be
-			// rejected as a fingerprint mismatch.
-			if ( isset( $body['customerId'] ) && XPay_Error_Codes::API_RESOURCE_MISSING === $e->get_error_code() ) {
+			// A pinned method the merchant's XPay account does not have is
+			// the MERCHANT'S configuration slip, never the shopper's dead
+			// end: fall back once to an unpinned session (the full XPay
+			// window) and leave the merchant a notice + log trail. Suffixed
+			// idempotency key — same key + different body would be rejected
+			// as a fingerprint mismatch.
+			if ( isset( $body['paymentMethodTypes'] ) && XPay_Error_Codes::API_PARAMETER_INVALID === $e->get_error_code() && 'paymentMethodTypes' === $e->get_param() ) {
+				$this->record_pin_rejection( $order, $body['paymentMethodTypes'] );
+				unset( $body['paymentMethodTypes'] );
+				$pin     = '';
+				$session = $this->client->create_checkout_session( $body, sprintf( 'wc_%d_a%dp', $order->get_id(), $attempt ) );
+			} elseif ( isset( $body['customerId'] ) && XPay_Error_Codes::API_RESOURCE_MISSING === $e->get_error_code() ) {
 				delete_user_meta( $order->get_user_id(), XPay_Constants::customer_user_meta_key( $this->client->is_live_mode() ) );
 				XPay_Logger::event(
 					'customer.stale_link_cleared',
@@ -163,6 +185,7 @@ class XPay_Checkout_Service {
 		}
 
 		$order->update_meta_data( XPay_Constants::META_SESSION_ID, (string) $session['id'] );
+		$order->update_meta_data( XPay_Constants::META_METHOD_PIN, $pin );
 		$order->update_meta_data( XPay_Constants::META_CLIENT_SECRET, (string) $session['clientSecret'] );
 		if ( ! empty( $session['url'] ) ) {
 			// Persisted (already allowlist-checked above) so the hosted
@@ -194,6 +217,29 @@ class XPay_Checkout_Service {
 		);
 
 		return $session;
+	}
+
+	/**
+	 * Remember that the API refused a method pin, so admin can tell the
+	 * merchant. Keyed by type: repeated rejections do not stack notices.
+	 *
+	 * @param WC_Order $order Order whose session creation hit the rejection.
+	 * @param array    $types The pinned types the API refused.
+	 */
+	private function record_pin_rejection( WC_Order $order, array $types ): void {
+		XPay_Logger::event(
+			'session.method_pin_rejected',
+			array(
+				'order_id' => $order->get_id(),
+				'types'    => $types,
+			)
+		);
+		$rejected = get_option( XPay_Constants::OPTION_PIN_REJECTED, array() );
+		$rejected = is_array( $rejected ) ? $rejected : array();
+		foreach ( $types as $type ) {
+			$rejected[ (string) $type ] = gmdate( 'Y-m-d H:i:s' );
+		}
+		update_option( XPay_Constants::OPTION_PIN_REJECTED, $rejected, false );
 	}
 
 	/**

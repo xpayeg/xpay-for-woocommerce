@@ -39,6 +39,7 @@ final class XPay_Error_Codes {
 
 	/* ── XPay API codes the plugin branches on ───────────────────────── */
 	const API_RESOURCE_MISSING       = 'resource_missing';
+	const API_PARAMETER_INVALID      = 'parameter_invalid';
 	const API_RESOURCE_INVALID_STATE = 'resource_invalid_state';
 	const API_RATE_LIMIT             = 'rate_limit';
 	const API_KEY_INVALID            = 'api_key_invalid';

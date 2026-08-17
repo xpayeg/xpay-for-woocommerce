@@ -63,8 +63,12 @@ final class XPay_Constants {
 	const META_CLIENT_SECRET    = '_xpay_client_secret';
 	const META_PAYMENT_INTENT   = '_xpay_payment_intent_id';
 	const META_ATTEMPT          = '_xpay_session_attempt';
+	const META_METHOD_PIN       = '_xpay_method_pin';
 	const META_PROCESSED_EVENTS = '_xpay_processed_events';
 	const META_CUSTOMER_ID      = '_xpay_customer_id';
+
+	/** Option flagging a method pin the API rejected (drives the admin notice). */
+	const OPTION_PIN_REJECTED = 'xpay_wc_method_pin_rejected';
 
 	/**
 	 * User-meta key holding the shopper's XPay Customer id (cus_…), split
@@ -80,6 +84,18 @@ final class XPay_Constants {
 
 	/** Gateway id — also the settings option suffix (woocommerce_xpay_settings). */
 	const GATEWAY_ID = 'xpay';
+
+	/**
+	 * True for the combined gateway AND its per-method rows (xpay_card,
+	 * xpay_valu, …). Every "was this order paid through us" check must use
+	 * this, not an exact GATEWAY_ID comparison — a valU-row order carries
+	 * payment_method 'xpay_valu' and is just as much ours.
+	 *
+	 * @param string $gateway_id A WooCommerce payment method id.
+	 */
+	public static function is_xpay_gateway( string $gateway_id ): bool {
+		return self::GATEWAY_ID === $gateway_id || 0 === strpos( $gateway_id, self::GATEWAY_ID . '_' );
+	}
 
 	/** WC-API endpoint slug for the webhook receiver. */
 	const WEBHOOK_ENDPOINT = 'xpay_webhook';

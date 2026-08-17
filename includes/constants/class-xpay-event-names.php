@@ -31,11 +31,15 @@ final class XPay_Event_Names {
 	);
 
 	/*
-	 * Deferred — refund.* events would let the plugin reflect refunds issued
-	 * from the XPay dashboard back into WooCommerce order notes. Reactivate
-	 * by following the 3-step checklist above.
+	 * Deferred — refund events would let the plugin reflect refunds issued
+	 * from the XPay dashboard back into WooCommerce. Reactivate by
+	 * following the 3-step checklist above, with the platform's ACTUAL
+	 * event names (event-names.constants.ts): 'charge.refunded' is the
+	 * money-settled signal, 'refund.failed' the decline; 'refund.created'
+	 * fires for pending creates too, so it is NOT a settlement signal, and
+	 * 'refund.updated' does not exist — refunds are immutable post-create.
 	 *
-	 * const REFUND_SUCCEEDED = 'refund.succeeded';
-	 * const REFUND_FAILED    = 'refund.failed';
+	 * const CHARGE_REFUNDED = 'charge.refunded';
+	 * const REFUND_FAILED   = 'refund.failed';
 	 */
 }

@@ -146,7 +146,7 @@ class XPay_Order_Sync {
 	 */
 	public static function verify_on_thankyou( $order_id ): void {
 		$order = wc_get_order( $order_id );
-		if ( ! $order instanceof WC_Order || XPay_Constants::GATEWAY_ID !== $order->get_payment_method() || $order->is_paid() ) {
+		if ( ! $order instanceof WC_Order || ! XPay_Constants::is_xpay_gateway( (string) $order->get_payment_method() ) || $order->is_paid() ) {
 			return;
 		}
 

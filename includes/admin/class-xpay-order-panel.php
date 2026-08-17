@@ -55,7 +55,7 @@ final class XPay_Order_Panel {
 		}
 
 		$order = $post_or_order instanceof WC_Order ? $post_or_order : wc_get_order( $post_or_order->ID );
-		if ( ! $order instanceof WC_Order || XPay_Constants::GATEWAY_ID !== $order->get_payment_method() ) {
+		if ( ! $order instanceof WC_Order || ! XPay_Constants::is_xpay_gateway( (string) $order->get_payment_method() ) ) {
 			echo '<p>' . esc_html__( 'This order was not paid with XPay.', 'xpay-for-woocommerce' ) . '</p>';
 			return;
 		}

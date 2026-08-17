@@ -57,6 +57,10 @@ Yes. Payments will not work on a store without HTTPS, and XPay webhooks are only
 
 Whatever is enabled on your XPay merchant account — cards and valU today, with more methods appearing automatically as XPay enables them for you. The plugin never shows a method your account cannot accept.
 
+= Can I show Card, valU and Fawry as separate options at checkout? =
+
+Yes. In the XPay settings, set "Payment options" to "A separate option per payment method" and tick the methods you offer. Each row shows its logo and opens the payment window directly on that method. Only tick methods enabled for your XPay account: shoppers who pick a method your account does not have are shown the full XPay window instead, and you get a notice in admin.
+
 = How do I set up the webhook? =
 
 Your XPay dashboard → Developers → Webhooks. Add an endpoint pointing at the URL shown in the plugin settings, subscribe it to `checkout.session.completed` and `checkout.session.expired`, and paste the signing secret into the plugin. Test and live modes each need their own endpoint and secret.

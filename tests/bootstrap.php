@@ -13,7 +13,9 @@
 
 define( 'ABSPATH', __DIR__ . '/' );
 
+require_once dirname( __DIR__ ) . '/includes/constants/class-xpay-constants.php';
 require_once dirname( __DIR__ ) . '/includes/constants/class-xpay-error-codes.php';
+require_once dirname( __DIR__ ) . '/includes/constants/class-xpay-payment-methods.php';
 require_once dirname( __DIR__ ) . '/includes/api/class-xpay-api-exception.php';
 require_once dirname( __DIR__ ) . '/includes/api/class-xpay-signature.php';
 require_once dirname( __DIR__ ) . '/includes/api/class-xpay-money.php';

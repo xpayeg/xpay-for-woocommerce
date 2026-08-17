@@ -6,10 +6,15 @@
  * simply does not appear on block-based checkouts — Blocks does not fall
  * back to classic gateways.
  *
+ * One instance per checkout row: the combined XPay row in combined mode,
+ * or one per ticked method in split mode — mirroring exactly what
+ * is_available() decides for classic checkout, so the two checkouts can
+ * never disagree about which rows exist.
+ *
  * The payment step itself happens on the order-pay page (see
  * XPay_Gateway), so the Blocks surface stays minimal: render the
- * title/description, and let Blocks' standard redirect flow carry the
- * shopper to the pay page. One flow for both checkouts, by design.
+ * title/description/icon, and let Blocks' standard redirect flow carry
+ * the shopper to the pay page. One flow for both checkouts, by design.
  *
  * @package XPay_For_WooCommerce
  */
@@ -20,8 +25,17 @@ use Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodTyp
 
 final class XPay_Blocks_Support extends AbstractPaymentMethodType {
 
-	/** @var string Required by AbstractPaymentMethodType. */
-	protected $name = XPay_Constants::GATEWAY_ID;
+	/** @var array{title:string, description:string, icon:string, active:bool} */
+	private $row;
+
+	/**
+	 * @param string $name Gateway id this row registers as (xpay, xpay_valu, …).
+	 * @param array  $row  title/description/icon/active for the row.
+	 */
+	public function __construct( string $name, array $row ) {
+		$this->name = $name;
+		$this->row  = $row;
+	}
 
 	public static function register(): void {
 		if ( ! class_exists( AbstractPaymentMethodType::class ) ) {
@@ -30,7 +44,37 @@ final class XPay_Blocks_Support extends AbstractPaymentMethodType {
 		add_action(
 			'woocommerce_blocks_payment_method_type_registration',
 			function ( $registry ) {
-				$registry->register( new self() );
+				$gateway = XPay_Plugin::instance()->gateway();
+				$split   = $gateway->split_types();
+
+				if ( array() === $split ) {
+					$registry->register(
+						new self(
+							XPay_Constants::GATEWAY_ID,
+							array(
+								'title'       => $gateway->get_option( 'title', 'XPay' ),
+								'description' => $gateway->get_option( 'description', '' ),
+								'icon'        => '',
+								'active'      => true,
+							)
+						)
+					);
+					return;
+				}
+
+				foreach ( $split as $type ) {
+					$registry->register(
+						new self(
+							XPay_Payment_Methods::gateway_id( $type ),
+							array(
+								'title'       => XPay_Payment_Methods::label( $type ),
+								'description' => XPay_Payment_Methods::description( $type ),
+								'icon'        => XPay_Payment_Methods::icon_url( $type ),
+								'active'      => true,
+							)
+						)
+					);
+				}
 			}
 		);
 	}
@@ -40,10 +84,12 @@ final class XPay_Blocks_Support extends AbstractPaymentMethodType {
 	}
 
 	public function is_active(): bool {
-		return isset( $this->settings['enabled'] ) && 'yes' === $this->settings['enabled'];
+		return $this->row['active'] && isset( $this->settings['enabled'] ) && 'yes' === $this->settings['enabled'];
 	}
 
 	public function get_payment_method_script_handles(): array {
+		// One shared script serves every row; registering the same handle
+		// repeatedly is a no-op in WordPress, so per-row calls stay safe.
 		wp_register_script(
 			'xpay-blocks',
 			XPAY_WC_PLUGIN_URL . 'assets/js/blocks-integration.js',
@@ -56,8 +102,10 @@ final class XPay_Blocks_Support extends AbstractPaymentMethodType {
 
 	public function get_payment_method_data(): array {
 		return array(
-			'title'       => isset( $this->settings['title'] ) ? $this->settings['title'] : 'XPay',
-			'description' => isset( $this->settings['description'] ) ? $this->settings['description'] : '',
+			'title'       => $this->row['title'],
+			'description' => $this->row['description'],
+			'icon'        => $this->row['icon'],
+			'name'        => $this->name,
 			'supports'    => array( 'products', 'refunds' ),
 		);
 	}

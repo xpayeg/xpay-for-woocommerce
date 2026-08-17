@@ -38,6 +38,7 @@ final class XPay_Plugin {
 		require_once $dir . 'constants/class-xpay-error-codes.php';
 		require_once $dir . 'constants/class-xpay-session-status.php';
 		require_once $dir . 'constants/class-xpay-refund-status.php';
+		require_once $dir . 'constants/class-xpay-payment-methods.php';
 		require_once $dir . 'constants/class-xpay-event-names.php';
 
 		// Logging (loaded before anything that logs).
@@ -64,6 +65,7 @@ final class XPay_Plugin {
 
 		// WooCommerce surfaces.
 		require_once $dir . 'gateway/class-xpay-gateway.php';
+		require_once $dir . 'gateway/class-xpay-method-gateway.php';
 		if ( class_exists( \Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType::class ) ) {
 			// The Blocks class extends AbstractPaymentMethodType at parse
 			// time — requiring the file without the parent loaded is a fatal,
@@ -98,17 +100,27 @@ final class XPay_Plugin {
 			add_action( 'admin_init', array( 'XPay_Log_Store', 'install' ) );
 			add_action( 'admin_menu', array( 'XPay_Log_Viewer', 'register_menu' ) );
 			add_action( 'add_meta_boxes', array( 'XPay_Order_Panel', 'register' ) );
+			add_action( 'admin_notices', array( 'XPay_Method_Gateway', 'render_pin_rejected_notice' ) );
 		}
 
 		XPay_Logger::init();
 	}
 
 	/**
-	 * @param array $gateways Registered gateway class names.
+	 * The combined gateway plus one row per splittable method. All are
+	 * always registered — each row's is_available() decides what checkout
+	 * actually shows, so mode switches never need cache-sensitive
+	 * registration logic. WooCommerce accepts instances here, which the
+	 * per-method rows need (their constructor takes the method type).
+	 *
+	 * @param array $gateways Registered gateway class names/instances.
 	 * @return array
 	 */
 	public function register_gateway( array $gateways ): array {
 		$gateways[] = 'XPay_Gateway';
+		foreach ( XPay_Payment_Methods::SPLITTABLE as $type ) {
+			$gateways[] = new XPay_Method_Gateway( $type );
+		}
 		return $gateways;
 	}
 

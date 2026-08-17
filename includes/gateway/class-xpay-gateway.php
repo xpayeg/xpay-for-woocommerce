@@ -31,7 +31,7 @@ class XPay_Gateway extends WC_Payment_Gateway {
 	private $client = null;
 
 	public function __construct() {
-		$this->id                 = XPay_Constants::GATEWAY_ID;
+		$this->id                 = $this->gateway_id();
 		$this->has_fields         = false;
 		$this->method_title       = __( 'XPay', 'xpay-for-woocommerce' );
 		$this->method_description = __( 'Accept cards, valU and more via XPay (Egypt). Customers pay in a secure XPay window without leaving your store.', 'xpay-for-woocommerce' );
@@ -45,6 +45,25 @@ class XPay_Gateway extends WC_Payment_Gateway {
 
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
 		add_action( 'woocommerce_receipt_' . $this->id, array( $this, 'receipt_page' ) );
+	}
+
+	/**
+	 * The WooCommerce gateway id. Overridable so the per-method rows
+	 * (XPay_Method_Gateway) get their own id BEFORE the constructor wires
+	 * the receipt/settings hooks that embed it.
+	 */
+	protected function gateway_id(): string {
+		return XPay_Constants::GATEWAY_ID;
+	}
+
+	/**
+	 * Session method restriction for this row: null = the merchant's full
+	 * method list (combined row); the per-method rows return their one type.
+	 *
+	 * @return array|null Wire strings from XPay_Payment_Methods, or null.
+	 */
+	protected function pinned_method_types(): ?array {
+		return null;
 	}
 
 	public function init_form_fields(): void {
@@ -113,6 +132,40 @@ class XPay_Gateway extends WC_Payment_Gateway {
 				/* translators: %s is this store's webhook URL. */
 				'description' => sprintf( __( 'whsec_… secret for a live-mode webhook endpoint pointing at %s.', 'xpay-for-woocommerce' ), '<code>' . esc_html( $webhook_url ) . '</code>' ),
 			),
+			'display_heading'      => array(
+				'title'       => __( 'Checkout display', 'xpay-for-woocommerce' ),
+				'type'        => 'title',
+				'description' => __( 'Choose how XPay appears on your checkout page.', 'xpay-for-woocommerce' ),
+			),
+			'display_mode'         => array(
+				'title'       => __( 'Payment options', 'xpay-for-woocommerce' ),
+				'type'        => 'select',
+				'description' => __( 'Separate options let shoppers pick their method before the payment window opens, so it opens directly on that method.', 'xpay-for-woocommerce' ),
+				'default'     => 'combined',
+				'options'     => array(
+					'combined' => __( 'One XPay option for all methods', 'xpay-for-woocommerce' ),
+					'split'    => __( 'A separate option per payment method', 'xpay-for-woocommerce' ),
+				),
+			),
+			'split_card'           => array(
+				'title'   => __( 'Card', 'xpay-for-woocommerce' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Offer Card (Visa, Mastercard, Meeza) as its own option', 'xpay-for-woocommerce' ),
+				'default' => 'yes',
+			),
+			'split_valu'           => array(
+				'title'   => __( 'valU', 'xpay-for-woocommerce' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Offer valU as its own option', 'xpay-for-woocommerce' ),
+				'default' => 'yes',
+			),
+			'split_fawry'          => array(
+				'title'       => __( 'Fawry', 'xpay-for-woocommerce' ),
+				'type'        => 'checkbox',
+				'label'       => __( 'Offer Fawry as its own option', 'xpay-for-woocommerce' ),
+				'description' => __( 'Only tick methods that are enabled for your XPay account. Shoppers who pick a method your account does not have are shown the full XPay window instead, and you get a notice here in admin.', 'xpay-for-woocommerce' ),
+				'default'     => 'no',
+			),
 			'debug'                => array(
 				'title'   => __( 'Diagnostic logging', 'xpay-for-woocommerce' ),
 				'type'    => 'checkbox',
@@ -120,6 +173,48 @@ class XPay_Gateway extends WC_Payment_Gateway {
 				'default' => 'no',
 			),
 		);
+	}
+
+	/* ── Checkout display (combined row vs per-method rows) ──────────── */
+
+	/**
+	 * Method types the merchant ticked for dedicated rows, or an empty
+	 * array in combined mode. The registry order is preserved so the rows
+	 * render in a stable order at checkout.
+	 *
+	 * @return array Wire strings from XPay_Payment_Methods::SPLITTABLE.
+	 */
+	public function split_types(): array {
+		if ( 'split' !== $this->get_option( 'display_mode' ) ) {
+			return array();
+		}
+		$types = array();
+		foreach ( XPay_Payment_Methods::SPLITTABLE as $type ) {
+			if ( 'yes' === $this->get_option( XPay_Payment_Methods::setting_key( $type ) ) ) {
+				$types[] = $type;
+			}
+		}
+		return $types;
+	}
+
+	/**
+	 * Enabled/configured check shared by the combined row and the
+	 * per-method rows — WITHOUT the display-mode split, which each row
+	 * layers on differently in is_available(). Reads the SHARED switch
+	 * from settings rather than $this->enabled: the per-method rows
+	 * repurpose $this->enabled to show their own state in the payments
+	 * list, so it cannot double as the plugin-wide switch.
+	 */
+	protected function base_available(): bool {
+		return 'yes' === $this->get_option( 'enabled' );
+	}
+
+	/**
+	 * The combined row steps aside when per-method rows are active: both
+	 * at once would offer the same payment twice under different names.
+	 */
+	public function is_available() {
+		return $this->base_available() && array() === $this->split_types();
 	}
 
 	/* ── Settings access (mode-aware) ────────────────────────────────── */
@@ -165,6 +260,10 @@ class XPay_Gateway extends WC_Payment_Gateway {
 	 */
 	public function process_admin_options() {
 		$saved = parent::process_admin_options();
+
+		// A settings save is the merchant acting on (or changing) their
+		// method configuration — retire any standing pin-rejected notice.
+		delete_option( XPay_Constants::OPTION_PIN_REJECTED );
 
 		$key = $this->api_key();
 		if ( '' === $key ) {
@@ -214,7 +313,7 @@ class XPay_Gateway extends WC_Payment_Gateway {
 
 		try {
 			$service = new XPay_Checkout_Service( $this->api_client() );
-			$service->get_or_create_session( $order );
+			$service->get_or_create_session( $order, $this->pinned_method_types() );
 		} catch ( XPay_Api_Exception $e ) {
 			XPay_Logger::event(
 				'process_payment.failed',
@@ -263,7 +362,7 @@ class XPay_Gateway extends WC_Payment_Gateway {
 			// links from admin emails work identically.
 			try {
 				$service       = new XPay_Checkout_Service( $this->api_client() );
-				$session       = $service->get_or_create_session( $order );
+				$session       = $service->get_or_create_session( $order, $this->pinned_method_types() );
 				$client_secret = (string) $session['clientSecret'];
 			} catch ( XPay_Api_Exception $e ) {
 				echo '<p>' . esc_html__( 'The payment could not be started. Please refresh the page to try again.', 'xpay-for-woocommerce' ) . '</p>';

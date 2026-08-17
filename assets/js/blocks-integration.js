@@ -1,10 +1,15 @@
 /**
- * Cart & Checkout Blocks registration for the XPay gateway.
+ * Cart & Checkout Blocks registration for the XPay checkout rows.
  *
- * Deliberately build-less plain JS (no JSX/webpack): the surface is a
- * label and description — Blocks' standard redirect flow does the rest,
- * and a build step would be tooling overhead with no shopper benefit.
- * WP.org review also favors reviewable, unminified source.
+ * Deliberately build-less plain JS (no JSX/webpack): each row is a label,
+ * an optional logo, and a description — Blocks' standard redirect flow
+ * does the rest, and a build step would be tooling overhead with no
+ * shopper benefit. WP.org review also favors reviewable, unminified source.
+ *
+ * The PHP side registers one payment method type per active row (combined
+ * XPay, or Card/valU/Fawry in split mode); each publishes its data under
+ * '<gateway id>_data'. This script registers whichever of those exist —
+ * the row list is decided server-side, never here.
  */
 ( function () {
 	'use strict';
@@ -18,21 +23,45 @@
 	var decodeEntities = window.wp.htmlEntities.decodeEntities;
 	var createElement = window.wp.element.createElement;
 
-	var settings = getSetting( 'xpay_data', {} );
-	var label = decodeEntities( settings.title || 'XPay' );
-	var description = decodeEntities( settings.description || '' );
+	var ROW_IDS = [ 'xpay', 'xpay_card', 'xpay_valu', 'xpay_fawry' ];
 
-	registerPaymentMethod( {
-		name: 'xpay',
-		label: label,
-		ariaLabel: label,
-		content: createElement( 'p', { style: { margin: 0 } }, description ),
-		edit: createElement( 'p', { style: { margin: 0 } }, description ),
-		canMakePayment: function () {
-			return true;
-		},
-		supports: {
-			features: ( settings.supports || [ 'products' ] ),
-		},
+	function labelElement( title, iconUrl ) {
+		if ( ! iconUrl ) {
+			return title;
+		}
+		return createElement(
+			'span',
+			{ style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+			title,
+			createElement( 'img', {
+				src: iconUrl,
+				alt: '',
+				style: { height: '20px', width: 'auto' },
+			} )
+		);
+	}
+
+	ROW_IDS.forEach( function ( id ) {
+		var settings = getSetting( id + '_data', null );
+		if ( ! settings ) {
+			return;
+		}
+
+		var title = decodeEntities( settings.title || 'XPay' );
+		var description = decodeEntities( settings.description || '' );
+
+		registerPaymentMethod( {
+			name: id,
+			label: labelElement( title, settings.icon ),
+			ariaLabel: title,
+			content: createElement( 'p', { style: { margin: 0 } }, description ),
+			edit: createElement( 'p', { style: { margin: 0 } }, description ),
+			canMakePayment: function () {
+				return true;
+			},
+			supports: {
+				features: ( settings.supports || [ 'products' ] ),
+			},
+		} );
 	} );
 } )();
