@@ -157,7 +157,10 @@ final class XPay_Log_Store {
 		// $where holds only the fixed placeholder fragments assembled above —
 		// every runtime value is placeholder-bound and the table name goes
 		// through %i (WP 6.2+), so the interpolation the sniff sees is static.
-		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- custom plugin table, no core API and no cache layer; see fragment note above.
+		// The placeholder-count sniff cannot count through implode()+array_merge
+		// either: placeholders and values are built in lockstep above (one push
+		// to $where per push to $values), so the counts match by construction.
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- custom plugin table, no core API and no cache layer; see fragment notes above.
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				'SELECT id, created_at, request_id, stage, order_id, message, context FROM %i WHERE ' . implode( ' AND ', $where ) . ' ORDER BY id DESC LIMIT %d',
