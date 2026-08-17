@@ -1,0 +1,78 @@
+# CI gates for every push and pull request.
+#
+# All three jobs are required: the conventions study found the monorepo's
+# `turbo test` task defined but never wired into CI — a gap this repo
+# deliberately does not repeat. A check that doesn't run doesn't exist.
+name: CI
+
+on:
+  push:
+    branches: [ v3, main, master ]
+  pull_request:
+
+# Least privilege: every job only reads the repo. The Plugin Check job adds
+# its own write grants below for the PR report comment it posts.
+permissions:
+  contents: read
+
+jobs:
+  phpcs:
+    name: PHPCS (WordPress-Extra)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+          tools: composer
+      - run: composer install --no-progress --no-interaction
+      - run: composer lint
+
+  phpunit:
+    name: PHPUnit (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # 7.4 is the plugin's floor; 8.3 the current mainstream. Both must pass.
+        php: [ '7.4', '8.3' ]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: composer
+      - run: composer install --no-progress --no-interaction
+      - run: composer test
+
+  plugin-check:
+    name: WordPress Plugin Check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # The action posts/updates its report as a PR comment; PR comments ride
+      # the issues API, so both write scopes are granted.
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      # Stage exactly what ships: the repo root carries dev tooling
+      # (.github, AGENTS.md, tests, bin) that PCP rightly flags in a
+      # production plugin. Scanning the .distignore-filtered build means
+      # this job checks the same bytes a wordpress.org reviewer gets.
+      - name: Stage distributable
+        run: |
+          mkdir -p plugin-build/xpay-for-woocommerce
+          rsync -a --exclude-from=.distignore --exclude 'plugin-build' ./ plugin-build/xpay-for-woocommerce/
+      # Runs the same Plugin Check (PCP) that wordpress.org executes on
+      # submission — an error here is a guaranteed review blocker there.
+      - uses: wordpress/plugin-check-action@v1
+        with:
+          build-dir: './plugin-build/xpay-for-woocommerce'

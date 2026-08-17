@@ -1,0 +1,8 @@
+reviews:
+  auto_review:
+    base_branches:
+      - ".*"
+  path_filters:
+    # Dependency lockfile and translation template are generated artifacts.
+    - "!composer.lock"
+    - "!languages/**"

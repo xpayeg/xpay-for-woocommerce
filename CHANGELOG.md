@@ -4,6 +4,35 @@ All notable changes to this plugin are documented here. Format follows [Keep a C
 
 ---
 
+## [3.0.0] — Unreleased
+
+Major version: complete rebuild against the XPay v3 platform (Checkout Sessions, signed webhooks, API refunds). The v2 community-API integration is removed entirely — a clean break, per the no-backward-compatibility rule now that the v3 API is the platform's forward path and the v2 API's Cloudflare WAF instability (documented in 2.0.1's Notes) made it unreliable in production.
+
+### Added
+
+- **On-site payment window.** `process_payment` redirects to WooCommerce's own order-pay page, where the XPay drop-in modal (`sdk.js` from checkout.xpay.app) opens over the store. One flow serves classic checkout, Blocks checkout, and admin pay links — and the pay page doubles as the retry surface. If the SDK cannot load within 6 seconds, the shopper is sent to the hosted checkout page for the same session: no dead ends.
+- **Signed webhook receiver** at `?wc-api=xpay_webhook`: HMAC-SHA256 `XPay-Signature` verification (constant-time, 300s replay window, fail-closed), per-order event dedupe, and an ownership check requiring the event's session id to match the id stored on the order. Response codes follow the caller's-fault-4xx / our-fault-5xx rule so XPay's ~3-day retry engine behaves correctly against a half-configured plugin.
+- **Refunds** (full and partial) from the order screen via `POST /refunds`, serialized per payment intent with a bounded MySQL `GET_LOCK` so two concurrent refund clicks cannot both reach the processor.
+- **Cart & Checkout Blocks** integration and **HPOS** compatibility declaration (`before_woocommerce_init`).
+- **Money helper** doing string-based minor-unit conversion (no float arithmetic on amounts; 3-decimal currencies handled).
+- **Redacting logger** rebuilt on `WC_Logger` with the v2 two-tier taxonomy plus a value-shape PAN scrub and v3 key-prefix patterns (`sk_`/`rk_`/`pk_`/`whsec_`).
+- **Customer linking.** Logged-in shoppers are linked to a persistent XPay Customer: the first paid session creates one (customerCreation=always) and its cus_… id is stored per mode in user meta; later checkouts send customerId so payments group under one customer in the merchant's XPay dashboard and fraud enrichment accumulates on a stable identity. A stale stored id (customer deleted in the dashboard) is detected on session create, cleared, and retried once as a fresh customer. Guests are deliberately left to the platform's own if_required + fingerprint dedupe. Groundwork for saved cards/subscriptions (Phase 5), which require customer objects.
+- **In-admin log viewer** (WooCommerce → XPay Log): filterable tail of a bounded custom table (14-day / 10k-row retention, daily prune), a one-click redacted **Copy debug report** for support tickets, a per-order XPay panel on the order screen showing that order's payment story, and a nonce-guarded Clear action. Rows are redacted at write time and nothing is ever transmitted anywhere — the merchant pastes manually.
+- **Standards tooling**: AGENTS.md engineering standard, PHPCS (WordPress-Extra + PHPCompatibilityWP), PHPUnit suite for the pure classes (37 tests), and CI that gates every PR on phpcs + Plugin Check + PHPUnit.
+
+### Removed
+
+- All v2 runtime code: the community/variable-amount API client, bare-file endpoints (`update_order.php`, `check_transaction.php` — replaced by the WC-API receiver), the Bootstrap-era modal, promo-code and installment features tied to the old API, and the WPFunnels compat shim. v2 lives on the `v2-maintenance` branch.
+
+### Notes
+
+- Settings do NOT migrate from v2 (different API, different credentials). v2 merchants install fresh keys and a webhook.
+- Deliberately not in 3.0.0: embedded PaymentElement fields (planned 3.1), per-method gateway entries (blocked on platform adapters), Apple Pay/Google Pay (no platform adapters yet), subscriptions (platform saved-card charging not production-ready), automatic live-mode webhook provisioning (blocked on xpay#411 — guided manual setup ships instead).
+- WordPress floor raised 6.0 → 6.2: the log store binds table identifiers with `wpdb::prepare()`'s `%i` placeholder (added in WP 6.2), and WooCommerce 8.3 — already our floor — requires a newer WordPress than 6.2 anyway.
+- `languages/xpay-for-woocommerce.pot` still contains v2 strings; regeneration is part of the release build before submission.
+
+---
+
 ## [2.0.1] — 2026-05-03
 
 ### Fixed

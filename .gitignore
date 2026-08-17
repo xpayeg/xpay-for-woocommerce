@@ -12,7 +12,6 @@
 # Build / dependencies
 node_modules/
 vendor/
-composer.lock
 
 # Build outputs (produced by bin/build.sh — see docs/PACKAGING.md)
 dist/
@@ -24,3 +23,4 @@ build/
 # Environment
 .env
 .env.local
+.phpunit.result.cache
