@@ -1,8 +1,8 @@
 === XPay for WooCommerce ===
 Contributors: xpay
 Tags: woocommerce, payments, payment gateway, egypt, valu
-Requires at least: 6.0
-Tested up to: 6.9
+Requires at least: 6.2
+Tested up to: 7.0
 Requires PHP: 7.4
 Stable tag: 3.0.0
 License: GPL-2.0-or-later
@@ -35,7 +35,7 @@ XPay for WooCommerce connects your store to [XPay](https://xpay.app/), the Egypt
 = Requirements =
 
 * An XPay merchant account ([sign up](https://xpay.app/)).
-* WordPress 6.0+, WooCommerce 8.3+, PHP 7.4+.
+* WordPress 6.2+, WooCommerce 8.3+, PHP 7.4+.
 * Your store currency set to a currency XPay supports (EGP recommended; settlement is in EGP).
 
 == External services ==

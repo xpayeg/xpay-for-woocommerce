@@ -76,3 +76,4 @@ phpunit.xml.dist
 tests/
 .github/
 .phpcs.xml.dist
+.coderabbit.yaml

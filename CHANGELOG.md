@@ -4,7 +4,7 @@ All notable changes to this plugin are documented here. Format follows [Keep a C
 
 ---
 
-## [3.0.0-dev] — Unreleased
+## [3.0.0] — Unreleased
 
 Major version: complete rebuild against the XPay v3 platform (Checkout Sessions, signed webhooks, API refunds). The v2 community-API integration is removed entirely — a clean break, per the no-backward-compatibility rule now that the v3 API is the platform's forward path and the v2 API's Cloudflare WAF instability (documented in 2.0.1's Notes) made it unreliable in production.
 
@@ -28,6 +28,7 @@ Major version: complete rebuild against the XPay v3 platform (Checkout Sessions,
 
 - Settings do NOT migrate from v2 (different API, different credentials). v2 merchants install fresh keys and a webhook.
 - Deliberately not in 3.0.0: embedded PaymentElement fields (planned 3.1), per-method gateway entries (blocked on platform adapters), Apple Pay/Google Pay (no platform adapters yet), subscriptions (platform saved-card charging not production-ready), automatic live-mode webhook provisioning (blocked on xpay#411 — guided manual setup ships instead).
+- WordPress floor raised 6.0 → 6.2: the log store binds table identifiers with `wpdb::prepare()`'s `%i` placeholder (added in WP 6.2), and WooCommerce 8.3 — already our floor — requires a newer WordPress than 6.2 anyway.
 - `languages/xpay-for-woocommerce.pot` still contains v2 strings; regeneration is part of the release build before submission.
 
 ---

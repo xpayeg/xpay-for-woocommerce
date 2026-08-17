@@ -46,8 +46,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Stage exactly what ships: the repo root carries dev tooling
+      # (.github, AGENTS.md, tests, bin) that PCP rightly flags in a
+      # production plugin. Scanning the .distignore-filtered build means
+      # this job checks the same bytes a wordpress.org reviewer gets.
+      - name: Stage distributable
+        run: |
+          mkdir -p plugin-build/xpay-for-woocommerce
+          rsync -a --exclude-from=.distignore --exclude 'plugin-build' ./ plugin-build/xpay-for-woocommerce/
       # Runs the same Plugin Check (PCP) that wordpress.org executes on
       # submission — an error here is a guaranteed review blocker there.
       - uses: wordpress/plugin-check-action@v1
         with:
-          exclude-directories: 'vendor,tests,docs,bin,wporg-assets,screenshots'
+          build-dir: './plugin-build/xpay-for-woocommerce'

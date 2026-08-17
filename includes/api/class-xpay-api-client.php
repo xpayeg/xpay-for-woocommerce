@@ -168,6 +168,7 @@ class XPay_Api_Client {
 		}
 
 		$error_body = ( is_array( $json ) && isset( $json['error'] ) && is_array( $json['error'] ) ) ? $json['error'] : array();
+		// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- API error envelope values; every render site (admin notices, order notes) escapes on output, and messages never reach the shopper raw.
 		throw XPay_Api_Exception::from_api_response( $error_body, $status );
 	}
 }

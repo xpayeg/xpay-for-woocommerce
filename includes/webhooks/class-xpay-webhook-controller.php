@@ -168,6 +168,7 @@ class XPay_Webhook_Controller {
 		// craft metadata pointing at ANY order. Exact match against the id
 		// we stored is the load-bearing control (v2's check, preserved).
 		if ( '' === $stored || '' === $incoming || ! hash_equals( $stored, $incoming ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- constant message; the webhook response body carries only the stable code, never this text.
 			throw XPay_Api_Exception::webhook( XPay_Error_Codes::ORDER_MISMATCH, 'Session does not belong to this order' );
 		}
 

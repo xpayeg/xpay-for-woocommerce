@@ -13,7 +13,7 @@
 	<arg name="extensions" value="php"/>
 	<arg name="parallel" value="8"/>
 
-	<config name="minimum_supported_wp_version" value="6.0"/>
+	<config name="minimum_supported_wp_version" value="6.2"/>
 	<config name="testVersion" value="7.4-"/>
 
 	<rule ref="WordPress-Extra">
@@ -21,19 +21,21 @@
 		     mis-fires on the constants files holding two tiny status classes
 		     (one registry file per concern beats two 8-line files). -->
 		<exclude name="Generic.Files.OneObjectStructurePerFile.MultipleFound"/>
-		<!-- Exception messages here are constant English strings with no
-		     request data (enforced by the AGENTS.md rule that IDs stay in
-		     log context, never in messages), and every render site escapes:
-		     WC_Admin_Settings and order notes escape on output. Escaping at
-		     throw time would also break the WP-free unit-test suite for the
-		     pure classes (XPay_Signature, XPay_Money). -->
-		<exclude name="WordPress.Security.EscapeOutput.ExceptionNotEscaped"/>
 	</rule>
 
 	<rule ref="WordPress.WP.I18n">
 		<properties>
 			<property name="text_domain" type="array">
 				<element value="xpay-for-woocommerce"/>
+			</property>
+		</properties>
+	</rule>
+
+	<rule ref="WordPress.WP.Capabilities">
+		<properties>
+			<!-- WooCommerce's own capability, registered by WC core. -->
+			<property name="custom_capabilities" type="array">
+				<element value="manage_woocommerce"/>
 			</property>
 		</properties>
 	</rule>

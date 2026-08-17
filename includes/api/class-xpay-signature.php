@@ -37,9 +37,11 @@ final class XPay_Signature {
 	 */
 	public static function verify( string $header, string $raw_body, string $secret, int $tolerance = self::DEFAULT_TOLERANCE, ?int $now = null ): void {
 		if ( '' === $secret ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- constant registry-code message with no request data; render sites escape on output.
 			throw XPay_Api_Exception::webhook( XPay_Error_Codes::WEBHOOK_NOT_CONFIGURED, 'No webhook signing secret is configured' );
 		}
 		if ( '' === trim( $header ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- constant registry-code message with no request data; render sites escape on output.
 			throw XPay_Api_Exception::webhook( XPay_Error_Codes::WEBHOOK_SIGNATURE_MISSING, 'XPay-Signature header is missing' );
 		}
 
@@ -58,11 +60,13 @@ final class XPay_Signature {
 		}
 
 		if ( null === $timestamp || array() === $signatures ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- constant registry-code message with no request data; render sites escape on output.
 			throw XPay_Api_Exception::webhook( XPay_Error_Codes::WEBHOOK_SIGNATURE_INVALID, 'XPay-Signature header is malformed' );
 		}
 
 		$now = null !== $now ? $now : time();
 		if ( abs( $now - $timestamp ) > $tolerance ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- constant registry-code message with no request data; render sites escape on output.
 			throw XPay_Api_Exception::webhook( XPay_Error_Codes::WEBHOOK_TIMESTAMP_TOLERANCE, 'Webhook timestamp is outside the allowed tolerance' );
 		}
 
@@ -75,6 +79,7 @@ final class XPay_Signature {
 			}
 		}
 
+		// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- constant registry-code message with no request data (AGENTS.md rule: ids live in log context, never messages); render sites escape on output.
 		throw XPay_Api_Exception::webhook( XPay_Error_Codes::WEBHOOK_SIGNATURE_INVALID, 'Webhook signature does not match' );
 	}
 }

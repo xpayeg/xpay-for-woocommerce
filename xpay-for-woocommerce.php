@@ -5,8 +5,8 @@
  * Description: Accept payments on your WooCommerce store via XPay (Egypt) — cards, valU and more, in a secure on-site checkout.
  * Author: XPay
  * Author URI: https://xpay.app/
- * Version: 3.0.0-dev
- * Requires at least: 6.0
+ * Version: 3.0.0
+ * Requires at least: 6.2
  * Requires PHP: 7.4
  * WC requires at least: 8.3
  * WC tested up to: 10.4
@@ -20,7 +20,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-defined( 'XPAY_WC_VERSION' ) || define( 'XPAY_WC_VERSION', '3.0.0-dev' );
+defined( 'XPAY_WC_VERSION' ) || define( 'XPAY_WC_VERSION', '3.0.0' );
 defined( 'XPAY_WC_PLUGIN_FILE' ) || define( 'XPAY_WC_PLUGIN_FILE', __FILE__ );
 defined( 'XPAY_WC_PLUGIN_DIR' ) || define( 'XPAY_WC_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 defined( 'XPAY_WC_PLUGIN_URL' ) || define( 'XPAY_WC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

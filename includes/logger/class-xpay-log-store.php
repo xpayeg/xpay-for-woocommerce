@@ -154,14 +154,18 @@ final class XPay_Log_Store {
 
 		$values[] = $limit;
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- table name is plugin-owned (not user input); WHERE clauses above are all placeholder-bound; custom table has no core API and no cache layer.
+		// $where holds only the fixed placeholder fragments assembled above —
+		// every runtime value is placeholder-bound and the table name goes
+		// through %i (WP 6.2+), so the interpolation the sniff sees is static.
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- custom plugin table, no core API and no cache layer; see fragment note above.
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				'SELECT id, created_at, request_id, stage, order_id, message, context FROM ' . self::table_name() . ' WHERE ' . implode( ' AND ', $where ) . ' ORDER BY id DESC LIMIT %d',
-				$values
+				'SELECT id, created_at, request_id, stage, order_id, message, context FROM %i WHERE ' . implode( ' AND ', $where ) . ' ORDER BY id DESC LIMIT %d',
+				array_merge( array( self::table_name() ), $values )
 			),
 			ARRAY_A
 		);
+		// phpcs:enable
 
 		return is_array( $rows ) ? $rows : array();
 	}
@@ -172,27 +176,27 @@ final class XPay_Log_Store {
 	 */
 	public static function prune(): void {
 		global $wpdb;
-		$table = self::table_name();
 
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- plugin-owned table name; values are placeholder-bound.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- custom plugin table: no core API exists and log rows are never cached. Table name via %i, values placeholder-bound.
 		$wpdb->query(
 			$wpdb->prepare(
-				'DELETE FROM ' . $table . ' WHERE created_at < %s',
+				'DELETE FROM %i WHERE created_at < %s',
+				self::table_name(),
 				gmdate( 'Y-m-d H:i:s', time() - self::RETENTION_DAYS * DAY_IN_SECONDS )
 			)
 		);
 
-		$max_id = $wpdb->get_var( 'SELECT MAX(id) FROM ' . $table );
-		$count  = (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . $table );
-		if ( $count > self::MAX_ROWS && null !== $max_id ) {
+		$count = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', self::table_name() ) );
+		if ( $count > self::MAX_ROWS ) {
 			$cutoff = (int) $wpdb->get_var(
 				$wpdb->prepare(
-					'SELECT id FROM ' . $table . ' ORDER BY id DESC LIMIT 1 OFFSET %d',
+					'SELECT id FROM %i ORDER BY id DESC LIMIT 1 OFFSET %d',
+					self::table_name(),
 					self::MAX_ROWS - 1
 				)
 			);
 			if ( $cutoff > 0 ) {
-				$wpdb->query( $wpdb->prepare( 'DELETE FROM ' . $table . ' WHERE id < %d', $cutoff ) );
+				$wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE id < %d', self::table_name(), $cutoff ) );
 			}
 		}
 		// phpcs:enable
@@ -201,7 +205,7 @@ final class XPay_Log_Store {
 	/** Empty the table (admin "Clear log" action). */
 	public static function clear(): void {
 		global $wpdb;
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- plugin-owned table; TRUNCATE is the cheapest full clear.
-		$wpdb->query( 'TRUNCATE TABLE ' . self::table_name() );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- plugin-owned table; TRUNCATE is the cheapest full clear and %i binds the identifier.
+		$wpdb->query( $wpdb->prepare( 'TRUNCATE TABLE %i', self::table_name() ) );
 	}
 }
