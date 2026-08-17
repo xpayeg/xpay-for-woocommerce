@@ -101,6 +101,23 @@ class XPay_Order_Sync {
 	}
 
 	/**
+	 * Re-read an order from storage, discarding this request's cached copy.
+	 * Call ONLY while holding the order's XPay_Order_Lock: the point is to
+	 * see the previous lock holder's save, which the per-request caches
+	 * (HPOS's OrderCache and the legacy post/meta cache alike) would hide.
+	 *
+	 * @param int $order_id Order to reload.
+	 */
+	public static function reload( int $order_id ): ?WC_Order {
+		if ( class_exists( \Automattic\WooCommerce\Caching\OrderCache::class ) ) {
+			wc_get_container()->get( \Automattic\WooCommerce\Caching\OrderCache::class )->remove( $order_id );
+		}
+		clean_post_cache( $order_id );
+		$order = wc_get_order( $order_id );
+		return $order instanceof WC_Order ? $order : null;
+	}
+
+	/**
 	 * Cancel an order whose session expired unpaid. Idempotent; refuses to
 	 * touch paid or already-terminal orders.
 	 *
@@ -158,8 +175,24 @@ class XPay_Order_Sync {
 		$paid = isset( $session['paymentStatus'] ) && XPay_Payment_Status::PAID === $session['paymentStatus']
 			&& isset( $session['status'] ) && XPay_Session_Status::COMPLETE === $session['status'];
 
-		if ( $paid ) {
-			self::mark_paid( $order, $session, 'thankyou' );
+		if ( ! $paid ) {
+			return;
+		}
+
+		// The webhook usually wins this race. Take the per-order lock
+		// non-blocking and defer to whoever holds it — their write is the
+		// same transition this one would apply.
+		$order_id = (int) $order_id;
+		if ( ! XPay_Order_Lock::acquire( $order_id, 0 ) ) {
+			return;
+		}
+		try {
+			$fresh = self::reload( $order_id );
+			if ( null !== $fresh && ! $fresh->is_paid() ) {
+				self::mark_paid( $fresh, $session, 'thankyou' );
+			}
+		} finally {
+			XPay_Order_Lock::release( $order_id );
 		}
 	}
 }

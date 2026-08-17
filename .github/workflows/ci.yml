@@ -10,12 +10,19 @@ on:
     branches: [ v3, main, master ]
   pull_request:
 
+# Least privilege: every job only reads the repo. The Plugin Check job adds
+# its own write grants below for the PR report comment it posts.
+permissions:
+  contents: read
+
 jobs:
   phpcs:
     name: PHPCS (WordPress-Extra)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
@@ -33,6 +40,8 @@ jobs:
         php: [ '7.4', '8.3' ]
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
@@ -44,8 +53,16 @@ jobs:
   plugin-check:
     name: WordPress Plugin Check
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # The action posts/updates its report as a PR comment; PR comments ride
+      # the issues API, so both write scopes are granted.
+      issues: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       # Stage exactly what ships: the repo root carries dev tooling
       # (.github, AGENTS.md, tests, bin) that PCP rightly flags in a
       # production plugin. Scanning the .distignore-filtered build means

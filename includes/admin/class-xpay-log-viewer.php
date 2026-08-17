@@ -103,8 +103,13 @@ final class XPay_Log_Viewer {
 		foreach ( $rows as $row ) {
 			$order_cell = '—';
 			if ( ! empty( $row['order_id'] ) ) {
-				$order_url  = admin_url( 'post.php?post=' . (int) $row['order_id'] . '&action=edit' );
-				$order_cell = '<a href="' . esc_url( $order_url ) . '">#' . (int) $row['order_id'] . '</a>';
+				// get_edit_order_url() is storage-aware: HPOS orders live at
+				// admin.php?page=wc-orders, not post.php — a hardcoded post
+				// URL 404s there. Deleted orders degrade to a plain number.
+				$log_order  = wc_get_order( (int) $row['order_id'] );
+				$order_cell = $log_order instanceof WC_Order
+					? '<a href="' . esc_url( $log_order->get_edit_order_url() ) . '">#' . (int) $row['order_id'] . '</a>'
+					: '#' . (int) $row['order_id'];
 			}
 			$details = (string) $row['context'];
 			if ( ! empty( $row['message'] ) ) {
@@ -185,11 +190,14 @@ final class XPay_Log_Viewer {
 
 		foreach ( XPay_Log_Store::query( array( 'limit' => self::REPORT_ROWS ) ) as $row ) {
 			$lines[] = sprintf(
-				'[%s] [%s] %s%s %s',
+				'[%s] [%s] %s%s%s %s',
 				$row['created_at'],
 				$row['request_id'],
 				$row['stage'],
 				! empty( $row['order_id'] ) ? ' order=' . (int) $row['order_id'] : '',
+				// The human-readable reason must survive into support
+				// tickets, not just the on-screen table.
+				! empty( $row['message'] ) ? ' ' . $row['message'] : '',
 				(string) $row['context']
 			);
 		}

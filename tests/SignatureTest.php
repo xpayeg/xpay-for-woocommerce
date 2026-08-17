@@ -44,13 +44,11 @@ final class SignatureTest extends TestCase {
 
 	public function test_tampered_body_is_rejected(): void {
 		$header = 't=' . self::NOW . ',v1=' . $this->sign( self::BODY, self::NOW );
-		$this->expectExceptionCode( 0 );
 		try {
 			XPay_Signature::verify( $header, self::BODY . ' ', self::SECRET, 300, self::NOW );
 			$this->fail( 'Tampered body must not verify' );
 		} catch ( XPay_Api_Exception $e ) {
 			$this->assertSame( XPay_Error_Codes::WEBHOOK_SIGNATURE_INVALID, $e->get_error_code() );
-			throw $e;
 		}
 	}
 

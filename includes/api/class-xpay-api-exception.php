@@ -64,7 +64,7 @@ class XPay_Api_Exception extends Exception {
 
 	/** Transport-level failure (timeout, DNS, TLS). $previous carries the WP_Error text. */
 	public static function transport( string $message, ?Throwable $previous = null ): self {
-		return new self( $message, 'transport_error', 0, '', '', $previous );
+		return new self( $message, XPay_Error_Codes::TRANSPORT_ERROR, 0, '', '', $previous );
 	}
 
 	/**
@@ -75,7 +75,7 @@ class XPay_Api_Exception extends Exception {
 	 * @param int   $http_status Response status.
 	 */
 	public static function from_api_response( array $error_body, int $http_status ): self {
-		$code    = isset( $error_body['code'] ) && is_string( $error_body['code'] ) ? $error_body['code'] : 'api_error';
+		$code    = isset( $error_body['code'] ) && is_string( $error_body['code'] ) ? $error_body['code'] : XPay_Error_Codes::API_ERROR;
 		$message = isset( $error_body['message'] ) && is_string( $error_body['message'] ) ? $error_body['message'] : 'XPay API request failed';
 		$doc_url = isset( $error_body['doc_url'] ) && is_string( $error_body['doc_url'] ) ? $error_body['doc_url'] : '';
 		$param   = isset( $error_body['param'] ) && is_string( $error_body['param'] ) ? $error_body['param'] : '';
@@ -95,5 +95,20 @@ class XPay_Api_Exception extends Exception {
 	/** Another refund for the same payment is in flight (advisory lock busy). */
 	public static function refund_lock_busy(): self {
 		return new self( 'Another refund for this payment is already being processed', XPay_Error_Codes::REFUND_LOCK_BUSY, 409 );
+	}
+
+	/** Another process is applying a payment transition to this order (advisory lock busy). */
+	public static function order_lock_busy(): self {
+		return new self( 'Another process is updating this order payment state', XPay_Error_Codes::ORDER_LOCK_BUSY, 409 );
+	}
+
+	/**
+	 * The API accepted the refund request but the refund object came back in
+	 * a non-accepted state (FAILED/CANCELED, or an unrecognized status). The
+	 * actual status belongs in log context, not here — messages are alert
+	 * grouping keys.
+	 */
+	public static function refund_rejected(): self {
+		return new self( 'XPay did not return an accepted refund state', XPay_Error_Codes::REFUND_REJECTED );
 	}
 }

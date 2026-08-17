@@ -55,6 +55,7 @@ class XPay_Refund_Service {
 		$deadline = microtime( true ) + self::LOCK_WAIT_SECONDS;
 		$acquired = false;
 		do {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- named MySQL advisory lock: connection-scoped and uncacheable by definition; no core API exists.
 			$acquired = '1' === (string) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, 0)', $lock_name ) );
 			if ( $acquired ) {
 				break;
@@ -76,6 +77,24 @@ class XPay_Refund_Service {
 			// UUID per admin action: transport-level retries inside this
 			// request replay safely; a second deliberate refund is a new key.
 			$refund = $this->client->create_refund( $body, 'wcref_' . str_replace( '-', '', wp_generate_uuid4() ) );
+
+			// A 2xx create can still carry FAILED/CANCELED — the processor's
+			// synchronous decline is copied into the refund object, not
+			// turned into an HTTP error. Gate on the accepted set before
+			// recording anything in WooCommerce.
+			$status = isset( $refund['status'] ) && is_string( $refund['status'] ) ? $refund['status'] : '';
+			if ( ! in_array( $status, XPay_Refund_Status::ACCEPTED, true ) ) {
+				XPay_Logger::event(
+					'refund.rejected',
+					array(
+						'order_id'  => $order->get_id(),
+						'intent_id' => $intent_id,
+						'refund_id' => isset( $refund['id'] ) ? (string) $refund['id'] : '',
+						'status'    => $status,
+					)
+				);
+				throw XPay_Api_Exception::refund_rejected();
+			}
 
 			$refund_id = isset( $refund['id'] ) ? (string) $refund['id'] : '';
 			$order->add_order_note(
@@ -100,6 +119,7 @@ class XPay_Refund_Service {
 
 			return $refund;
 		} finally {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- releases the advisory lock acquired above; uncacheable by definition.
 			$wpdb->query( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $lock_name ) );
 		}
 	}
@@ -115,6 +135,8 @@ class XPay_Refund_Service {
 		switch ( $e->get_error_code() ) {
 			case XPay_Error_Codes::REFUND_LOCK_BUSY:
 				return __( 'Another refund for this payment is still processing. Wait a few seconds and try again.', 'xpay-for-woocommerce' );
+			case XPay_Error_Codes::REFUND_REJECTED:
+				return __( 'XPay accepted the request but did not complete the refund. Check the payment in your XPay dashboard before retrying.', 'xpay-for-woocommerce' );
 			case XPay_Error_Codes::API_RESOURCE_INVALID_STATE:
 				return __( 'XPay cannot refund this payment in its current state. Check the payment in your XPay dashboard.', 'xpay-for-woocommerce' );
 			default:

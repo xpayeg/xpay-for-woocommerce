@@ -43,42 +43,55 @@
 	}
 
 	function openModal( xpay ) {
-		var modal = xpay.checkout( {
-			clientSecret: params.clientSecret,
-			mode: 'modal',
-			locale: params.locale || 'en',
-			onComplete: function () {
-				// The thank-you page re-verifies server-side; this redirect
-				// carries no authority of its own.
-				window.location.href = params.returnUrl;
-			},
-			onClose: function () {
-				setStatus( params.i18n.closed );
-				if ( payButton ) {
-					payButton.style.display = '';
-				}
-				if ( hostedLink ) {
-					hostedLink.style.display = '';
-				}
-			},
-			onError: function () {
-				// The modal shows its own error UI for payment failures;
-				// this fires for setup-level errors — fall back rather
-				// than strand the shopper.
-				goHosted();
-			},
-		} );
+		// Synchronous SDK throws (bad key shape, internal setup error) never
+		// reach onError — it was never registered. Without the try/catch the
+		// shopper is stranded on "Opening secure payment…", breaking the
+		// never-a-dead-end rule this file is built around.
+		var modal;
+		try {
+			modal = xpay.checkout( {
+				clientSecret: params.clientSecret,
+				mode: 'modal',
+				locale: params.locale || 'en',
+				onComplete: function () {
+					// The thank-you page re-verifies server-side; this redirect
+					// carries no authority of its own.
+					window.location.href = params.returnUrl;
+				},
+				onClose: function () {
+					setStatus( params.i18n.closed );
+					if ( payButton ) {
+						payButton.style.display = '';
+					}
+					if ( hostedLink ) {
+						hostedLink.style.display = '';
+					}
+				},
+				onError: function () {
+					// The modal shows its own error UI for payment failures;
+					// this fires for setup-level errors — fall back rather
+					// than strand the shopper.
+					goHosted();
+				},
+			} );
 
-		if ( payButton ) {
-			payButton.onclick = function () {
-				setStatus( params.i18n.preparing );
-				payButton.style.display = 'none';
-				modal.open();
-			};
+			if ( payButton ) {
+				payButton.onclick = function () {
+					setStatus( params.i18n.preparing );
+					payButton.style.display = 'none';
+					try {
+						modal.open();
+					} catch ( e ) {
+						goHosted();
+					}
+				};
+			}
+
+			setStatus( params.i18n.preparing );
+			modal.open();
+		} catch ( e ) {
+			goHosted();
 		}
-
-		setStatus( params.i18n.preparing );
-		modal.open();
 	}
 
 	function loadSdk() {

@@ -22,12 +22,19 @@
 			}, 2500 );
 		};
 
+		var fallback = function () {
+			report.select();
+			if ( document.execCommand( 'copy' ) ) {
+				done();
+			}
+		};
+
 		if ( navigator.clipboard && window.isSecureContext ) {
-			navigator.clipboard.writeText( report.value ).then( done );
+			// writeText rejects when the browser denies clipboard permission
+			// — fall through to execCommand instead of failing silently.
+			navigator.clipboard.writeText( report.value ).then( done ).catch( fallback );
 			return;
 		}
-		report.select();
-		document.execCommand( 'copy' );
-		done();
+		fallback();
 	} );
 } )();

@@ -89,7 +89,7 @@ final class XPay_Redactor {
 				if ( is_string( $lower ) && in_array( $lower, self::$secret_keys, true ) ) {
 					$out[ $k ] = self::mask_secret( $v );
 				} elseif ( is_string( $lower ) && in_array( $lower, self::$pii_keys, true ) ) {
-					$out[ $k ] = self::mask_pii( $v );
+					$out[ $k ] = self::mask_pii( $v, $depth + 1 );
 				} else {
 					$out[ $k ] = self::redact( $v, $depth + 1 );
 				}
@@ -111,10 +111,16 @@ final class XPay_Redactor {
 		return 0 === $len ? '[empty]' : '[REDACTED:' . $len . 'b]';
 	}
 
-	/** Last-4 mask so one customer stays traceable through a flow. */
-	public static function mask_pii( $value ) {
+	/**
+	 * Last-4 mask so one customer stays traceable through a flow.
+	 *
+	 * @param mixed $value PII value (arrays recurse through redact()).
+	 * @param int   $depth Recursion depth carried from redact() — resetting
+	 *                     it would let nested PII-key chains bypass MAX_DEPTH.
+	 */
+	public static function mask_pii( $value, int $depth = 0 ) {
 		if ( is_array( $value ) ) {
-			return self::redact( $value, 1 );
+			return self::redact( $value, $depth );
 		}
 		if ( ! is_scalar( $value ) ) {
 			return '[REDACTED]';

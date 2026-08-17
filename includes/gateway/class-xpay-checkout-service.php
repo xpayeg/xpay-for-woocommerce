@@ -46,10 +46,13 @@ class XPay_Checkout_Service {
 					return $session;
 				}
 			} catch ( XPay_Api_Exception $e ) {
-				// A missing/broken previous session is not fatal — we mint a
-				// fresh one below. Anything else (auth, transport) must
-				// surface: retrying with a new session won't fix a bad key.
-				if ( XPay_Error_Codes::API_RESOURCE_MISSING !== $e->get_error_code() && 0 !== $e->get_http_status() && 404 !== $e->get_http_status() ) {
+				// ONLY a genuinely missing previous session falls through to
+				// minting a fresh one. Transport failures (status 0) and auth
+				// errors must surface instead: the old session may still be
+				// OPEN, and a shopper paying it through its hosted link would
+				// then hit the ownership check with a superseded session id —
+				// money taken, order never marked paid.
+				if ( XPay_Error_Codes::API_RESOURCE_MISSING !== $e->get_error_code() && 404 !== $e->get_http_status() ) {
 					throw $e;
 				}
 			}
@@ -161,6 +164,13 @@ class XPay_Checkout_Service {
 
 		$order->update_meta_data( XPay_Constants::META_SESSION_ID, (string) $session['id'] );
 		$order->update_meta_data( XPay_Constants::META_CLIENT_SECRET, (string) $session['clientSecret'] );
+		if ( ! empty( $session['url'] ) ) {
+			// Persisted (already allowlist-checked above) so the hosted
+			// fallback always points at the deployment that minted the
+			// session — a rebuilt production URL is wrong under a staging
+			// override.
+			$order->update_meta_data( XPay_Constants::META_SESSION_URL, (string) $session['url'] );
+		}
 		$order->update_meta_data( XPay_Constants::META_ATTEMPT, $attempt );
 		$order->save();
 

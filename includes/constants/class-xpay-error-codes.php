@@ -28,7 +28,13 @@ final class XPay_Error_Codes {
 	const GATEWAY_NOT_CONFIGURED = 'gateway_not_configured';
 	const SESSION_URL_UNTRUSTED  = 'session_url_untrusted';
 	const REFUND_LOCK_BUSY       = 'refund_lock_busy';
+	const REFUND_REJECTED        = 'refund_rejected';
+	const ORDER_LOCK_BUSY        = 'order_lock_busy';
 	const ORDER_MISMATCH         = 'order_session_mismatch';
+
+	/* ── Plugin-minted: API client fallbacks ─────────────────────────── */
+	const TRANSPORT_ERROR = 'transport_error'; // No HTTP response at all (timeout, DNS, TLS).
+	const API_ERROR       = 'api_error';       // API error response carried no usable code.
 
 	/* ── XPay API codes the plugin branches on ───────────────────────── */
 	const API_RESOURCE_MISSING       = 'resource_missing';

@@ -22,6 +22,13 @@ final class XPay_Order_Panel {
 	const ROWS = 10;
 
 	public static function register(): void {
+		// The box exposes payment identifiers — same manage_woocommerce
+		// boundary as the log viewer, enforced at registration so the box
+		// never appears for lesser roles with order-screen access.
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			return;
+		}
+
 		$screen = class_exists( \Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class )
 			&& wc_get_container()->get( \Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class )->custom_orders_table_usage_is_enabled()
 				? wc_get_page_screen_id( 'shop-order' )
@@ -41,6 +48,12 @@ final class XPay_Order_Panel {
 	 * @param WP_Post|WC_Order $post_or_order Screen object (HPOS passes the order).
 	 */
 	public static function render( $post_or_order ): void {
+		// Belt and braces: register() already gates on this, but a meta box
+		// callback must never rely on registration-time state alone.
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			return;
+		}
+
 		$order = $post_or_order instanceof WC_Order ? $post_or_order : wc_get_order( $post_or_order->ID );
 		if ( ! $order instanceof WC_Order || XPay_Constants::GATEWAY_ID !== $order->get_payment_method() ) {
 			echo '<p>' . esc_html__( 'This order was not paid with XPay.', 'xpay-for-woocommerce' ) . '</p>';

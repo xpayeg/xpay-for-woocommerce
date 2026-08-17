@@ -43,7 +43,13 @@ fi
 # Cross-check against the XPAY_WC_VERSION constant — they must match,
 # otherwise enqueued asset versions and the plugin header drift apart.
 CONST_VERSION=$(grep -E "define\(\s*'XPAY_WC_VERSION'" "$MAIN_FILE" | head -1 | sed -E "s/.*'([0-9.]+)'.*/\1/")
-if [[ -n "${CONST_VERSION:-}" && "$CONST_VERSION" != "$VERSION" ]]; then
+if [[ -z "${CONST_VERSION:-}" ]]; then
+  # An unextractable constant must fail the build, not skip the check —
+  # otherwise a renamed/removed constant ships silently unversioned.
+  echo "Error: could not extract XPAY_WC_VERSION constant from $MAIN_FILE." >&2
+  exit 1
+fi
+if [[ "$CONST_VERSION" != "$VERSION" ]]; then
   echo "Error: Plugin header Version ($VERSION) != XPAY_WC_VERSION constant ($CONST_VERSION)." >&2
   echo "Bump them in lockstep before building." >&2
   exit 1

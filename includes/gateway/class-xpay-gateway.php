@@ -317,6 +317,15 @@ class XPay_Gateway extends WC_Payment_Gateway {
 		if ( '' === $session_id ) {
 			return '';
 		}
+		// Prefer the URL the API returned for THIS session (persisted at
+		// creation): under a staging override the rebuilt production URL
+		// below would point the shopper at the wrong deployment.
+		$stored = (string) $order->get_meta( XPay_Constants::META_SESSION_URL );
+		if ( '' !== $stored && XPay_Constants::is_allowed_xpay_url( $stored ) ) {
+			return $stored;
+		}
+		// Rebuild as a last resort (session predates URL persistence) —
+		// correct on production, and better than a dead end anywhere.
 		$url = 'https://checkout.xpay.app/c/' . rawurlencode( $session_id );
 		return XPay_Constants::is_allowed_xpay_url( $url ) ? $url : '';
 	}

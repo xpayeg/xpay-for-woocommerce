@@ -41,13 +41,16 @@ class XPay_Webhook_Controller {
 		try {
 			XPay_Signature::verify( $header, $raw_body, $secret );
 		} catch ( XPay_Api_Exception $e ) {
+			// Log BEFORE responding: respond() exits, and the not-configured
+			// rejection is exactly the one docs/WEBHOOKS.md tells merchants
+			// to look for in the log.
+			XPay_Logger::event( 'webhook.rejected', array( 'code' => $e->get_error_code() ) );
 			if ( XPay_Error_Codes::WEBHOOK_NOT_CONFIGURED === $e->get_error_code() ) {
 				// Our fault (5xx): merchant hasn't stored the secret yet.
 				// Answering 4xx here would make XPay's alerting treat a
 				// misconfigured plugin as the sender's problem.
 				self::respond( 500, array( 'error' => $e->get_error_code() ) );
 			}
-			XPay_Logger::event( 'webhook.rejected', array( 'code' => $e->get_error_code() ) );
 			self::respond( 401, array( 'error' => $e->get_error_code() ) );
 		}
 
@@ -110,7 +113,7 @@ class XPay_Webhook_Controller {
 	 * @param string $type     Event type.
 	 * @param string $event_id Event id (evt_…), used for dedupe.
 	 * @param array  $session_object data.object payload (a checkout session).
-	 * @throws XPay_Api_Exception On ownership mismatch.
+	 * @throws XPay_Api_Exception On ownership mismatch, or when the per-order lock stays busy.
 	 */
 	private static function apply_event( string $type, string $event_id, array $session_object ): void {
 		if ( ! in_array( $type, XPay_Event_Names::SUBSCRIBED, true ) ) {
@@ -125,21 +128,43 @@ class XPay_Webhook_Controller {
 			return;
 		}
 
-		if ( '' !== $event_id && self::already_processed( $order, $event_id ) ) {
-			return;
+		// One writer per order: dedupe check → transition → processed-list
+		// save is a read-modify-write. Two concurrent deliveries (or a
+		// delivery racing the thank-you check) would otherwise both pass the
+		// dedupe and both apply side effects.
+		$order_id = $order->get_id();
+		if ( ! XPay_Order_Lock::acquire( $order_id, XPay_Order_Lock::WAIT_SECONDS ) ) {
+			// Surfaces as a 500 → XPay's retry engine redelivers after the
+			// current holder finishes; nothing is lost.
+			throw XPay_Api_Exception::order_lock_busy();
 		}
 
-		switch ( $type ) {
-			case XPay_Event_Names::CHECKOUT_SESSION_COMPLETED:
-				XPay_Order_Sync::mark_paid( $order, $session_object, 'webhook' );
-				break;
-			case XPay_Event_Names::CHECKOUT_SESSION_EXPIRED:
-				XPay_Order_Sync::mark_expired( $order );
-				break;
-		}
+		try {
+			// Re-read inside the lock: the pre-lock snapshot may predate the
+			// previous holder's save.
+			$order = XPay_Order_Sync::reload( $order_id );
+			if ( null === $order ) {
+				return;
+			}
 
-		if ( '' !== $event_id ) {
-			self::remember_processed( $order, $event_id );
+			if ( '' !== $event_id && self::already_processed( $order, $event_id ) ) {
+				return;
+			}
+
+			switch ( $type ) {
+				case XPay_Event_Names::CHECKOUT_SESSION_COMPLETED:
+					XPay_Order_Sync::mark_paid( $order, $session_object, 'webhook' );
+					break;
+				case XPay_Event_Names::CHECKOUT_SESSION_EXPIRED:
+					XPay_Order_Sync::mark_expired( $order );
+					break;
+			}
+
+			if ( '' !== $event_id ) {
+				self::remember_processed( $order, $event_id );
+			}
+		} finally {
+			XPay_Order_Lock::release( $order_id );
 		}
 	}
 

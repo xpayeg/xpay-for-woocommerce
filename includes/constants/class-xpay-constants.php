@@ -59,6 +59,7 @@ final class XPay_Constants {
 	 * for support traceability.
 	 */
 	const META_SESSION_ID       = '_xpay_session_id';
+	const META_SESSION_URL      = '_xpay_session_url';
 	const META_CLIENT_SECRET    = '_xpay_client_secret';
 	const META_PAYMENT_INTENT   = '_xpay_payment_intent_id';
 	const META_ATTEMPT          = '_xpay_session_attempt';

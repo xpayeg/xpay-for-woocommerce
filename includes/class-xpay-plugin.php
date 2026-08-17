@@ -37,6 +37,7 @@ final class XPay_Plugin {
 		require_once $dir . 'constants/class-xpay-constants.php';
 		require_once $dir . 'constants/class-xpay-error-codes.php';
 		require_once $dir . 'constants/class-xpay-session-status.php';
+		require_once $dir . 'constants/class-xpay-refund-status.php';
 		require_once $dir . 'constants/class-xpay-event-names.php';
 
 		// Logging (loaded before anything that logs).
@@ -55,6 +56,7 @@ final class XPay_Plugin {
 		require_once $dir . 'api/class-xpay-api-client.php';
 
 		// Domain services.
+		require_once $dir . 'gateway/class-xpay-order-lock.php';
 		require_once $dir . 'gateway/class-xpay-checkout-service.php';
 		require_once $dir . 'gateway/class-xpay-order-sync.php';
 		require_once $dir . 'refunds/class-xpay-refund-service.php';
@@ -62,12 +64,19 @@ final class XPay_Plugin {
 
 		// WooCommerce surfaces.
 		require_once $dir . 'gateway/class-xpay-gateway.php';
-		require_once $dir . 'blocks/class-xpay-blocks-support.php';
+		if ( class_exists( \Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType::class ) ) {
+			// The Blocks class extends AbstractPaymentMethodType at parse
+			// time — requiring the file without the parent loaded is a fatal,
+			// so the guard must live HERE, not inside the class.
+			require_once $dir . 'blocks/class-xpay-blocks-support.php';
+		}
 	}
 
 	public function init(): void {
 		add_filter( 'woocommerce_payment_gateways', array( $this, 'register_gateway' ) );
-		add_action( 'woocommerce_blocks_loaded', array( 'XPay_Blocks_Support', 'register' ) );
+		if ( class_exists( 'XPay_Blocks_Support' ) ) {
+			add_action( 'woocommerce_blocks_loaded', array( 'XPay_Blocks_Support', 'register' ) );
+		}
 
 		// Public webhook receiver: https://<site>/?wc-api=xpay_webhook
 		// Trust boundary: unauthenticated internet traffic — the HMAC
