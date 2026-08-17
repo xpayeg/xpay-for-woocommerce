@@ -43,6 +43,8 @@ class XPay_Order_Sync {
 			$order->update_meta_data( XPay_Constants::META_PAYMENT_INTENT, $intent_id );
 		}
 
+		self::remember_customer( $order, $session );
+
 		// payment_complete() sets processing/completed, records the
 		// transaction id, and reduces stock — WooCommerce's canonical
 		// "money arrived" transition.
@@ -66,6 +68,36 @@ class XPay_Order_Sync {
 				'via'        => $via,
 			)
 		);
+	}
+
+	/**
+	 * Persist the XPay Customer id from a paid session: on the order (for
+	 * the support panel) and, for logged-in shoppers, on the user per mode
+	 * so the next checkout sends customerId instead of re-creating.
+	 *
+	 * The mode comes from the session's OWN livemode stamp, never from the
+	 * gateway's current settings toggle — the record decides its plane.
+	 *
+	 * @param WC_Order $order   Target order.
+	 * @param array    $session Session payload (webhook or API fetch).
+	 */
+	private static function remember_customer( WC_Order $order, array $session ): void {
+		$customer_id = '';
+		if ( isset( $session['customer'] ) && is_string( $session['customer'] ) ) {
+			$customer_id = $session['customer'];
+		} elseif ( isset( $session['customer']['id'] ) && is_string( $session['customer']['id'] ) ) {
+			$customer_id = $session['customer']['id'];
+		}
+		if ( '' === $customer_id || 0 !== strpos( $customer_id, 'cus_' ) ) {
+			return;
+		}
+
+		$order->update_meta_data( XPay_Constants::META_CUSTOMER_ID, $customer_id );
+
+		$user_id = $order->get_user_id();
+		if ( $user_id > 0 && isset( $session['livemode'] ) ) {
+			update_user_meta( $user_id, XPay_Constants::customer_user_meta_key( (bool) $session['livemode'] ), $customer_id );
+		}
 	}
 
 	/**

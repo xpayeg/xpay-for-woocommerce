@@ -51,9 +51,12 @@ final class XPay_Order_Panel {
 		$intent_id  = (string) $order->get_meta( XPay_Constants::META_PAYMENT_INTENT );
 		$attempt    = (int) $order->get_meta( XPay_Constants::META_ATTEMPT );
 
+		$customer_id = (string) $order->get_meta( XPay_Constants::META_CUSTOMER_ID );
+
 		echo '<p style="word-break:break-all">';
 		echo esc_html__( 'Session:', 'xpay-for-woocommerce' ) . ' <code>' . esc_html( '' !== $session_id ? $session_id : '—' ) . '</code><br />';
 		echo esc_html__( 'Payment intent:', 'xpay-for-woocommerce' ) . ' <code>' . esc_html( '' !== $intent_id ? $intent_id : '—' ) . '</code><br />';
+		echo esc_html__( 'Customer:', 'xpay-for-woocommerce' ) . ' <code>' . esc_html( '' !== $customer_id ? $customer_id : '—' ) . '</code><br />';
 		/* translators: %d is how many payment attempts were made for this order. */
 		echo esc_html( sprintf( __( 'Attempts: %d', 'xpay-for-woocommerce' ), max( $attempt, 0 ) ) );
 		echo '</p>';

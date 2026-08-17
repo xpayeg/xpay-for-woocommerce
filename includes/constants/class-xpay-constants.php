@@ -63,6 +63,19 @@ final class XPay_Constants {
 	const META_PAYMENT_INTENT   = '_xpay_payment_intent_id';
 	const META_ATTEMPT          = '_xpay_session_attempt';
 	const META_PROCESSED_EVENTS = '_xpay_processed_events';
+	const META_CUSTOMER_ID      = '_xpay_customer_id';
+
+	/**
+	 * User-meta key holding the shopper's XPay Customer id (cus_…), split
+	 * per mode: test and live are separate XPay planes with separate
+	 * customer records — one shared key would leak test ids into live
+	 * sessions after go-live.
+	 *
+	 * @param bool $live_mode Which plane the id belongs to.
+	 */
+	public static function customer_user_meta_key( bool $live_mode ): string {
+		return $live_mode ? '_xpay_customer_id_live' : '_xpay_customer_id_test';
+	}
 
 	/** Gateway id — also the settings option suffix (woocommerce_xpay_settings). */
 	const GATEWAY_ID = 'xpay';

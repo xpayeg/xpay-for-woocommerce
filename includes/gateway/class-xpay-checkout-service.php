@@ -109,13 +109,6 @@ class XPay_Checkout_Service {
 				'redirect' => array( 'url' => $return_url ),
 			),
 			'cancelUrl'       => $order->get_checkout_payment_url(),
-			'customerDetails' => array_filter(
-				array(
-					'name'  => trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() ),
-					'email' => $order->get_billing_email(),
-					'phone' => $order->get_billing_phone(),
-				)
-			),
 			'metadata'        => array(
 				'wc_order_id'  => (string) $order->get_id(),
 				'wc_order_key' => $order->get_order_key(),
@@ -123,13 +116,38 @@ class XPay_Checkout_Service {
 			),
 		);
 
-		$session = $this->client->create_checkout_session(
-			$body,
-			// Order id + attempt: a transport retry of THIS attempt replays;
-			// a deliberate new attempt (total changed, session expired) gets
-			// a fresh key.
-			sprintf( 'wc_%d_a%d', $order->get_id(), $attempt )
-		);
+		$body = $this->apply_customer_fields( $body, $order );
+
+		try {
+			$session = $this->client->create_checkout_session(
+				$body,
+				// Order id + attempt: a transport retry of THIS attempt replays;
+				// a deliberate new attempt (total changed, session expired) gets
+				// a fresh key.
+				sprintf( 'wc_%d_a%d', $order->get_id(), $attempt )
+			);
+		} catch ( XPay_Api_Exception $e ) {
+			// A stored customer id can go stale (deleted in the XPay
+			// dashboard). Recover instead of blocking checkout: drop the
+			// dead link and retry once as a fresh customer. The retry uses a
+			// suffixed idempotency key — same key + different body would be
+			// rejected as a fingerprint mismatch.
+			if ( isset( $body['customerId'] ) && XPay_Error_Codes::API_RESOURCE_MISSING === $e->get_error_code() ) {
+				delete_user_meta( $order->get_user_id(), XPay_Constants::customer_user_meta_key( $this->client->is_live_mode() ) );
+				XPay_Logger::event(
+					'customer.stale_link_cleared',
+					array(
+						'order_id' => $order->get_id(),
+						'user_id'  => $order->get_user_id(),
+					)
+				);
+				unset( $body['customerId'] );
+				$body    = $this->apply_customer_fields( $body, $order );
+				$session = $this->client->create_checkout_session( $body, sprintf( 'wc_%d_a%dr', $order->get_id(), $attempt ) );
+			} else {
+				throw $e;
+			}
+		}
 
 		if ( empty( $session['id'] ) || empty( $session['clientSecret'] ) ) {
 			throw XPay_Api_Exception::from_api_response( array( 'message' => 'Session response missing id or clientSecret' ), 502 );
@@ -166,5 +184,59 @@ class XPay_Checkout_Service {
 		);
 
 		return $session;
+	}
+
+	/**
+	 * Customer linking. Three cases, mirroring the API's own contract
+	 * (customerId is exclusive with customerDetails and with
+	 * customerCreation=always — validated server-side):
+	 *
+	 *   1. Logged-in shopper with a stored XPay customer id for this mode
+	 *      → send customerId only. Payments group under one customer in
+	 *      the merchant's XPay dashboard, and fraud enrichment accumulates
+	 *      on a stable identity.
+	 *   2. Logged-in shopper without a stored id → customerDetails +
+	 *      customerCreation=always; the id comes back with the paid
+	 *      session and XPay_Order_Sync stores it for next time.
+	 *   3. Guest → customerDetails only. The platform's default
+	 *      (if_required + guest dedupe by email/phone fingerprint) already
+	 *      handles guests correctly; forcing records for them would be
+	 *      noise in the merchant's customer list.
+	 *
+	 * @param array    $body  Session payload under construction.
+	 * @param WC_Order $order Order being paid.
+	 * @return array Payload with customer fields applied.
+	 */
+	private function apply_customer_fields( array $body, WC_Order $order ): array {
+		$user_id = $order->get_user_id();
+
+		if ( $user_id > 0 && ! isset( $body['customerId'] ) ) {
+			$stored = (string) get_user_meta( $user_id, XPay_Constants::customer_user_meta_key( $this->client->is_live_mode() ), true );
+			if ( '' !== $stored && 0 === strpos( $stored, 'cus_' ) ) {
+				$body['customerId'] = $stored;
+				unset( $body['customerDetails'], $body['customerCreation'] );
+				XPay_Logger::event(
+					'customer.linked',
+					array(
+						'order_id'    => $order->get_id(),
+						'user_id'     => $user_id,
+						'customer_id' => $stored,
+					)
+				);
+				return $body;
+			}
+		}
+
+		$body['customerDetails'] = array_filter(
+			array(
+				'name'  => trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() ),
+				'email' => $order->get_billing_email(),
+				'phone' => $order->get_billing_phone(),
+			)
+		);
+		if ( $user_id > 0 ) {
+			$body['customerCreation'] = 'always';
+		}
+		return $body;
 	}
 }
