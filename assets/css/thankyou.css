@@ -189,6 +189,22 @@
 	width: auto;
 }
 
+/* ── RTL (Arabic) ────────────────────────────────────────────────────── */
+
+/* Same two rules as pay-page.css: connected Arabic script takes no
+   tracking, and amounts stay bidi-isolated next to Arabic labels. */
+[dir="rtl"] .xpay-ty__store,
+[dir="rtl"] .xpay-ty__order-line,
+[dir="rtl"] .xpay-ty__stamp,
+[dir="rtl"] .xpay-ty__total {
+	letter-spacing: 0;
+}
+
+[dir="rtl"] .xpay-ty__line-amount,
+[dir="rtl"] .xpay-ty__total > span:last-child {
+	unicode-bidi: plaintext;
+}
+
 @media (max-width: 480px) {
 	.xpay-ty {
 		border-radius: 0;

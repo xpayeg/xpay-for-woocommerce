@@ -289,12 +289,33 @@
 	display: flex;
 	flex: none;
 	gap: 10px;
-	margin-left: auto;
+	/* Logical, not left: in RTL the badges must push to the row's far
+	   side, which is the left — margin-left would pin them wrong. */
+	margin-inline-start: auto;
 }
 
 .xpay-pay .xpay-pay__method-icon {
 	height: 15px;
 	width: auto;
+}
+
+/* ── RTL (Arabic) ────────────────────────────────────────────────────── */
+
+/* Arabic letters connect; tracking breaks the joining, and the uppercase
+   treatment these rules pair with is a no-op in Arabic — dropping the
+   spacing loses nothing and restores the script's shape. */
+[dir="rtl"] .xpay-pay__store,
+[dir="rtl"] .xpay-pay__order-line,
+[dir="rtl"] .xpay-pay__stamp,
+[dir="rtl"] .xpay-pay__total {
+	letter-spacing: 0;
+}
+
+/* Amounts mix digits with a currency marker; isolate each so the bidi
+   algorithm never reorders value and currency around Arabic labels. */
+[dir="rtl"] .xpay-pay__line-amount,
+[dir="rtl"] .xpay-pay__total-amount {
+	unicode-bidi: plaintext;
 }
 
 /* ── Scrim while the XPay window is open ─────────────────────────────── */
