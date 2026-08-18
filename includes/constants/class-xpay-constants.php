@@ -26,7 +26,8 @@ final class XPay_Constants {
 	 * @param string $rel_path Asset path relative to the plugin root.
 	 */
 	public static function asset_version( string $rel_path ): string {
-		$mtime = @filemtime( XPAY_WC_PLUGIN_DIR . $rel_path );
+		$path  = XPAY_WC_PLUGIN_DIR . $rel_path;
+		$mtime = is_file( $path ) ? filemtime( $path ) : false;
 		return XPAY_WC_VERSION . ( false === $mtime ? '' : '.' . $mtime );
 	}
 
