@@ -30,6 +30,19 @@ class XPay_Gateway extends WC_Payment_Gateway {
 	/** @var XPay_Api_Client|null Lazy — settings may be incomplete on admin screens. */
 	private $client = null;
 
+	/**
+	 * Gateway ids whose hooks are already bound this request. WooCommerce
+	 * constructs its own copy of every gateway AND the plugin keeps a
+	 * settings-reader instance (which Blocks support touches on every
+	 * page), so two instances of the same id coexist routinely. Hooks
+	 * must bind once per id, not once per instance — otherwise
+	 * woocommerce_receipt_<id> fires receipt_page twice and the shopper
+	 * sees the pay page rendered double.
+	 *
+	 * @var array<string, bool>
+	 */
+	private static $hooked_ids = array();
+
 	public function __construct() {
 		$this->id                 = $this->gateway_id();
 		$this->has_fields         = false;
@@ -43,8 +56,11 @@ class XPay_Gateway extends WC_Payment_Gateway {
 		$this->title       = $this->get_option( 'title' );
 		$this->description = $this->get_option( 'description' );
 
-		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
-		add_action( 'woocommerce_receipt_' . $this->id, array( $this, 'receipt_page' ) );
+		if ( ! isset( self::$hooked_ids[ $this->id ] ) ) {
+			self::$hooked_ids[ $this->id ] = true;
+			add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
+			add_action( 'woocommerce_receipt_' . $this->id, array( $this, 'receipt_page' ) );
+		}
 	}
 
 	/**
