@@ -100,6 +100,15 @@ final class XPay_Thankyou_Notice {
 			return;
 		}
 
+		// The receipt carries the items, totals, and status — WooCommerce's
+		// "Order details" table below would repeat all of it, so it goes.
+		// Removed here (before_thankyou fires ahead of the thankyou hook in
+		// the template), and only on the orders where the receipt renders:
+		// failed/cancelled orders keep the full WooCommerce page. This also
+		// drops the customer-address block and download links that template
+		// prints — the order email still carries both.
+		remove_action( 'woocommerce_thankyou', 'woocommerce_order_details_table', 10 );
+
 		// The same per-merchant stage the pay page paints — one synced
 		// primary, one gradient formula, so the two pages can never drift.
 		$stage = XPay_Branding::stage_from_primary( (string) get_option( XPay_Constants::OPTION_BRAND_PRIMARY, '' ) );
