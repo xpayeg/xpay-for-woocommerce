@@ -45,6 +45,33 @@ class XPay_Order_Sync {
 
 		self::remember_customer( $order, $session );
 
+		// Money truth: the session says what was CHARGED, the order says
+		// what is OWED, and they can drift — an admin editing the total
+		// while the shopper holds a live pay page. Completing on drifted
+		// numbers would stamp the order fully paid for the wrong amount,
+		// silently. Absent fields skip the check (the event is already
+		// signature-verified; fail open on shape, closed on value);
+		// present-but-different values park the order for a human. The
+		// money is at XPay either way — the order just waits.
+		if ( self::charged_amount_disagrees( $session, $order ) ) {
+			if ( ! $order->has_status( 'on-hold' ) ) {
+				XPay_Logger::event(
+					'order.amount_mismatch',
+					array(
+						'order_id'   => $order->get_id(),
+						'session_id' => isset( $session['id'] ) ? $session['id'] : '',
+						'via'        => $via,
+					)
+				);
+				$order->update_status( 'on-hold', self::mismatch_note( $session, $order ) );
+			} else {
+				// Already held (earlier delivery or another reason): keep
+				// the identifiers written above without re-noting.
+				$order->save();
+			}
+			return;
+		}
+
 		// payment_complete() sets processing/completed, records the
 		// transaction id, and reduces stock — WooCommerce's canonical
 		// "money arrived" transition.
@@ -67,6 +94,53 @@ class XPay_Order_Sync {
 				'intent_id'  => $intent_id,
 				'via'        => $via,
 			)
+		);
+	}
+
+	/**
+	 * True when the session states a charged amount that does not equal
+	 * the order's total. The comparison source prefers presentmentDetails
+	 * (the platform's mirror in the shopper's currency when it differs
+	 * from processing) and falls back to the top-level amount — both in
+	 * minor units, both compared against the same conversion the session
+	 * was created with. Missing/malformed fields answer false: only a
+	 * present-but-different value may block a payment.
+	 *
+	 * @param array    $session Session payload (webhook or API fetch).
+	 * @param WC_Order $order   Order about to be marked paid.
+	 */
+	private static function charged_amount_disagrees( array $session, WC_Order $order ): bool {
+		$amount   = null;
+		$currency = '';
+		if ( isset( $session['presentmentDetails']['amountTotal'], $session['presentmentDetails']['currency'] ) ) {
+			$amount   = $session['presentmentDetails']['amountTotal'];
+			$currency = (string) $session['presentmentDetails']['currency'];
+		} elseif ( isset( $session['amountTotal'], $session['currency'] ) ) {
+			$amount   = $session['amountTotal'];
+			$currency = (string) $session['currency'];
+		}
+		if ( null === $amount || ! is_scalar( $amount ) || '' === $currency ) {
+			return false;
+		}
+		return strtoupper( $order->get_currency() ) !== strtoupper( $currency )
+			|| XPay_Money::to_minor( $order->get_total(), $order->get_currency() ) !== (int) $amount;
+	}
+
+	/**
+	 * Order note explaining an amount mismatch with both numbers, so the
+	 * merchant can resolve it without opening a log.
+	 *
+	 * @param array    $session Session payload carrying the charged amount.
+	 * @param WC_Order $order   Held order.
+	 */
+	private static function mismatch_note( array $session, WC_Order $order ): string {
+		$currency = isset( $session['presentmentDetails']['currency'] ) ? (string) $session['presentmentDetails']['currency'] : ( isset( $session['currency'] ) ? (string) $session['currency'] : $order->get_currency() );
+		$amount   = isset( $session['presentmentDetails']['amountTotal'] ) ? $session['presentmentDetails']['amountTotal'] : ( isset( $session['amountTotal'] ) ? $session['amountTotal'] : 0 );
+		return sprintf(
+			/* translators: 1: the amount XPay charged, 2: this order's total. */
+			__( 'XPay charged %1$s but this order totals %2$s. Review the payment in your XPay dashboard, adjust the order if needed, then complete or refund it manually.', 'xpay-for-woocommerce' ),
+			wc_price( XPay_Money::from_minor( (string) $amount, $currency ), array( 'currency' => $currency ) ),
+			wc_price( $order->get_total(), array( 'currency' => $order->get_currency() ) )
 		);
 	}
 
@@ -125,6 +199,13 @@ class XPay_Order_Sync {
 	 */
 	public static function mark_expired( WC_Order $order ): void {
 		if ( $order->is_paid() || ! $order->has_status( array( 'pending', 'on-hold' ) ) ) {
+			return;
+		}
+		// A recorded payment intent means money moved for this order —
+		// possibly parked on-hold by the amount guard while a later retry
+		// session expired unpaid. Cancelling would bury a real payment;
+		// orders with money behind them are resolved by humans only.
+		if ( '' !== (string) $order->get_meta( XPay_Constants::META_PAYMENT_INTENT ) ) {
 			return;
 		}
 		$order->update_status(
