@@ -1,0 +1,204 @@
+/**
+ * Order-received page: the pay page's receipt returns, stamped with the
+ * payment's true state. Every recipe is copied verbatim from pay-page.css
+ * (stage gradient, 14px card, mono receipt type, stamp anatomy, trust row)
+ * so the two pages read as one product — .xpay-ty gets its own namespace
+ * only because its states are static, not JS-driven.
+ *
+ * Two stamp states, matching what XPay_Thankyou_Notice renders:
+ *   - .xpay-ty--paid: green PAID stamp. One green everywhere: #15803d.
+ *   - .xpay-ty--pending: brand-colored CONFIRMING PAYMENT stamp + note.
+ *
+ * The sibling rules below hide WooCommerce's own "Thank you…" line and the
+ * order-overview bullets (order number / date / total) — the receipt now
+ * carries all of it. The `.xpay-ty ~` scope is load-bearing: on any order
+ * where the receipt does NOT render (failed, cancelled), nothing matches
+ * and WooCommerce's copy stays — the page is never left saying nothing.
+ */
+
+.xpay-ty {
+	--xpay-brand-from: #4f46e5;
+	--xpay-brand-to: #8d87ee;
+
+	background: linear-gradient(135deg, var(--xpay-brand-from), var(--xpay-brand-to));
+	border-radius: 14px;
+	box-sizing: border-box;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	margin: 0 auto 36px;
+	max-width: 720px;
+	padding: 36px 20px 44px;
+}
+
+.xpay-ty *,
+.xpay-ty *::before,
+.xpay-ty *::after {
+	box-sizing: inherit;
+}
+
+.xpay-ty ~ .woocommerce-thankyou-order-received,
+.xpay-ty ~ .woocommerce-order-overview {
+	display: none;
+}
+
+/* ── Receipt card ────────────────────────────────────────────────────── */
+
+.xpay-ty__card {
+	background: #ffffff;
+	border-radius: 14px;
+	box-shadow: 0 18px 50px rgba(10, 10, 10, 0.35);
+	color: #0a0a0a;
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+	margin: 0 auto;
+	max-width: 400px;
+	padding: 26px;
+}
+
+.xpay-ty__head {
+	align-items: center;
+	border-bottom: 1px dashed #e5e5e5;
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	padding-bottom: 14px;
+	text-align: center;
+}
+
+/* Doubled-container selectors on every img: WooCommerce ships
+   `.woocommerce img { height: auto; max-width: 100%; }`, which outranks a
+   single class — same defense as pay-page.css. */
+.xpay-ty .xpay-ty__store-logo {
+	height: 28px;
+	width: auto;
+}
+
+.xpay-ty__store {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 14px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.xpay-ty__order-line {
+	color: #737373;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 11px;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+}
+
+.xpay-ty__lines {
+	display: flex;
+	flex-direction: column;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 12.5px;
+	font-variant-numeric: tabular-nums;
+	gap: 8px;
+}
+
+.xpay-ty__line {
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+}
+
+.xpay-ty__line-label {
+	color: #737373;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.xpay-ty__line-amount {
+	flex: none;
+}
+
+.xpay-ty__total {
+	border-top: 1px dashed #e5e5e5;
+	display: flex;
+	font-size: 15px;
+	font-weight: 600;
+	justify-content: space-between;
+	padding-top: 8px;
+	text-transform: uppercase;
+}
+
+/* ── Stamp ───────────────────────────────────────────────────────────── */
+
+.xpay-ty__stamp {
+	align-items: center;
+	align-self: center;
+	border: 2.5px solid var(--xpay-brand-from);
+	border-radius: 8px;
+	color: var(--xpay-brand-from);
+	display: flex;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 12px;
+	font-weight: 600;
+	gap: 8px;
+	letter-spacing: 0.14em;
+	padding: 7px 14px;
+	text-transform: uppercase;
+	transform: rotate(-3deg);
+}
+
+.xpay-ty--paid .xpay-ty__stamp {
+	border-color: #15803d;
+	color: #15803d;
+}
+
+.xpay-ty__stamp-icon {
+	flex: none;
+	height: 14px;
+	width: 14px;
+}
+
+.xpay-ty__note {
+	color: #737373;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 11px;
+	margin: 0;
+	text-align: center;
+}
+
+/* ── Signature ───────────────────────────────────────────────────────── */
+
+.xpay-ty__trust {
+	align-items: center;
+	border-top: 1px solid #e5e5e5;
+	color: #737373;
+	display: flex;
+	font-size: 12px;
+	gap: 7px;
+	justify-content: center;
+	padding-top: 13px;
+	white-space: nowrap;
+}
+
+.xpay-ty__lock {
+	flex: none;
+	height: 13px;
+	width: 13px;
+}
+
+.xpay-ty .xpay-ty__wordmark {
+	height: 11px;
+	width: auto;
+}
+
+@media (max-width: 480px) {
+	.xpay-ty {
+		border-radius: 0;
+		margin-left: calc(50% - 50vw);
+		margin-right: calc(50% - 50vw);
+		max-width: none;
+		padding: 28px 16px 36px;
+	}
+
+	.xpay-ty__card {
+		padding: 20px;
+	}
+}

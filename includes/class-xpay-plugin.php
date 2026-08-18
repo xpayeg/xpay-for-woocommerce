@@ -103,8 +103,10 @@ final class XPay_Plugin {
 		// trusting the redirect. Webhook remains the authoritative writer;
 		// this closes the gap when the shopper outruns the webhook.
 		add_action( 'woocommerce_before_thankyou', array( 'XPay_Order_Sync', 'verify_on_thankyou' ) );
-		// Priority 20: the status strip must read post-verification truth.
+		// Priority 20: the stamped receipt must read post-verification truth.
 		add_action( 'woocommerce_before_thankyou', array( 'XPay_Thankyou_Notice', 'render' ), 20 );
+		add_action( 'wp_enqueue_scripts', array( 'XPay_Thankyou_Notice', 'enqueue' ) );
+		add_filter( 'woocommerce_thankyou_order_received_text', array( 'XPay_Thankyou_Notice', 'filter_received_text' ), 10, 2 );
 
 		// Prune runs from WP-Cron (any request context, not just admin).
 		add_action( XPay_Log_Store::CRON_HOOK, array( 'XPay_Log_Store', 'prune' ) );
