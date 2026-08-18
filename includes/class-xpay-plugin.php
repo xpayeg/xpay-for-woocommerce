@@ -47,9 +47,10 @@ final class XPay_Plugin {
 		require_once $dir . 'logger/class-xpay-log-store.php';
 		require_once $dir . 'logger/class-xpay-logger.php';
 
-		// Admin surfaces (log viewer, order panel).
+		// Admin surfaces (log viewer, order panel, settings screen).
 		require_once $dir . 'admin/class-xpay-log-viewer.php';
 		require_once $dir . 'admin/class-xpay-order-panel.php';
+		require_once $dir . 'admin/class-xpay-settings-screen.php';
 
 		// API layer.
 		require_once $dir . 'api/class-xpay-api-exception.php';
@@ -127,6 +128,7 @@ final class XPay_Plugin {
 			// cached option read on admin loads.
 			add_action( 'admin_init', array( 'XPay_Log_Store', 'install' ) );
 			add_action( 'admin_menu', array( 'XPay_Log_Viewer', 'register_menu' ) );
+			add_action( 'admin_enqueue_scripts', array( 'XPay_Settings_Screen', 'enqueue' ) );
 			add_action( 'add_meta_boxes', array( 'XPay_Order_Panel', 'register' ) );
 			add_action( 'admin_notices', array( 'XPay_Method_Gateway', 'render_pin_rejected_notice' ) );
 			XPay_WPFunnels_Compat::register_admin();

@@ -320,12 +320,22 @@ class XPay_Gateway extends WC_Payment_Gateway {
 		try {
 			$this->client = null; // Re-validate with the freshly saved key.
 			$this->api_client()->validate_key();
+			// Persist proof for the settings screen's Connected badge.
+			update_option(
+				XPay_Constants::OPTION_KEY_VALIDATED,
+				array(
+					'mode'         => $this->is_test_mode() ? 'test' : 'live',
+					'validated_at' => time(),
+				),
+				false
+			);
 			WC_Admin_Settings::add_message(
 				$this->is_test_mode()
 					? __( 'XPay connected (test mode).', 'xpay-for-woocommerce' )
 					: __( 'XPay connected (live mode).', 'xpay-for-woocommerce' )
 			);
 		} catch ( XPay_Api_Exception $e ) {
+			delete_option( XPay_Constants::OPTION_KEY_VALIDATED );
 			WC_Admin_Settings::add_error(
 				sprintf(
 					/* translators: %s is the error returned while validating the API key. */
@@ -336,6 +346,17 @@ class XPay_Gateway extends WC_Payment_Gateway {
 		}
 
 		return $saved;
+	}
+
+	/**
+	 * The Manage screen. Replaces WooCommerce's flat settings table with
+	 * the XPay-designed screen (guided activation on a fresh install, the
+	 * grouped management view once keys exist). Every control posts the
+	 * standard woocommerce_xpay_* field names, so process_admin_options
+	 * and storage are untouched — this override is presentation only.
+	 */
+	public function admin_options() {
+		XPay_Settings_Screen::render( $this );
 	}
 
 	/* ── Checkout flow ───────────────────────────────────────────────── */

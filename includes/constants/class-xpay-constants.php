@@ -93,6 +93,27 @@ final class XPay_Constants {
 	const OPTION_BRAND_PRIMARY = 'xpay_wc_brand_primary';
 
 	/**
+	 * Last successful save-time key validation: array{mode: string,
+	 * validated_at: int}. Written by process_admin_options, cleared when a
+	 * key fails validation or is removed. The settings screen's "Connected"
+	 * badge reads it — a badge must never claim more than a real API call
+	 * proved.
+	 */
+	const OPTION_KEY_VALIDATED = 'xpay_wc_key_validated';
+
+	/**
+	 * Unix time of the last webhook that PASSED signature verification.
+	 * Stamped by the webhook controller regardless of the logging setting —
+	 * the settings screen's webhook-health row must stay truthful with
+	 * diagnostics off. Never stamped for rejected requests: an attacker
+	 * probing the endpoint must not be able to paint the health dot green.
+	 */
+	const OPTION_LAST_WEBHOOK_AT = 'xpay_wc_last_webhook_at';
+
+	/** The merchant-facing XPay dashboard (apps/nextjs siteConfig.ts). */
+	const DASHBOARD_URL = 'https://dashboard.xpay.app';
+
+	/**
 	 * User-meta key holding the shopper's XPay Customer id (cus_…), split
 	 * per mode: test and live are separate XPay planes with separate
 	 * customer records — one shared key would leak test ids into live

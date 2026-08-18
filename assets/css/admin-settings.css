@@ -1,0 +1,647 @@
+/**
+ * The Manage screen, in XPay's design system (packages/ui theme.css):
+ * primary oklch(0.51 0.23 277) ≈ #4f46e5 with #edf1ff foreground, radii
+ * 8px controls / 10px rows / 14px cards, 40px control height, #e5e5e5
+ * borders, #737373 muted text, the Stripe-style form-field decoration
+ * shadow, and the Developers screen's joined bordered-row lists.
+ *
+ * Font: the dashboard runs Inter. wp.org forbids remote assets, so until
+ * the brand team ships a local Inter woff2 this uses the system stack the
+ * design already falls back to; swap by defining --xpay-adm-font.
+ *
+ * Loaded only on WooCommerce → Settings → Payments → XPay.
+ */
+
+.xpay-adm {
+	--p: #4f46e5;
+	--pf: #edf1ff;
+	--p-tint: #eef2ff;
+	--p-line: #c7d2fe;
+	--fg: #171717;
+	--mut: #737373;
+	--faint: #a3a3a3;
+	--bd: #e5e5e5;
+	--green: #16a34a;
+	--green-text: #15803d;
+	--amber: #d97706;
+	--r-ctl: 8px;
+	--r-row: 10px;
+	--r-card: 14px;
+	--field-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.07), 0 1px 1.5px 0 rgba(0, 0, 0, 0.05);
+	--xpay-adm-font: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+	box-sizing: border-box;
+	color: var(--fg);
+	font-family: var(--xpay-adm-font);
+	font-size: 14px;
+	margin: 16px 0 24px;
+	max-width: 1048px;
+	-webkit-font-smoothing: antialiased;
+}
+
+.xpay-adm *,
+.xpay-adm *::before,
+.xpay-adm *::after {
+	box-sizing: inherit;
+}
+
+/* WooCommerce's own save button and section title duplicate this screen's. */
+#mainform > p.submit,
+#mainform > h2 {
+	display: none;
+}
+
+.xpay-adm a,
+.xpay-adm .xpay-adm__link {
+	color: var(--p);
+	font-weight: 500;
+	text-decoration: none;
+}
+
+.xpay-adm a:hover,
+.xpay-adm .xpay-adm__link:hover {
+	color: #3730a3;
+}
+
+.xpay-adm__link {
+	background: none;
+	border: 0;
+	cursor: pointer;
+	flex: none;
+	font-family: inherit;
+	font-size: 13px;
+	padding: 0;
+}
+
+.xpay-adm__mono {
+	font-family: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 13px;
+}
+
+/* ── Header band ─────────────────────────────────────────────────────── */
+
+.xpay-adm__band {
+	align-items: center;
+	background: linear-gradient(135deg, #4f46e5, #8d87ee);
+	border-radius: var(--r-card) var(--r-card) 0 0;
+	display: flex;
+	gap: 14px;
+	padding: 20px 24px;
+}
+
+.xpay-adm__wordmark-pill {
+	background: #fff;
+	border-radius: var(--r-ctl);
+	display: inline-flex;
+	flex: none;
+	padding: 8px 14px;
+}
+
+.xpay-adm .xpay-adm__wordmark-pill img {
+	height: 15px;
+	width: auto;
+}
+
+.xpay-adm__band-title {
+	color: #fff;
+	font-size: 16px;
+	font-weight: 600;
+}
+
+.xpay-adm__badge {
+	align-items: center;
+	border: 1px solid rgba(255, 255, 255, 0.35);
+	background: rgba(255, 255, 255, 0.16);
+	border-radius: 9999px;
+	color: #fff;
+	display: inline-flex;
+	flex: none;
+	font-size: 12px;
+	font-weight: 600;
+	gap: 6px;
+	padding: 3px 12px;
+}
+
+.xpay-adm__badge::before {
+	border-radius: 50%;
+	content: "";
+	height: 7px;
+	width: 7px;
+}
+
+.xpay-adm__badge--green::before {
+	background: #4ade80;
+}
+
+.xpay-adm__badge--amber::before {
+	background: #fbbf24;
+}
+
+.xpay-adm__band-note {
+	color: rgba(255, 255, 255, 0.85);
+	font-size: 13px;
+	margin-left: auto;
+}
+
+.xpay-adm__band-btn {
+	align-items: center;
+	background: #fff;
+	border-radius: var(--r-ctl);
+	display: inline-flex;
+	flex: none;
+	font-size: 13px;
+	font-weight: 600;
+	height: 36px;
+	margin-left: auto;
+	padding: 0 16px;
+}
+
+.xpay-adm__band-btn:hover {
+	background: var(--p-tint);
+}
+
+/* ── Card ────────────────────────────────────────────────────────────── */
+
+.xpay-adm__card {
+	background: #fff;
+	border: 1px solid var(--bd);
+	border-radius: 0 0 var(--r-card) var(--r-card);
+	border-top: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 28px;
+	padding: 24px;
+}
+
+/* ── Joined-row lists ────────────────────────────────────────────────── */
+
+.xpay-adm__row {
+	align-items: center;
+	border: 1px solid var(--bd);
+	display: flex;
+	gap: 12px;
+	padding: 14px 16px;
+}
+
+.xpay-adm__row--first {
+	border-radius: var(--r-row) var(--r-row) 0 0;
+}
+
+.xpay-adm__list .xpay-adm__row + .xpay-adm__row {
+	margin-top: -1px;
+}
+
+.xpay-adm__row--last {
+	border-radius: 0 0 var(--r-row) var(--r-row);
+}
+
+.xpay-adm__row--nudge {
+	background: var(--p-tint);
+	border-color: var(--p-line);
+}
+
+.xpay-adm__row-icon {
+	flex: none;
+	font-weight: 700;
+}
+
+.xpay-adm__row-icon--green {
+	color: var(--green);
+}
+
+.xpay-adm__row-icon--amber {
+	color: var(--amber);
+}
+
+.xpay-adm__row-icon--nudge {
+	color: var(--p);
+}
+
+.xpay-adm__row-main {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.xpay-adm__row--nudge strong {
+	color: #3730a3;
+}
+
+.xpay-adm__row-sub {
+	color: var(--mut);
+	font-size: 13px;
+	margin-left: 10px;
+}
+
+.xpay-adm__row--nudge .xpay-adm__row-sub {
+	color: #6366f1;
+}
+
+.xpay-adm__row-label {
+	flex: none;
+	font-size: 13px;
+	font-weight: 500;
+	width: 160px;
+}
+
+.xpay-adm__row-value {
+	color: var(--fg);
+	flex: 1 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.xpay-adm__row-value--empty {
+	color: var(--faint);
+	font-size: 13px;
+}
+
+.xpay-adm__row input.xpay-adm__input {
+	flex: 1 1 auto;
+}
+
+.xpay-adm__health {
+	align-items: center;
+	display: inline-flex;
+	flex: 1 1 auto;
+	font-size: 13px;
+	font-weight: 500;
+	gap: 8px;
+	min-width: 0;
+}
+
+.xpay-adm__health--green {
+	color: var(--green-text);
+}
+
+.xpay-adm__health--amber {
+	color: var(--amber);
+}
+
+.xpay-adm__dot {
+	border-radius: 50%;
+	flex: none;
+	height: 7px;
+	width: 7px;
+}
+
+.xpay-adm__health--green .xpay-adm__dot {
+	background: var(--green);
+}
+
+.xpay-adm__health--amber .xpay-adm__dot {
+	background: #f59e0b;
+}
+
+/* ── Sections ────────────────────────────────────────────────────────── */
+
+.xpay-adm__section-head {
+	align-items: center;
+	display: flex;
+	gap: 14px;
+	margin-bottom: 12px;
+}
+
+.xpay-adm__section-head > div:first-child {
+	flex: 1 1 auto;
+}
+
+.xpay-adm__section-title {
+	font-size: 16px;
+	font-weight: 600;
+}
+
+.xpay-adm__section-sub {
+	color: var(--mut);
+	font-size: 13px;
+	margin-top: 2px;
+}
+
+/* ── Controls ────────────────────────────────────────────────────────── */
+
+.xpay-adm__label {
+	display: block;
+	font-size: 13px;
+	font-weight: 500;
+	margin-bottom: 6px;
+}
+
+.xpay-adm input.xpay-adm__input {
+	background: #fff;
+	border: 1px solid var(--bd);
+	border-radius: var(--r-ctl);
+	box-shadow: var(--field-shadow);
+	color: var(--fg);
+	font-family: inherit;
+	font-size: 14px;
+	height: 40px;
+	line-height: normal;
+	margin: 0;
+	min-height: 40px;
+	padding: 0 12px;
+	width: 100%;
+}
+
+.xpay-adm input.xpay-adm__input.xpay-adm__mono {
+	font-family: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 13px;
+}
+
+.xpay-adm input.xpay-adm__input:focus {
+	border-color: var(--p);
+	box-shadow: var(--field-shadow), 0 0 0 3px rgba(79, 70, 229, 0.15);
+	outline: none;
+}
+
+.xpay-adm__btn {
+	align-items: center;
+	background: var(--p);
+	border: 0;
+	border-radius: var(--r-ctl);
+	color: var(--pf);
+	cursor: pointer;
+	display: inline-flex;
+	flex: none;
+	font-family: inherit;
+	font-size: 14px;
+	font-weight: 600;
+	height: 40px;
+	padding: 0 18px;
+}
+
+.xpay-adm__btn:hover {
+	background: #4338ca;
+	color: var(--pf);
+}
+
+.xpay-adm__btn--sm {
+	font-size: 13px;
+	height: 32px;
+	padding: 0 14px;
+}
+
+.xpay-adm__btn--save {
+	margin-left: auto;
+	padding: 0 20px;
+}
+
+.xpay-adm__grid2 {
+	display: grid;
+	gap: 14px 16px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* Segmented control (shadcn Tabs geometry: 10px list, 8px active pill). */
+.xpay-adm__segment {
+	background: #f5f5f5;
+	border-radius: var(--r-row);
+	display: inline-flex;
+	flex: none;
+	font-size: 13px;
+	font-weight: 600;
+	padding: 3px;
+}
+
+.xpay-adm__seg {
+	border-radius: var(--r-ctl);
+	color: var(--mut);
+	cursor: pointer;
+	padding: 6px 18px;
+}
+
+.xpay-adm__seg input {
+	clip: rect(0 0 0 0);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	width: 1px;
+}
+
+.xpay-adm__seg.is-active {
+	background: #fff;
+	box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+	color: var(--fg);
+}
+
+/* Mode rows: only the selected mode's rows show. */
+.xpay-adm [data-xpay-mode="live"],
+.xpay-adm--live [data-xpay-mode="test"] {
+	display: none;
+}
+
+.xpay-adm--live .xpay-adm__row[data-xpay-mode="live"] {
+	display: flex;
+}
+
+/* ── Method tiles ────────────────────────────────────────────────────── */
+
+.xpay-adm__tiles {
+	display: grid;
+	gap: 12px;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	margin-bottom: 14px;
+}
+
+.xpay-adm__tile {
+	align-items: center;
+	border: 1px solid var(--bd);
+	border-radius: var(--r-row);
+	cursor: pointer;
+	display: flex;
+	gap: 10px;
+	padding: 14px 16px;
+}
+
+.xpay-adm__tile.is-on {
+	background: var(--p-tint);
+	border: 1.5px solid var(--p);
+	padding: 13px 15px;
+}
+
+.xpay-adm__tile input {
+	clip: rect(0 0 0 0);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	width: 1px;
+}
+
+.xpay-adm .xpay-adm__tile img {
+	height: 16px;
+	width: auto;
+}
+
+.xpay-adm__tile-name {
+	flex: 1 1 auto;
+	font-weight: 600;
+}
+
+.xpay-adm__tile-name--brand {
+	color: #f7a600;
+	font-weight: 700;
+}
+
+/* ── Switches ────────────────────────────────────────────────────────── */
+
+.xpay-adm__switch {
+	background: #d4d4d4;
+	border-radius: 10px;
+	flex: none;
+	height: 20px;
+	position: relative;
+	transition: background 0.15s ease;
+	width: 36px;
+}
+
+.xpay-adm__switch::after {
+	background: #fff;
+	border-radius: 50%;
+	content: "";
+	height: 16px;
+	left: 2px;
+	position: absolute;
+	top: 2px;
+	transition: left 0.15s ease;
+	width: 16px;
+}
+
+.xpay-adm__tile input:checked ~ .xpay-adm__switch,
+.xpay-adm__toggle input:checked ~ .xpay-adm__switch {
+	background: var(--p);
+}
+
+.xpay-adm__tile input:checked ~ .xpay-adm__switch::after,
+.xpay-adm__toggle input:checked ~ .xpay-adm__switch::after {
+	left: 18px;
+}
+
+.xpay-adm__toggle {
+	align-items: center;
+	color: var(--mut);
+	cursor: pointer;
+	display: flex;
+	font-size: 13px;
+	gap: 8px;
+}
+
+.xpay-adm__toggle input {
+	clip: rect(0 0 0 0);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	width: 1px;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────── */
+
+.xpay-adm__footer {
+	align-items: center;
+	border-top: 1px solid var(--bd);
+	display: flex;
+	gap: 20px;
+	padding-top: 20px;
+}
+
+/* ── Activation steps ────────────────────────────────────────────────── */
+
+.xpay-adm__step {
+	border: 1px solid var(--bd);
+	padding: 18px 20px;
+}
+
+.xpay-adm__step--active {
+	border-radius: var(--r-row) var(--r-row) 0 0;
+	padding: 20px;
+}
+
+.xpay-adm__step--pending {
+	align-items: center;
+	display: flex;
+	gap: 12px;
+	margin-top: -1px;
+}
+
+.xpay-adm__step--last {
+	border-radius: 0 0 var(--r-row) var(--r-row);
+}
+
+.xpay-adm__step-head {
+	align-items: center;
+	display: flex;
+	gap: 12px;
+	margin-bottom: 4px;
+}
+
+.xpay-adm__step-no {
+	align-items: center;
+	border: 1.5px solid #d4d4d4;
+	border-radius: 50%;
+	color: var(--mut);
+	display: inline-flex;
+	flex: none;
+	font-size: 12px;
+	font-weight: 700;
+	height: 24px;
+	justify-content: center;
+	width: 24px;
+}
+
+.xpay-adm__step-no--active {
+	background: var(--p);
+	border: 0;
+	color: var(--pf);
+}
+
+.xpay-adm__step-title {
+	font-size: 16px;
+	font-weight: 600;
+}
+
+.xpay-adm__step-title--muted {
+	color: var(--mut);
+}
+
+.xpay-adm__step-hint {
+	color: var(--faint);
+	font-size: 13px;
+}
+
+.xpay-adm__step-sub {
+	color: var(--mut);
+	font-size: 13px;
+	margin: 0 0 16px 36px;
+}
+
+.xpay-adm__step-body {
+	margin: 0 0 16px 36px;
+}
+
+.xpay-adm__step-body:last-child {
+	margin-bottom: 0;
+}
+
+.xpay-adm__trust {
+	align-items: center;
+	color: var(--mut);
+	display: flex;
+	font-size: 13px;
+	gap: 8px;
+	margin: 16px 0 0;
+}
+
+@media (max-width: 782px) {
+	.xpay-adm__grid2,
+	.xpay-adm__tiles {
+		grid-template-columns: 1fr;
+	}
+
+	.xpay-adm__band,
+	.xpay-adm__footer {
+		flex-wrap: wrap;
+	}
+
+	.xpay-adm__row-label {
+		width: 110px;
+	}
+}

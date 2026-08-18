@@ -59,6 +59,12 @@ class XPay_Webhook_Controller {
 			self::respond( 400, array( 'error' => XPay_Error_Codes::WEBHOOK_PAYLOAD_MALFORMED ) );
 		}
 
+		// Health heartbeat for the settings screen: only signature-verified,
+		// well-formed events reach this line, so the timestamp can't be
+		// painted by unauthenticated probes. Independent of the logging
+		// setting on purpose — health must stay truthful with logging off.
+		update_option( XPay_Constants::OPTION_LAST_WEBHOOK_AT, time(), false );
+
 		$event_id = isset( $event['id'] ) && is_string( $event['id'] ) ? $event['id'] : '';
 		XPay_Logger::event(
 			'webhook.received',
