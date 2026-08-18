@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-18T21:29:17+00:00\n"
+"POT-Creation-Date: 2026-08-18T21:51:39+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: xpay-for-woocommerce\n"
@@ -136,6 +136,18 @@ msgstr ""
 
 #: includes/admin/class-xpay-order-panel.php:102
 msgid "View full log for this order"
+msgstr ""
+
+#: includes/compat/class-xpay-wpfunnels-compat.php:106
+msgid "XPay: WPFunnels is active. Unless you run a WPFunnels Pro upsell flow, shoppers who pay with XPay can land on the cart page instead of the order confirmation. Turn on the WPFunnels safeguard in the XPay settings."
+msgstr ""
+
+#: includes/compat/class-xpay-wpfunnels-compat.php:108
+msgid "Open XPay settings"
+msgstr ""
+
+#: includes/compat/class-xpay-wpfunnels-compat.php:109
+msgid "Dismiss — I run a WPFunnels Pro upsell flow"
 msgstr ""
 
 #: includes/constants/class-xpay-payment-methods.php:51
@@ -318,72 +330,92 @@ msgid "Only tick methods that are enabled for your XPay account. Shoppers who pi
 msgstr ""
 
 #: includes/gateway/class-xpay-gateway.php:186
-msgid "Diagnostic logging"
+msgid "WPFunnels compatibility"
 msgstr ""
 
 #: includes/gateway/class-xpay-gateway.php:188
+msgid "Only relevant when the WPFunnels plugin is active."
+msgstr ""
+
+#: includes/gateway/class-xpay-gateway.php:192
+msgid "Confirmation page"
+msgstr ""
+
+#: includes/gateway/class-xpay-gateway.php:194
+msgid "Force the standard order-received page after payment"
+msgstr ""
+
+#: includes/gateway/class-xpay-gateway.php:195
+msgid "WPFunnels reroutes the after-payment page into its funnel flow. Without a WPFunnels Pro upsell step, that bounces shoppers to the cart with no confirmation. Turn this on unless you run a working upsell flow. Applies to XPay orders only."
+msgstr ""
+
+#: includes/gateway/class-xpay-gateway.php:199
+msgid "Diagnostic logging"
+msgstr ""
+
+#: includes/gateway/class-xpay-gateway.php:201
 msgid "Write redacted diagnostic logs (WooCommerce → Status → Logs, source \"xpay\")"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:292
+#: includes/gateway/class-xpay-gateway.php:305
 msgid "XPay: no API key is saved for the selected mode, so XPay stays hidden at checkout until you add one."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:299
+#: includes/gateway/class-xpay-gateway.php:312
 msgid "XPay: the key in the selected mode is a LIVE key but the gateway is in Test mode. Paste the matching key for the mode you selected."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:303
+#: includes/gateway/class-xpay-gateway.php:316
 msgid "XPay: the key in the selected mode is a TEST key but the gateway is in Live mode. Paste the matching key for the mode you selected."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:312
+#: includes/gateway/class-xpay-gateway.php:325
 msgid "XPay connected (test mode)."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:313
+#: includes/gateway/class-xpay-gateway.php:326
 msgid "XPay connected (live mode)."
 msgstr ""
 
 #. translators: %s is the error returned while validating the API key.
-#: includes/gateway/class-xpay-gateway.php:319
+#: includes/gateway/class-xpay-gateway.php:332
 #, php-format
 msgid "XPay: the API key did not validate — %s"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:350
+#: includes/gateway/class-xpay-gateway.php:363
 msgid "The payment could not be started. Please try again — your card has not been charged."
 msgstr ""
 
 #. translators: 1: XPay error code, 2: error message.
-#: includes/gateway/class-xpay-gateway.php:354
+#: includes/gateway/class-xpay-gateway.php:367
 #, php-format
 msgid "XPay session creation failed [%1$s]: %2$s"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:391
+#: includes/gateway/class-xpay-gateway.php:404
 msgid "The payment could not be started. Please refresh the page to try again."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:422
+#: includes/gateway/class-xpay-gateway.php:435
 #: includes/gateway/class-xpay-pay-page.php:63
 msgid "Opening secure payment…"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:423
+#: includes/gateway/class-xpay-gateway.php:436
 msgid "Taking you to the secure payment page…"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:424
+#: includes/gateway/class-xpay-gateway.php:437
 #: includes/gateway/class-xpay-pay-page.php:85
 msgid "Pay now"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:425
+#: includes/gateway/class-xpay-gateway.php:438
 msgid "Your order is saved. Pay when you are ready."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:463
+#: includes/gateway/class-xpay-gateway.php:476
 msgid "Refund amount is required."
 msgstr ""
 

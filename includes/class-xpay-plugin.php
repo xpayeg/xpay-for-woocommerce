@@ -64,6 +64,10 @@ final class XPay_Plugin {
 		require_once $dir . 'refunds/class-xpay-refund-service.php';
 		require_once $dir . 'webhooks/class-xpay-webhook-controller.php';
 
+		// Compatibility shims (third-party conflicts the field taught us).
+		require_once $dir . 'compat/class-xpay-wpfunnels-compat.php';
+		require_once $dir . 'compat/class-xpay-script-guard.php';
+
 		// WooCommerce surfaces.
 		require_once $dir . 'gateway/class-xpay-pay-page.php';
 		require_once $dir . 'gateway/class-xpay-thankyou-notice.php';
@@ -108,6 +112,11 @@ final class XPay_Plugin {
 		add_action( 'wp_enqueue_scripts', array( 'XPay_Thankyou_Notice', 'enqueue' ) );
 		add_filter( 'woocommerce_thankyou_order_received_text', array( 'XPay_Thankyou_Notice', 'filter_received_text' ), 10, 2 );
 
+		// Compatibility shims: WPFunnels' order-received rewrite, and
+		// optimizer opt-outs on the payment-critical script tags.
+		XPay_WPFunnels_Compat::register();
+		XPay_Script_Guard::register();
+
 		// Prune runs from WP-Cron (any request context, not just admin).
 		add_action( XPay_Log_Store::CRON_HOOK, array( 'XPay_Log_Store', 'prune' ) );
 
@@ -119,6 +128,7 @@ final class XPay_Plugin {
 			add_action( 'admin_menu', array( 'XPay_Log_Viewer', 'register_menu' ) );
 			add_action( 'add_meta_boxes', array( 'XPay_Order_Panel', 'register' ) );
 			add_action( 'admin_notices', array( 'XPay_Method_Gateway', 'render_pin_rejected_notice' ) );
+			XPay_WPFunnels_Compat::register_admin();
 		}
 
 		XPay_Logger::init();

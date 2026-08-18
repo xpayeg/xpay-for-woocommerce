@@ -86,27 +86,27 @@ class XPay_Gateway extends WC_Payment_Gateway {
 		$webhook_url = home_url( '/?wc-api=' . XPay_Constants::WEBHOOK_ENDPOINT );
 
 		$this->form_fields = array(
-			'enabled'              => array(
+			'enabled'                           => array(
 				'title'   => __( 'Enable/Disable', 'xpay-for-woocommerce' ),
 				'type'    => 'checkbox',
 				'label'   => __( 'Enable XPay', 'xpay-for-woocommerce' ),
 				'default' => 'no',
 			),
-			'title'                => array(
+			'title'                             => array(
 				'title'       => __( 'Title', 'xpay-for-woocommerce' ),
 				'type'        => 'text',
 				'description' => __( 'Payment method name shown to customers at checkout.', 'xpay-for-woocommerce' ),
 				'default'     => __( 'XPay', 'xpay-for-woocommerce' ),
 				'desc_tip'    => true,
 			),
-			'description'          => array(
+			'description'                       => array(
 				'title'       => __( 'Description', 'xpay-for-woocommerce' ),
 				'type'        => 'text',
 				'description' => __( 'One sentence under the payment method name.', 'xpay-for-woocommerce' ),
 				'default'     => __( 'Pay securely by card or valU.', 'xpay-for-woocommerce' ),
 				'desc_tip'    => true,
 			),
-			'mode'                 => array(
+			'mode'                              => array(
 				'title'       => __( 'Mode', 'xpay-for-woocommerce' ),
 				'type'        => 'select',
 				'description' => __( 'Test mode never charges real money. Keys and webhook secrets are separate per mode.', 'xpay-for-woocommerce' ),
@@ -116,44 +116,44 @@ class XPay_Gateway extends WC_Payment_Gateway {
 					'live' => __( 'Live', 'xpay-for-woocommerce' ),
 				),
 			),
-			'test_api_key'         => array(
+			'test_api_key'                      => array(
 				'title'       => __( 'Test secret key', 'xpay-for-woocommerce' ),
 				'type'        => 'password',
 				'description' => __( 'A restricted key (rk_test_…) with Checkout Sessions and Refunds access, from your XPay dashboard → Developers → API keys.', 'xpay-for-woocommerce' ),
 			),
-			'test_publishable_key' => array(
+			'test_publishable_key'              => array(
 				'title'       => __( 'Test publishable key', 'xpay-for-woocommerce' ),
 				'type'        => 'text',
 				'description' => __( 'pk_test_… key, used by the secure payment window in the browser.', 'xpay-for-woocommerce' ),
 			),
-			'test_webhook_secret'  => array(
+			'test_webhook_secret'               => array(
 				'title'       => __( 'Test webhook signing secret', 'xpay-for-woocommerce' ),
 				'type'        => 'password',
 				/* translators: %s is this store's webhook URL. */
 				'description' => sprintf( __( 'whsec_… secret for a webhook endpoint pointing at %s (events: checkout.session.completed, checkout.session.expired).', 'xpay-for-woocommerce' ), '<code>' . esc_html( $webhook_url ) . '</code>' ),
 			),
-			'live_api_key'         => array(
+			'live_api_key'                      => array(
 				'title'       => __( 'Live secret key', 'xpay-for-woocommerce' ),
 				'type'        => 'password',
 				'description' => __( 'A restricted key (rk_live_…) with Checkout Sessions and Refunds access.', 'xpay-for-woocommerce' ),
 			),
-			'live_publishable_key' => array(
+			'live_publishable_key'              => array(
 				'title'       => __( 'Live publishable key', 'xpay-for-woocommerce' ),
 				'type'        => 'text',
 				'description' => __( 'pk_live_… key.', 'xpay-for-woocommerce' ),
 			),
-			'live_webhook_secret'  => array(
+			'live_webhook_secret'               => array(
 				'title'       => __( 'Live webhook signing secret', 'xpay-for-woocommerce' ),
 				'type'        => 'password',
 				/* translators: %s is this store's webhook URL. */
 				'description' => sprintf( __( 'whsec_… secret for a live-mode webhook endpoint pointing at %s.', 'xpay-for-woocommerce' ), '<code>' . esc_html( $webhook_url ) . '</code>' ),
 			),
-			'display_heading'      => array(
+			'display_heading'                   => array(
 				'title'       => __( 'Checkout display', 'xpay-for-woocommerce' ),
 				'type'        => 'title',
 				'description' => __( 'Choose how XPay appears on your checkout page.', 'xpay-for-woocommerce' ),
 			),
-			'display_mode'         => array(
+			'display_mode'                      => array(
 				'title'       => __( 'Payment options', 'xpay-for-woocommerce' ),
 				'type'        => 'select',
 				'description' => __( 'Separate options let shoppers pick their method before the payment window opens, so it opens directly on that method.', 'xpay-for-woocommerce' ),
@@ -163,26 +163,39 @@ class XPay_Gateway extends WC_Payment_Gateway {
 					'split'    => __( 'A separate option per payment method', 'xpay-for-woocommerce' ),
 				),
 			),
-			'split_card'           => array(
+			'split_card'                        => array(
 				'title'   => __( 'Card', 'xpay-for-woocommerce' ),
 				'type'    => 'checkbox',
 				'label'   => __( 'Offer Card (Visa, Mastercard, Meeza) as its own option', 'xpay-for-woocommerce' ),
 				'default' => 'yes',
 			),
-			'split_valu'           => array(
+			'split_valu'                        => array(
 				'title'   => __( 'valU', 'xpay-for-woocommerce' ),
 				'type'    => 'checkbox',
 				'label'   => __( 'Offer valU as its own option', 'xpay-for-woocommerce' ),
 				'default' => 'yes',
 			),
-			'split_fawry'          => array(
+			'split_fawry'                       => array(
 				'title'       => __( 'Fawry', 'xpay-for-woocommerce' ),
 				'type'        => 'checkbox',
 				'label'       => __( 'Offer Fawry as its own option', 'xpay-for-woocommerce' ),
 				'description' => __( 'Only tick methods that are enabled for your XPay account. Shoppers who pick a method your account does not have are shown the full XPay window instead, and you get a notice here in admin.', 'xpay-for-woocommerce' ),
 				'default'     => 'no',
 			),
-			'debug'                => array(
+			'wpfunnels_heading'                 => array(
+				'title'       => __( 'WPFunnels compatibility', 'xpay-for-woocommerce' ),
+				'type'        => 'title',
+				'description' => __( 'Only relevant when the WPFunnels plugin is active.', 'xpay-for-woocommerce' ),
+			),
+			// Key must match XPay_WPFunnels_Compat::SETTING_KEY.
+			'wpfunnels_force_standard_redirect' => array(
+				'title'       => __( 'Confirmation page', 'xpay-for-woocommerce' ),
+				'type'        => 'checkbox',
+				'label'       => __( 'Force the standard order-received page after payment', 'xpay-for-woocommerce' ),
+				'description' => __( 'WPFunnels reroutes the after-payment page into its funnel flow. Without a WPFunnels Pro upsell step, that bounces shoppers to the cart with no confirmation. Turn this on unless you run a working upsell flow. Applies to XPay orders only.', 'xpay-for-woocommerce' ),
+				'default'     => 'no',
+			),
+			'debug'                             => array(
 				'title'   => __( 'Diagnostic logging', 'xpay-for-woocommerce' ),
 				'type'    => 'checkbox',
 				'label'   => __( 'Write redacted diagnostic logs (WooCommerce → Status → Logs, source "xpay")', 'xpay-for-woocommerce' ),
