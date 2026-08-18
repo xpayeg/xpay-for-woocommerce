@@ -26,7 +26,6 @@
 	var container = document.getElementById( 'xpay-payment' );
 	var statusEl = document.getElementById( 'xpay-payment-status' );
 	var payButton = document.getElementById( 'xpay-pay-button' );
-	var hostedLink = document.getElementById( 'xpay-hosted-link' );
 
 	function setStatus( text ) {
 		if ( statusEl ) {
@@ -55,9 +54,6 @@
 		// state: the order is saved and payable later (account, pay link).
 		setPaused( true );
 		setStatus( params.i18n.closed );
-		if ( hostedLink ) {
-			hostedLink.style.display = '';
-		}
 	}
 
 	function openModal( xpay ) {
@@ -81,9 +77,6 @@
 					setPaused( true );
 					if ( payButton ) {
 						payButton.style.display = '';
-					}
-					if ( hostedLink ) {
-						hostedLink.style.display = '';
 					}
 				},
 				onError: function () {

@@ -243,24 +243,17 @@
 	opacity: 0.8;
 }
 
-.xpay-pay__hosted {
-	color: #737373;
-	font-size: 12px;
-	text-decoration: none;
-}
-
-.xpay-pay__hosted:hover {
-	text-decoration: underline;
-	text-underline-offset: 4px;
-}
-
 /* ── Trust row ───────────────────────────────────────────────────────── */
 
+/* Wraps: "Secured by" + wordmark and the method badges together can run
+   wider than the card. Wrapping drops the badges to their own line (kept
+   right-aligned by the margin below) instead of colliding with the mark. */
 .xpay-pay__trust {
 	align-items: center;
 	border-top: 1px solid #e5e5e5;
 	display: flex;
-	gap: 12px;
+	flex-wrap: wrap;
+	gap: 10px 12px;
 	justify-content: space-between;
 	padding-top: 13px;
 }
@@ -289,7 +282,9 @@
 .xpay-pay__methods {
 	align-items: center;
 	display: flex;
+	flex: none;
 	gap: 10px;
+	margin-left: auto;
 }
 
 .xpay-pay__method-icon {

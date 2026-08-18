@@ -9,11 +9,10 @@
  * Two states, one markup, toggled by checkout-modal.js via the
  * `xpay-paused` class on the container:
  *   - Opening (default): spinning ring + "Opening secure payment…". The
- *     stamp, Pay now button, and hosted link are hidden — the window opens
- *     by itself, so the happy path shows no controls at all.
+ *     stamp and Pay now button are hidden — the window opens by itself,
+ *     so the happy path shows no controls at all.
  *   - Paused (shopper closed the window): ring stops, the "Awaiting
- *     payment" stamp appears, and the JS reveals the button and the hosted
- *     rescue link.
+ *     payment" stamp appears, and the JS reveals the Pay now button.
  *
  * Identity hierarchy mirrors the hosted checkout's own: the STORE leads the
  * receipt (site logo and name — a receipt is issued by the store), XPay
@@ -35,11 +34,10 @@ final class XPay_Pay_Page {
 
 	/**
 	 * @param WC_Order   $order        Order being paid.
-	 * @param string     $hosted_url   Allowlist-checked hosted checkout URL, '' when unavailable.
 	 * @param array|null $pinned_types This row's method restriction (trust strip icons), null = all.
 	 * @param array      $stage        Gradient stops from XPay_Branding::stage_from_primary().
 	 */
-	public static function render( WC_Order $order, string $hosted_url, ?array $pinned_types, array $stage ): void {
+	public static function render( WC_Order $order, ?array $pinned_types, array $stage ): void {
 		// Custom properties, not classes: the stage and the button must take
 		// the merchant's synced primary, and inline style is the only place
 		// a per-merchant color can live without emitting a <style> block.
@@ -47,7 +45,7 @@ final class XPay_Pay_Page {
 
 		echo '<div id="xpay-payment" class="xpay-pay" data-order="' . esc_attr( (string) $order->get_id() ) . '" style="' . esc_attr( $style ) . '">';
 		self::render_halo();
-		self::render_receipt( $order, $hosted_url, $pinned_types );
+		self::render_receipt( $order, $pinned_types );
 		echo '</div>';
 	}
 
@@ -68,10 +66,9 @@ final class XPay_Pay_Page {
 
 	/**
 	 * @param WC_Order   $order        Order being paid.
-	 * @param string     $hosted_url   Hosted checkout URL, '' when unavailable.
 	 * @param array|null $pinned_types This row's method restriction, null = all.
 	 */
-	private static function render_receipt( WC_Order $order, string $hosted_url, ?array $pinned_types ): void {
+	private static function render_receipt( WC_Order $order, ?array $pinned_types ): void {
 		echo '<div class="xpay-pay__card">';
 
 		self::render_head( $order );
@@ -79,13 +76,13 @@ final class XPay_Pay_Page {
 
 		echo '<div class="xpay-pay__stamp">' . esc_html__( 'Awaiting payment', 'xpay-for-woocommerce' ) . '</div>';
 
-		// Hidden until checkout-modal.js reveals them in the paused state —
-		// the happy path never shows a control on this page.
+		// Hidden until checkout-modal.js reveals it in the paused state —
+		// the happy path never shows a control on this page. No hosted-page
+		// link here: the SDK-failure path auto-redirects to the hosted
+		// checkout, so a visible second path would only split the shopper's
+		// attention between two buttons that do the same thing.
 		echo '<div class="xpay-pay__actions">';
 		echo '<button type="button" class="button alt xpay-pay__button" id="xpay-pay-button" style="display:none">' . esc_html__( 'Pay now', 'xpay-for-woocommerce' ) . '</button>';
-		if ( '' !== $hosted_url ) {
-			echo '<a href="' . esc_url( $hosted_url ) . '" id="xpay-hosted-link" class="xpay-pay__hosted" style="display:none">' . esc_html__( 'Continue on the XPay payment page', 'xpay-for-woocommerce' ) . '</a>';
-		}
 		echo '</div>';
 
 		self::render_trust( $pinned_types );

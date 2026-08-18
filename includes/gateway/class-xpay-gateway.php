@@ -429,7 +429,6 @@ class XPay_Gateway extends WC_Payment_Gateway {
 
 		XPay_Pay_Page::render(
 			$order,
-			$hosted_url,
 			$this->pinned_method_types(),
 			XPay_Branding::stage_from_primary( (string) get_option( XPay_Constants::OPTION_BRAND_PRIMARY, '' ) )
 		);
