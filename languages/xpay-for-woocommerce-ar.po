@@ -35,71 +35,85 @@ msgstr "XPay"
 
 #: includes/admin/class-xpay-log-viewer.php:32
 #: includes/admin/class-xpay-log-viewer.php:33
-#: includes/admin/class-xpay-log-viewer.php:58
+#: includes/admin/class-xpay-log-viewer.php:66
+#: includes/admin/class-xpay-log-viewer.php:72
 msgid "XPay Log"
 msgstr "سجل XPay"
 
-#: includes/admin/class-xpay-log-viewer.php:61
+#: includes/admin/class-xpay-log-viewer.php:74
+msgid "Logging on"
+msgstr "التسجيل مفعّل"
+
+#: includes/admin/class-xpay-log-viewer.php:76
+msgid "Logging off"
+msgstr "التسجيل متوقف"
+
+#: includes/admin/class-xpay-log-viewer.php:78
+#: includes/compat/class-xpay-wpfunnels-compat.php:108
+msgid "Open XPay settings"
+msgstr "فتح إعدادات XPay"
+
+#: includes/admin/class-xpay-log-viewer.php:86
 msgid "Diagnostic logging is off. Turn it on in WooCommerce → Settings → Payments → XPay to record new entries."
 msgstr "التسجيل التشخيصي متوقف. فعِّله من WooCommerce ← الإعدادات ← المدفوعات ← XPay لتسجيل إدخالات جديدة."
 
-#: includes/admin/class-xpay-log-viewer.php:78
+#: includes/admin/class-xpay-log-viewer.php:108
 msgid "Order #"
 msgstr "رقم الطلب"
 
-#: includes/admin/class-xpay-log-viewer.php:79
+#: includes/admin/class-xpay-log-viewer.php:109
 msgid "Request id"
 msgstr "معرّف الطلب (request)"
 
-#: includes/admin/class-xpay-log-viewer.php:80
+#: includes/admin/class-xpay-log-viewer.php:110
 msgid "Stage starts with"
 msgstr "المرحلة تبدأ بـ"
 
-#: includes/admin/class-xpay-log-viewer.php:81
+#: includes/admin/class-xpay-log-viewer.php:111
 msgid "Filter"
 msgstr "تصفية"
 
-#: includes/admin/class-xpay-log-viewer.php:86
+#: includes/admin/class-xpay-log-viewer.php:116
 msgid "Copied — paste it into your support ticket"
 msgstr "تم النسخ — ألصقه في تذكرة الدعم الخاصة بك"
 
-#: includes/admin/class-xpay-log-viewer.php:86
+#: includes/admin/class-xpay-log-viewer.php:116
 msgid "Copy debug report"
 msgstr "نسخ تقرير التشخيص"
 
-#: includes/admin/class-xpay-log-viewer.php:92
-msgid "Time (UTC)"
-msgstr "الوقت (UTC)"
-
-#: includes/admin/class-xpay-log-viewer.php:93
-msgid "Request"
-msgstr "المعرّف"
-
-#: includes/admin/class-xpay-log-viewer.php:94
-msgid "Stage"
-msgstr "المرحلة"
-
-#: includes/admin/class-xpay-log-viewer.php:95
-msgid "Order"
-msgstr "الطلب"
-
-#: includes/admin/class-xpay-log-viewer.php:96
-msgid "Details"
-msgstr "التفاصيل"
-
-#: includes/admin/class-xpay-log-viewer.php:100
-msgid "No log entries match. New entries appear here as payments run."
-msgstr "لا توجد إدخالات مطابقة في السجل. ستظهر الإدخالات الجديدة هنا مع تشغيل المدفوعات."
-
-#: includes/admin/class-xpay-log-viewer.php:130
+#: includes/admin/class-xpay-log-viewer.php:117
 msgid "Delete all XPay log entries? This cannot be undone."
 msgstr "هل تريد حذف جميع إدخالات سجل XPay؟ لا يمكن التراجع عن هذا الإجراء."
 
-#: includes/admin/class-xpay-log-viewer.php:133
+#: includes/admin/class-xpay-log-viewer.php:120
 msgid "Clear log"
 msgstr "مسح السجل"
 
-#: includes/admin/class-xpay-log-viewer.php:148
+#: includes/admin/class-xpay-log-viewer.php:133
+msgid "Time (UTC)"
+msgstr "الوقت (UTC)"
+
+#: includes/admin/class-xpay-log-viewer.php:134
+msgid "Request"
+msgstr "المعرّف"
+
+#: includes/admin/class-xpay-log-viewer.php:135
+msgid "Stage"
+msgstr "المرحلة"
+
+#: includes/admin/class-xpay-log-viewer.php:136
+msgid "Order"
+msgstr "الطلب"
+
+#: includes/admin/class-xpay-log-viewer.php:137
+msgid "Details"
+msgstr "التفاصيل"
+
+#: includes/admin/class-xpay-log-viewer.php:141
+msgid "No log entries match. New entries appear here as payments run."
+msgstr "لا توجد إدخالات مطابقة في السجل. ستظهر الإدخالات الجديدة هنا مع تشغيل المدفوعات."
+
+#: includes/admin/class-xpay-log-viewer.php:181
 msgid "XPay log cleared."
 msgstr "تم مسح سجل XPay."
 
@@ -431,10 +445,6 @@ msgstr "تجاهل — أنا في منتصف عملية الانتقال وأع
 #: includes/compat/class-xpay-wpfunnels-compat.php:106
 msgid "XPay: WPFunnels is active. Unless you run a WPFunnels Pro upsell flow, shoppers who pay with XPay can land on the cart page instead of the order confirmation. Turn on the WPFunnels safeguard in the XPay settings."
 msgstr "XPay: إضافة WPFunnels مفعّلة. ما لم تكن تستخدم مسار بيع إضافي (Upsell) من WPFunnels Pro، فقد يصل المتسوقون الذين يدفعون عبر XPay إلى صفحة السلة بدلًا من تأكيد الطلب. فعِّل خيار حماية WPFunnels من إعدادات XPay."
-
-#: includes/compat/class-xpay-wpfunnels-compat.php:108
-msgid "Open XPay settings"
-msgstr "فتح إعدادات XPay"
 
 #: includes/compat/class-xpay-wpfunnels-compat.php:109
 msgid "Dismiss — I run a WPFunnels Pro upsell flow"

@@ -110,8 +110,8 @@ final class XPay_Constants {
 	 */
 	const OPTION_LAST_WEBHOOK_AT = 'xpay_wc_last_webhook_at';
 
-	/** The merchant-facing XPay dashboard (apps/nextjs siteConfig.ts). */
-	const DASHBOARD_URL = 'https://dashboard.xpay.app';
+	/** The merchant-facing XPay dashboard (production host). */
+	const DASHBOARD_URL = 'https://app.xpay.app';
 
 	/**
 	 * User-meta key holding the shopper's XPay Customer id (cus_…), split

@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-18T23:28:57+00:00\n"
+"POT-Creation-Date: 2026-08-18T23:36:48+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: xpay-for-woocommerce\n"
@@ -41,71 +41,85 @@ msgstr ""
 
 #: includes/admin/class-xpay-log-viewer.php:32
 #: includes/admin/class-xpay-log-viewer.php:33
-#: includes/admin/class-xpay-log-viewer.php:58
+#: includes/admin/class-xpay-log-viewer.php:66
+#: includes/admin/class-xpay-log-viewer.php:72
 msgid "XPay Log"
 msgstr ""
 
-#: includes/admin/class-xpay-log-viewer.php:61
-msgid "Diagnostic logging is off. Turn it on in WooCommerce → Settings → Payments → XPay to record new entries."
+#: includes/admin/class-xpay-log-viewer.php:74
+msgid "Logging on"
+msgstr ""
+
+#: includes/admin/class-xpay-log-viewer.php:76
+msgid "Logging off"
 msgstr ""
 
 #: includes/admin/class-xpay-log-viewer.php:78
+#: includes/compat/class-xpay-wpfunnels-compat.php:108
+msgid "Open XPay settings"
+msgstr ""
+
+#: includes/admin/class-xpay-log-viewer.php:86
+msgid "Diagnostic logging is off. Turn it on in WooCommerce → Settings → Payments → XPay to record new entries."
+msgstr ""
+
+#: includes/admin/class-xpay-log-viewer.php:108
 msgid "Order #"
 msgstr ""
 
-#: includes/admin/class-xpay-log-viewer.php:79
+#: includes/admin/class-xpay-log-viewer.php:109
 msgid "Request id"
 msgstr ""
 
-#: includes/admin/class-xpay-log-viewer.php:80
+#: includes/admin/class-xpay-log-viewer.php:110
 msgid "Stage starts with"
 msgstr ""
 
-#: includes/admin/class-xpay-log-viewer.php:81
+#: includes/admin/class-xpay-log-viewer.php:111
 msgid "Filter"
 msgstr ""
 
-#: includes/admin/class-xpay-log-viewer.php:86
+#: includes/admin/class-xpay-log-viewer.php:116
 msgid "Copied — paste it into your support ticket"
 msgstr ""
 
-#: includes/admin/class-xpay-log-viewer.php:86
+#: includes/admin/class-xpay-log-viewer.php:116
 msgid "Copy debug report"
 msgstr ""
 
-#: includes/admin/class-xpay-log-viewer.php:92
-msgid "Time (UTC)"
-msgstr ""
-
-#: includes/admin/class-xpay-log-viewer.php:93
-msgid "Request"
-msgstr ""
-
-#: includes/admin/class-xpay-log-viewer.php:94
-msgid "Stage"
-msgstr ""
-
-#: includes/admin/class-xpay-log-viewer.php:95
-msgid "Order"
-msgstr ""
-
-#: includes/admin/class-xpay-log-viewer.php:96
-msgid "Details"
-msgstr ""
-
-#: includes/admin/class-xpay-log-viewer.php:100
-msgid "No log entries match. New entries appear here as payments run."
-msgstr ""
-
-#: includes/admin/class-xpay-log-viewer.php:130
+#: includes/admin/class-xpay-log-viewer.php:117
 msgid "Delete all XPay log entries? This cannot be undone."
 msgstr ""
 
-#: includes/admin/class-xpay-log-viewer.php:133
+#: includes/admin/class-xpay-log-viewer.php:120
 msgid "Clear log"
 msgstr ""
 
-#: includes/admin/class-xpay-log-viewer.php:148
+#: includes/admin/class-xpay-log-viewer.php:133
+msgid "Time (UTC)"
+msgstr ""
+
+#: includes/admin/class-xpay-log-viewer.php:134
+msgid "Request"
+msgstr ""
+
+#: includes/admin/class-xpay-log-viewer.php:135
+msgid "Stage"
+msgstr ""
+
+#: includes/admin/class-xpay-log-viewer.php:136
+msgid "Order"
+msgstr ""
+
+#: includes/admin/class-xpay-log-viewer.php:137
+msgid "Details"
+msgstr ""
+
+#: includes/admin/class-xpay-log-viewer.php:141
+msgid "No log entries match. New entries appear here as payments run."
+msgstr ""
+
+#: includes/admin/class-xpay-log-viewer.php:181
 msgid "XPay log cleared."
 msgstr ""
 
@@ -436,10 +450,6 @@ msgstr ""
 
 #: includes/compat/class-xpay-wpfunnels-compat.php:106
 msgid "XPay: WPFunnels is active. Unless you run a WPFunnels Pro upsell flow, shoppers who pay with XPay can land on the cart page instead of the order confirmation. Turn on the WPFunnels safeguard in the XPay settings."
-msgstr ""
-
-#: includes/compat/class-xpay-wpfunnels-compat.php:108
-msgid "Open XPay settings"
 msgstr ""
 
 #: includes/compat/class-xpay-wpfunnels-compat.php:109

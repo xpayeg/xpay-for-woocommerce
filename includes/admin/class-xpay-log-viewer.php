@@ -44,60 +44,101 @@ final class XPay_Log_Viewer {
 
 		self::handle_clear();
 
+		// The screen shares the settings screen's design-system stylesheet;
+		// registering the same handle twice is a no-op.
+		wp_enqueue_style(
+			'xpay-admin-settings',
+			XPAY_WC_PLUGIN_URL . 'assets/css/admin-settings.css',
+			array(),
+			XPay_Constants::asset_version( 'assets/css/admin-settings.css' )
+		);
 		wp_enqueue_script(
 			'xpay-admin-log',
 			XPAY_WC_PLUGIN_URL . 'assets/js/admin-log-viewer.js',
 			array(),
-			XPAY_WC_VERSION,
+			XPay_Constants::asset_version( 'assets/js/admin-log-viewer.js' ),
 			true
 		);
 
 		$filters = self::read_filters();
 		$rows    = XPay_Log_Store::query( array_merge( $filters, array( 'limit' => self::TAIL_ROWS ) ) );
 
-		echo '<div class="wrap"><h1>' . esc_html__( 'XPay Log', 'xpay-for-woocommerce' ) . '</h1>';
+		echo '<div class="wrap"><h1 class="screen-reader-text">' . esc_html__( 'XPay Log', 'xpay-for-woocommerce' ) . '</h1>';
+		echo '<div class="xpay-adm">';
+
+		// Band: title, live logging state, and the way back to settings.
+		echo '<div class="xpay-adm__band">';
+		echo '<span class="xpay-adm__wordmark-pill"><img src="' . esc_url( XPAY_WC_PLUGIN_URL . 'assets/images/xpay-wordmark.svg' ) . '" alt="XPay"></span>';
+		echo '<span class="xpay-adm__band-title">' . esc_html__( 'XPay Log', 'xpay-for-woocommerce' ) . '</span>';
+		if ( XPay_Logger::is_enabled() ) {
+			echo '<span class="xpay-adm__badge xpay-adm__badge--green">' . esc_html__( 'Logging on', 'xpay-for-woocommerce' ) . '</span>';
+		} else {
+			echo '<span class="xpay-adm__badge xpay-adm__badge--amber">' . esc_html__( 'Logging off', 'xpay-for-woocommerce' ) . '</span>';
+		}
+		echo '<a class="xpay-adm__band-btn" href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=checkout&section=' . XPay_Constants::GATEWAY_ID ) ) . '">' . esc_html__( 'Open XPay settings', 'xpay-for-woocommerce' ) . '</a>';
+		echo '</div>';
+
+		echo '<div class="xpay-adm__card xpay-adm__card--log">';
 
 		if ( ! XPay_Logger::is_enabled() ) {
-			echo '<div class="notice notice-warning"><p>' . esc_html__( 'Diagnostic logging is off. Turn it on in WooCommerce → Settings → Payments → XPay to record new entries.', 'xpay-for-woocommerce' ) . '</p></div>';
+			echo '<div class="xpay-adm__row xpay-adm__row--first xpay-adm__row--last xpay-adm__row--warn">';
+			echo '<span class="xpay-adm__row-icon xpay-adm__row-icon--amber">!</span>';
+			echo '<span class="xpay-adm__row-main">' . esc_html__( 'Diagnostic logging is off. Turn it on in WooCommerce → Settings → Payments → XPay to record new entries.', 'xpay-for-woocommerce' ) . '</span>';
+			echo '</div>';
 		}
 
-		self::render_filter_form( $filters );
+		self::render_toolbar( $filters );
 		self::render_debug_report();
 		self::render_rows( $rows );
-		self::render_clear_form();
 
+		echo '</div>';
+		echo '</div>';
 		echo '</div>';
 	}
 
 	/* ── Sections ────────────────────────────────────────────────────── */
 
-	private static function render_filter_form( array $filters ): void {
-		echo '<form method="get" style="margin:12px 0">';
-		echo '<input type="hidden" name="page" value="xpay-log" />';
+	private static function render_toolbar( array $filters ): void {
+		echo '<div class="xpay-adm__toolbar">';
+
+		// Filter form (GET, nonce-carrying).
+		echo '<form method="get" class="xpay-adm__filters">';
+		echo '<input type="hidden" name="page" value="xpay-log">';
 		wp_nonce_field( 'xpay-log-filter', '_xpaynonce', false );
-		echo '<label>' . esc_html__( 'Order #', 'xpay-for-woocommerce' ) . ' <input type="number" name="order_id" value="' . esc_attr( $filters['order_id'] ? (string) $filters['order_id'] : '' ) . '" style="width:90px" /></label> ';
-		echo '<label>' . esc_html__( 'Request id', 'xpay-for-woocommerce' ) . ' <input type="text" name="request_id" value="' . esc_attr( $filters['request_id'] ) . '" style="width:130px" /></label> ';
-		echo '<label>' . esc_html__( 'Stage starts with', 'xpay-for-woocommerce' ) . ' <input type="text" name="stage" value="' . esc_attr( $filters['stage'] ) . '" placeholder="webhook." style="width:130px" /></label> ';
-		submit_button( __( 'Filter', 'xpay-for-woocommerce' ), 'secondary', '', false );
+		echo '<input class="xpay-adm__input xpay-adm__input--w110" type="number" name="order_id" value="' . esc_attr( $filters['order_id'] ? (string) $filters['order_id'] : '' ) . '" placeholder="' . esc_attr__( 'Order #', 'xpay-for-woocommerce' ) . '" aria-label="' . esc_attr__( 'Order #', 'xpay-for-woocommerce' ) . '">';
+		echo '<input class="xpay-adm__input xpay-adm__input--w150 xpay-adm__mono" type="text" name="request_id" value="' . esc_attr( $filters['request_id'] ) . '" placeholder="' . esc_attr__( 'Request id', 'xpay-for-woocommerce' ) . '" aria-label="' . esc_attr__( 'Request id', 'xpay-for-woocommerce' ) . '">';
+		echo '<input class="xpay-adm__input xpay-adm__input--w150 xpay-adm__mono" type="text" name="stage" value="' . esc_attr( $filters['stage'] ) . '" placeholder="webhook." aria-label="' . esc_attr__( 'Stage starts with', 'xpay-for-woocommerce' ) . '">';
+		echo '<button type="submit" class="xpay-adm__btn xpay-adm__btn--secondary">' . esc_html__( 'Filter', 'xpay-for-woocommerce' ) . '</button>';
 		echo '</form>';
+
+		// Actions: copy (no form) and clear (its own POST form).
+		echo '<div class="xpay-adm__toolbar-actions">';
+		echo '<button type="button" class="xpay-adm__btn" id="xpay-copy-report" data-copied="' . esc_attr__( 'Copied — paste it into your support ticket', 'xpay-for-woocommerce' ) . '">' . esc_html__( 'Copy debug report', 'xpay-for-woocommerce' ) . '</button>';
+		echo '<form method="post" class="xpay-adm__clear" onsubmit="return window.confirm(this.dataset.msg)" data-msg="' . esc_attr__( 'Delete all XPay log entries? This cannot be undone.', 'xpay-for-woocommerce' ) . '">';
+		wp_nonce_field( 'xpay-log-clear' );
+		echo '<input type="hidden" name="xpay_log_action" value="clear">';
+		echo '<button type="submit" class="xpay-adm__btn xpay-adm__btn--danger">' . esc_html__( 'Clear log', 'xpay-for-woocommerce' ) . '</button>';
+		echo '</form>';
+		echo '</div>';
+
+		echo '</div>';
 	}
 
 	private static function render_debug_report(): void {
-		echo '<p><button type="button" class="button button-primary" id="xpay-copy-report" data-copied="' . esc_attr__( 'Copied — paste it into your support ticket', 'xpay-for-woocommerce' ) . '">' . esc_html__( 'Copy debug report', 'xpay-for-woocommerce' ) . '</button></p>';
-		echo '<textarea id="xpay-debug-report" readonly rows="4" style="width:100%;font-family:monospace;font-size:11px">' . esc_textarea( self::build_debug_report() ) . '</textarea>';
+		echo '<textarea id="xpay-debug-report" class="xpay-adm__report xpay-adm__mono" readonly rows="4">' . esc_textarea( self::build_debug_report() ) . '</textarea>';
 	}
 
 	private static function render_rows( array $rows ): void {
-		echo '<table class="widefat striped" style="margin-top:12px"><thead><tr>';
+		echo '<table class="xpay-adm__table"><thead><tr>';
 		echo '<th style="width:150px">' . esc_html__( 'Time (UTC)', 'xpay-for-woocommerce' ) . '</th>';
 		echo '<th style="width:110px">' . esc_html__( 'Request', 'xpay-for-woocommerce' ) . '</th>';
-		echo '<th style="width:170px">' . esc_html__( 'Stage', 'xpay-for-woocommerce' ) . '</th>';
+		echo '<th style="width:180px">' . esc_html__( 'Stage', 'xpay-for-woocommerce' ) . '</th>';
 		echo '<th style="width:80px">' . esc_html__( 'Order', 'xpay-for-woocommerce' ) . '</th>';
 		echo '<th>' . esc_html__( 'Details', 'xpay-for-woocommerce' ) . '</th>';
 		echo '</tr></thead><tbody>';
 
 		if ( array() === $rows ) {
-			echo '<tr><td colspan="5">' . esc_html__( 'No log entries match. New entries appear here as payments run.', 'xpay-for-woocommerce' ) . '</td></tr>';
+			echo '<tr><td colspan="5" class="xpay-adm__table-empty">' . esc_html__( 'No log entries match. New entries appear here as payments run.', 'xpay-for-woocommerce' ) . '</td></tr>';
 		}
 
 		foreach ( $rows as $row ) {
@@ -116,22 +157,14 @@ final class XPay_Log_Viewer {
 				$details = $row['message'] . ' ' . $details;
 			}
 			echo '<tr>';
-			echo '<td>' . esc_html( (string) $row['created_at'] ) . '</td>';
-			echo '<td><code>' . esc_html( (string) $row['request_id'] ) . '</code></td>';
-			echo '<td><code>' . esc_html( (string) $row['stage'] ) . '</code></td>';
+			echo '<td class="xpay-adm__cell-muted">' . esc_html( (string) $row['created_at'] ) . '</td>';
+			echo '<td class="xpay-adm__mono">' . esc_html( (string) $row['request_id'] ) . '</td>';
+			echo '<td class="xpay-adm__mono">' . esc_html( (string) $row['stage'] ) . '</td>';
 			echo '<td>' . wp_kses_post( $order_cell ) . '</td>';
-			echo '<td style="font-family:monospace;font-size:11px;word-break:break-all">' . esc_html( $details ) . '</td>';
+			echo '<td class="xpay-adm__mono xpay-adm__cell-details">' . esc_html( $details ) . '</td>';
 			echo '</tr>';
 		}
 		echo '</tbody></table>';
-	}
-
-	private static function render_clear_form(): void {
-		echo '<form method="post" style="margin-top:12px" onsubmit="return window.confirm(this.dataset.msg)" data-msg="' . esc_attr__( 'Delete all XPay log entries? This cannot be undone.', 'xpay-for-woocommerce' ) . '">';
-		wp_nonce_field( 'xpay-log-clear' );
-		echo '<input type="hidden" name="xpay_log_action" value="clear" />';
-		submit_button( __( 'Clear log', 'xpay-for-woocommerce' ), 'delete', '', false );
-		echo '</form>';
 	}
 
 	/* ── Actions & data ──────────────────────────────────────────────── */

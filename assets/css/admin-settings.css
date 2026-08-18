@@ -17,7 +17,7 @@
 	--pf: #edf1ff;
 	--p-tint: #eef2ff;
 	--p-line: #c7d2fe;
-	--fg: #171717;
+	--fg: #0a0a0a;
 	--mut: #737373;
 	--faint: #a3a3a3;
 	--bd: #e5e5e5;
@@ -628,6 +628,141 @@
 	font-size: 13px;
 	gap: 8px;
 	margin: 16px 0 0;
+}
+
+/* ── Log screen ──────────────────────────────────────────────────────── */
+
+.xpay-adm__card--log {
+	gap: 16px;
+}
+
+.xpay-adm__row--warn {
+	background: #fffbeb;
+	border-color: #fde68a;
+	color: #92400e;
+	font-size: 13px;
+}
+
+.xpay-adm__toolbar {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+}
+
+.xpay-adm__filters {
+	align-items: center;
+	display: flex;
+	flex: 1 1 auto;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin: 0;
+}
+
+.xpay-adm input.xpay-adm__input--w110 {
+	flex: none;
+	width: 110px;
+}
+
+.xpay-adm input.xpay-adm__input--w150 {
+	flex: none;
+	width: 150px;
+}
+
+.xpay-adm__toolbar-actions {
+	align-items: center;
+	display: flex;
+	flex: none;
+	gap: 12px;
+	margin-left: auto;
+}
+
+.xpay-adm__toolbar-actions form {
+	margin: 0;
+}
+
+.xpay-adm__btn--secondary {
+	background: #fff;
+	border: 1px solid var(--bd);
+	color: var(--fg);
+}
+
+.xpay-adm__btn--secondary:hover {
+	background: #fafafa;
+	color: var(--fg);
+}
+
+.xpay-adm__btn--danger {
+	background: none;
+	border: 0;
+	color: #dc2626;
+	font-weight: 500;
+	height: 40px;
+	padding: 0 6px;
+}
+
+.xpay-adm__btn--danger:hover {
+	background: none;
+	color: #991b1b;
+}
+
+.xpay-adm textarea.xpay-adm__report {
+	background: #fafafa;
+	border: 1px solid var(--bd);
+	border-radius: var(--r-row);
+	box-shadow: none;
+	color: var(--mut);
+	font-size: 12px;
+	margin: 0;
+	padding: 10px 12px;
+	resize: vertical;
+	width: 100%;
+}
+
+.xpay-adm__table {
+	border-collapse: collapse;
+	width: 100%;
+}
+
+.xpay-adm__table th {
+	border-bottom: 1px solid var(--bd);
+	color: var(--mut);
+	font-size: 12px;
+	font-weight: 500;
+	padding: 8px 10px;
+	text-align: start;
+}
+
+.xpay-adm__table td {
+	border-bottom: 1px solid #f5f5f5;
+	font-size: 13px;
+	padding: 9px 10px;
+	vertical-align: top;
+}
+
+.xpay-adm__table tbody tr:hover td {
+	background: #fafafa;
+}
+
+.xpay-adm__table td.xpay-adm__mono {
+	font-size: 12px;
+}
+
+.xpay-adm__cell-muted {
+	color: var(--mut);
+	font-size: 12px;
+	white-space: nowrap;
+}
+
+.xpay-adm__cell-details {
+	color: var(--mut);
+	word-break: break-all;
+}
+
+.xpay-adm__table-empty {
+	color: var(--faint);
+	padding: 28px 10px;
+	text-align: center;
 }
 
 @media (max-width: 782px) {
