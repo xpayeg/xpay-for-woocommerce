@@ -53,6 +53,7 @@ class XPay_Checkout_Service {
 			try {
 				$session = $this->client->get_checkout_session( $existing_id );
 				if ( $this->is_reusable( $session, $order ) ) {
+					$this->remember_brand_primary( $session );
 					return $session;
 				}
 			} catch ( XPay_Api_Exception $e ) {
@@ -69,6 +70,7 @@ class XPay_Checkout_Service {
 		}
 
 		$session = $this->create_session( $order, $pinned_types, $pin );
+		$this->remember_brand_primary( $session );
 
 		// The order now points at the NEW session, but the old one stays
 		// OPEN (and payable!) on the platform for up to 24h. A shopper
@@ -254,6 +256,31 @@ class XPay_Checkout_Service {
 		);
 
 		return $session;
+	}
+
+	/**
+	 * Snapshot the merchant's primary brand color from the session response
+	 * so the pay page's stage matches the XPay window that opens over it.
+	 * The API resolves the merchant's XPay dashboard branding into every
+	 * session, which makes this a free sync: change the color in the
+	 * dashboard, and the next session repaints the pay page too. An
+	 * unbranded response clears the snapshot so the page returns to the
+	 * XPay-indigo fallback on its own.
+	 *
+	 * @param array $session Session object from the API.
+	 */
+	private function remember_brand_primary( array $session ): void {
+		$primary = XPay_Branding::primary_from_session( $session );
+		$stored  = (string) get_option( XPay_Constants::OPTION_BRAND_PRIMARY, '' );
+		if ( $primary === $stored ) {
+			return;
+		}
+		if ( '' === $primary ) {
+			delete_option( XPay_Constants::OPTION_BRAND_PRIMARY );
+			return;
+		}
+		// autoload false: the value is read only on the order-pay page.
+		update_option( XPay_Constants::OPTION_BRAND_PRIMARY, $primary, false );
 	}
 
 	/**

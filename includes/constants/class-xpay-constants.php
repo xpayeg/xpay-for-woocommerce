@@ -71,6 +71,14 @@ final class XPay_Constants {
 	const OPTION_PIN_REJECTED = 'xpay_wc_method_pin_rejected';
 
 	/**
+	 * The merchant's primary brand color ('#rrggbb'), snapshotted from the
+	 * latest checkout session response (the API resolves the merchant's XPay
+	 * dashboard branding into every session). Read by the pay page's stage;
+	 * '' / absent means unbranded, and the page falls back to XPay indigo.
+	 */
+	const OPTION_BRAND_PRIMARY = 'xpay_wc_brand_primary';
+
+	/**
 	 * User-meta key holding the shopper's XPay Customer id (cus_…), split
 	 * per mode: test and live are separate XPay planes with separate
 	 * customer records — one shared key would leak test ids into live

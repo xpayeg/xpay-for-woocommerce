@@ -23,6 +23,7 @@
 
 	var SDK_TIMEOUT_MS = 6000; // Covers slow EG mobile networks; beyond this the hosted page is faster than waiting.
 
+	var container = document.getElementById( 'xpay-payment' );
 	var statusEl = document.getElementById( 'xpay-payment-status' );
 	var payButton = document.getElementById( 'xpay-pay-button' );
 	var hostedLink = document.getElementById( 'xpay-hosted-link' );
@@ -33,11 +34,24 @@
 		}
 	}
 
+	// The pay page draws two states from this one class: paused stops the
+	// opening ring and reveals the "Awaiting payment" stamp. Button/link
+	// visibility stays inline-display-driven below — the class is purely
+	// presentational, so a theme stripping it breaks nothing functional.
+	function setPaused( paused ) {
+		if ( container ) {
+			container.classList.toggle( 'xpay-paused', paused );
+		}
+	}
+
 	function goHosted() {
 		if ( params.hostedUrl ) {
 			setStatus( params.i18n.fallback );
 			window.location.href = params.hostedUrl;
 		} else if ( hostedLink ) {
+			// Paused too: the actions container only renders in the paused
+			// state, so revealing the link without it would show nothing.
+			setPaused( true );
 			hostedLink.style.display = '';
 		}
 	}
@@ -60,6 +74,7 @@
 				},
 				onClose: function () {
 					setStatus( params.i18n.closed );
+					setPaused( true );
 					if ( payButton ) {
 						payButton.style.display = '';
 					}
@@ -78,6 +93,7 @@
 			if ( payButton ) {
 				payButton.onclick = function () {
 					setStatus( params.i18n.preparing );
+					setPaused( false );
 					payButton.style.display = 'none';
 					try {
 						modal.open();

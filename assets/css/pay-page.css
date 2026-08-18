@@ -1,0 +1,310 @@
+/**
+ * Order-pay page: the store's receipt floating on the brand-colored stage.
+ *
+ * Every recipe here is the XPay checkout app's own, so the plugin page and
+ * the window that opens over it read as one product:
+ *   - Stage: the hosted checkout's hero gradient (135°, primary → each
+ *     channel lifted 35% toward white). Stops arrive per-merchant as
+ *     --xpay-brand-from/--xpay-brand-to on the container (synced from the
+ *     XPay dashboard via the session; indigo #4f46e5 fallback).
+ *   - Card: 14px radius (--radius-card) with a floating shadow.
+ *   - Button: 48px tall, 8px radius (--radius-control), weight 500,
+ *     hover at 80% — the .cn-button lg recipe, deliberately shadow-free.
+ *   - Ring: the checkout spinner (3px stroke, track + leading arc,
+ *     1s linear) scaled to 74px around the XPay mark.
+ *   - Receipt: monospace tabular numbers — the treatment the platform's
+ *     own confirmation strip uses.
+ *
+ * States: the container is .xpay-paused after the shopper closes the XPay
+ * window (checkout-modal.js toggles it). Default hides the stamp and stops
+ * nothing; paused stops the ring, hides its arc, and shows the stamp. The
+ * Pay button and hosted link stay JS-owned (inline display) — CSS only
+ * styles them.
+ *
+ * System font stacks throughout: wp.org forbids remote assets, and the XPay
+ * window itself carries the brand webfonts.
+ */
+
+.xpay-pay {
+	--xpay-brand-from: #4f46e5;
+	--xpay-brand-to: #8d87ee;
+
+	background: linear-gradient(135deg, var(--xpay-brand-from), var(--xpay-brand-to));
+	border-radius: 14px;
+	box-sizing: border-box;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	margin: 0 auto;
+	max-width: 720px;
+	padding: 44px 20px 52px;
+}
+
+.xpay-pay *,
+.xpay-pay *::before,
+.xpay-pay *::after {
+	box-sizing: inherit;
+}
+
+/* ── Halo: ring + status ─────────────────────────────────────────────── */
+
+.xpay-pay__halo {
+	align-items: center;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	padding-bottom: 24px;
+}
+
+.xpay-pay__ring {
+	align-items: center;
+	display: flex;
+	height: 74px;
+	justify-content: center;
+	position: relative;
+	width: 74px;
+}
+
+.xpay-pay__ring-svg {
+	animation: xpay-ring 1s linear infinite;
+	inset: 0;
+	position: absolute;
+}
+
+.xpay-pay__mark {
+	height: auto;
+	width: 36px;
+}
+
+.xpay-pay__status {
+	color: #ffffff;
+	font-size: 14px;
+	margin: 0;
+	opacity: 0.92;
+	text-align: center;
+}
+
+@keyframes xpay-ring {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.xpay-pay__ring-svg {
+		animation: none;
+	}
+}
+
+.xpay-pay.xpay-paused .xpay-pay__ring-svg {
+	animation: none;
+}
+
+.xpay-pay.xpay-paused .xpay-pay__ring-arc {
+	display: none;
+}
+
+/* ── Receipt card ────────────────────────────────────────────────────── */
+
+.xpay-pay__card {
+	background: #ffffff;
+	border-radius: 14px;
+	box-shadow: 0 18px 50px rgba(10, 10, 10, 0.35);
+	color: #0a0a0a;
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+	margin: 0 auto;
+	max-width: 400px;
+	padding: 26px;
+}
+
+.xpay-pay__head {
+	align-items: center;
+	border-bottom: 1px dashed #e5e5e5;
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	padding-bottom: 14px;
+	text-align: center;
+}
+
+.xpay-pay__store-logo {
+	height: 28px;
+	width: auto;
+}
+
+.xpay-pay__store {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 14px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.xpay-pay__order-line {
+	color: #737373;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 11px;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+}
+
+.xpay-pay__lines {
+	display: flex;
+	flex-direction: column;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 12.5px;
+	font-variant-numeric: tabular-nums;
+	gap: 8px;
+}
+
+.xpay-pay__line {
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+}
+
+.xpay-pay__line-label {
+	color: #737373;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.xpay-pay__line-amount {
+	flex: none;
+}
+
+.xpay-pay__total {
+	border-top: 1px dashed #e5e5e5;
+	display: flex;
+	font-size: 15px;
+	font-weight: 600;
+	justify-content: space-between;
+	padding-top: 8px;
+	text-transform: uppercase;
+}
+
+/* ── Stamp (paused state only) ───────────────────────────────────────── */
+
+.xpay-pay__stamp {
+	align-self: center;
+	border: 2.5px solid var(--xpay-brand-from);
+	border-radius: 8px;
+	color: var(--xpay-brand-from);
+	display: none;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.14em;
+	padding: 7px 14px;
+	text-transform: uppercase;
+	transform: rotate(-3deg);
+}
+
+.xpay-pay.xpay-paused .xpay-pay__stamp {
+	display: block;
+}
+
+/* ── Actions (JS reveals them when paused) ───────────────────────────── */
+
+/* Hidden as a block until paused — an empty flex child would otherwise
+   double the card's 18px gap on the happy path. */
+.xpay-pay__actions {
+	display: none;
+	flex-direction: column;
+	gap: 10px;
+	text-align: center;
+}
+
+.xpay-pay.xpay-paused .xpay-pay__actions {
+	display: flex;
+}
+
+/* Doubled class beats theme .button rules without resorting to !important. */
+.xpay-pay .xpay-pay__button.xpay-pay__button {
+	background: var(--xpay-brand-from);
+	border: 0;
+	border-radius: 8px;
+	color: #edf1ff;
+	font-size: 16px;
+	font-weight: 500;
+	height: 48px;
+	line-height: 48px;
+	padding: 0 16px;
+	text-shadow: none;
+	width: 100%;
+}
+
+.xpay-pay .xpay-pay__button.xpay-pay__button:hover,
+.xpay-pay .xpay-pay__button.xpay-pay__button:focus {
+	background: var(--xpay-brand-from);
+	color: #edf1ff;
+	opacity: 0.8;
+}
+
+.xpay-pay__hosted {
+	color: #737373;
+	font-size: 12px;
+	text-decoration: none;
+}
+
+.xpay-pay__hosted:hover {
+	text-decoration: underline;
+	text-underline-offset: 4px;
+}
+
+/* ── Trust row ───────────────────────────────────────────────────────── */
+
+.xpay-pay__trust {
+	align-items: center;
+	border-top: 1px solid #e5e5e5;
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+	padding-top: 13px;
+}
+
+.xpay-pay__secured {
+	align-items: center;
+	color: #737373;
+	display: flex;
+	font-size: 12px;
+	gap: 7px;
+}
+
+.xpay-pay__lock {
+	flex: none;
+	height: 13px;
+	width: 13px;
+}
+
+.xpay-pay__wordmark {
+	height: 11px;
+	width: auto;
+}
+
+.xpay-pay__methods {
+	align-items: center;
+	display: flex;
+	gap: 10px;
+}
+
+.xpay-pay__method-icon {
+	height: 15px;
+	width: auto;
+}
+
+@media (max-width: 480px) {
+	.xpay-pay {
+		border-radius: 0;
+		margin-left: calc(50% - 50vw);
+		margin-right: calc(50% - 50vw);
+		max-width: none;
+		padding: 32px 16px 40px;
+	}
+
+	.xpay-pay__card {
+		padding: 20px;
+	}
+}

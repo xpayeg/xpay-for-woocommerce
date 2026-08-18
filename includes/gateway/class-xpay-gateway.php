@@ -379,6 +379,12 @@ class XPay_Gateway extends WC_Payment_Gateway {
 
 		$hosted_url = $this->hosted_url_for( $order );
 
+		wp_enqueue_style(
+			'xpay-pay-page',
+			XPAY_WC_PLUGIN_URL . 'assets/css/pay-page.css',
+			array(),
+			XPAY_WC_VERSION
+		);
 		wp_enqueue_script(
 			'xpay-checkout-modal',
 			XPAY_WC_PLUGIN_URL . 'assets/js/checkout-modal.js',
@@ -405,13 +411,12 @@ class XPay_Gateway extends WC_Payment_Gateway {
 			)
 		);
 
-		echo '<div id="xpay-payment" data-order="' . esc_attr( (string) $order_id ) . '">';
-		echo '<p id="xpay-payment-status">' . esc_html__( 'Opening secure payment…', 'xpay-for-woocommerce' ) . '</p>';
-		echo '<p><button type="button" class="button alt" id="xpay-pay-button" style="display:none">' . esc_html__( 'Pay now', 'xpay-for-woocommerce' ) . '</button> ';
-		if ( '' !== $hosted_url ) {
-			echo '<a href="' . esc_url( $hosted_url ) . '" id="xpay-hosted-link" style="display:none">' . esc_html__( 'Continue on the XPay payment page', 'xpay-for-woocommerce' ) . '</a>';
-		}
-		echo '</p></div>';
+		XPay_Pay_Page::render(
+			$order,
+			$hosted_url,
+			$this->pinned_method_types(),
+			XPay_Branding::stage_from_primary( (string) get_option( XPay_Constants::OPTION_BRAND_PRIMARY, '' ) )
+		);
 	}
 
 	/**

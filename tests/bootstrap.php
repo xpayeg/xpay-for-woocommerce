@@ -31,6 +31,7 @@ if ( ! function_exists( 'untrailingslashit' ) ) {
 require_once dirname( __DIR__ ) . '/includes/constants/class-xpay-constants.php';
 require_once dirname( __DIR__ ) . '/includes/constants/class-xpay-error-codes.php';
 require_once dirname( __DIR__ ) . '/includes/constants/class-xpay-payment-methods.php';
+require_once dirname( __DIR__ ) . '/includes/constants/class-xpay-branding.php';
 require_once dirname( __DIR__ ) . '/includes/constants/class-xpay-refund-status.php';
 require_once dirname( __DIR__ ) . '/includes/api/class-xpay-api-exception.php';
 require_once dirname( __DIR__ ) . '/includes/api/class-xpay-signature.php';

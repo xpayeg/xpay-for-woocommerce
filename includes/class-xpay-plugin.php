@@ -39,6 +39,7 @@ final class XPay_Plugin {
 		require_once $dir . 'constants/class-xpay-session-status.php';
 		require_once $dir . 'constants/class-xpay-refund-status.php';
 		require_once $dir . 'constants/class-xpay-payment-methods.php';
+		require_once $dir . 'constants/class-xpay-branding.php';
 		require_once $dir . 'constants/class-xpay-event-names.php';
 
 		// Logging (loaded before anything that logs).
@@ -64,6 +65,7 @@ final class XPay_Plugin {
 		require_once $dir . 'webhooks/class-xpay-webhook-controller.php';
 
 		// WooCommerce surfaces.
+		require_once $dir . 'gateway/class-xpay-pay-page.php';
 		require_once $dir . 'gateway/class-xpay-gateway.php';
 		require_once $dir . 'gateway/class-xpay-method-gateway.php';
 		if ( class_exists( \Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType::class ) ) {
