@@ -32,3 +32,14 @@ final class XPay_Refund_Status {
 	 */
 	const IN_FLIGHT = array( self::PENDING, self::REQUIRES_ACTION );
 }
+
+/**
+ * Refund reason wire strings (refund-reason.enum.ts) — UPPERCASE on the
+ * wire like every refund enum, and validated case-sensitively by the API.
+ * Only the one reason the plugin ever sends is mirrored here; the enum's
+ * other members (DUPLICATE, FRAUDULENT, RISK_HOLD_CAPTURE) are unused or
+ * platform-internal and mirroring them would be dead registry entries.
+ */
+final class XPay_Refund_Reason {
+	const REQUESTED_BY_CUSTOMER = 'REQUESTED_BY_CUSTOMER';
+}

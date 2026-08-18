@@ -25,6 +25,13 @@ class XPay_Api_Client {
 	/** Request timeout. XPay session/refund calls are fast; 30s covers 3DS-adjacent slow paths. */
 	const TIMEOUT_SECONDS = 30;
 
+	/**
+	 * Timeout for reads that block a shopper-facing render (thank-you
+	 * re-check). Failing open to the pending UI after 5s beats holding a
+	 * PHP worker for the full write-path budget during an API brown-out.
+	 */
+	const SHOPPER_READ_TIMEOUT_SECONDS = 5;
+
 	/** @var string */
 	private $api_key;
 
@@ -65,12 +72,24 @@ class XPay_Api_Client {
 	}
 
 	/**
-	 * @param string $session_id cs_… id.
+	 * @param string   $session_id cs_… id.
+	 * @param int|null $timeout    Override for shopper-facing reads; null = default.
 	 * @return array Decoded session object.
 	 * @throws XPay_Api_Exception
 	 */
-	public function get_checkout_session( string $session_id ): array {
-		return $this->request( 'GET', '/checkout/sessions/' . rawurlencode( $session_id ) );
+	public function get_checkout_session( string $session_id, ?int $timeout = null ): array {
+		return $this->request( 'GET', '/checkout/sessions/' . rawurlencode( $session_id ), array(), null, $timeout );
+	}
+
+	/**
+	 * Expire a session this plugin has superseded. Idempotent server-side;
+	 * the key is derived from the session id, so retries collapse.
+	 *
+	 * @param string $session_id cs_… id to expire.
+	 * @throws XPay_Api_Exception
+	 */
+	public function expire_checkout_session( string $session_id ): void {
+		$this->request( 'POST', '/checkout/sessions/' . rawurlencode( $session_id ) . '/expire', array(), 'expire_' . $session_id );
 	}
 
 	/* ── Refunds ─────────────────────────────────────────────────────── */
@@ -102,10 +121,11 @@ class XPay_Api_Client {
 	 * @param string      $path            API path starting with '/'.
 	 * @param array       $payload         Body for POST, query args for GET.
 	 * @param string|null $idempotency_key Sent only on writes.
+	 * @param int|null    $timeout         Per-call override; null = TIMEOUT_SECONDS.
 	 * @return array Decoded JSON response.
 	 * @throws XPay_Api_Exception
 	 */
-	private function request( string $method, string $path, array $payload = array(), ?string $idempotency_key = null ): array {
+	private function request( string $method, string $path, array $payload = array(), ?string $idempotency_key = null, ?int $timeout = null ): array {
 		$url = XPay_Constants::api_base() . $path;
 
 		$query = array( 'liveMode' => $this->live_mode ? 'true' : 'false' );
@@ -126,7 +146,7 @@ class XPay_Api_Client {
 		$args = array(
 			'method'  => $method,
 			'headers' => $headers,
-			'timeout' => self::TIMEOUT_SECONDS,
+			'timeout' => $timeout ?? self::TIMEOUT_SECONDS,
 		);
 		if ( 'POST' === $method ) {
 			$args['body'] = wp_json_encode( $payload );

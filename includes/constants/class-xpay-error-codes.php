@@ -27,7 +27,6 @@ final class XPay_Error_Codes {
 	/* ── Plugin-minted: gateway/config ───────────────────────────────── */
 	const GATEWAY_NOT_CONFIGURED = 'gateway_not_configured';
 	const SESSION_URL_UNTRUSTED  = 'session_url_untrusted';
-	const REFUND_LOCK_BUSY       = 'refund_lock_busy';
 	const REFUND_REJECTED        = 'refund_rejected';
 	const REFUND_PENDING         = 'refund_pending';
 	const ORDER_LOCK_BUSY        = 'order_lock_busy';

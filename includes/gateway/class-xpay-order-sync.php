@@ -157,7 +157,7 @@ class XPay_Order_Sync {
 
 		try {
 			$client  = XPay_Plugin::instance()->gateway()->api_client();
-			$session = $client->get_checkout_session( $session_id );
+			$session = $client->get_checkout_session( $session_id, XPay_Api_Client::SHOPPER_READ_TIMEOUT_SECONDS );
 		} catch ( XPay_Api_Exception $e ) {
 			// Fail open to the pending UI: the webhook retry engine is the
 			// safety net, and blocking the thank-you page on an API blip

@@ -12,7 +12,7 @@ Major version: complete rebuild against the XPay v3 platform (Checkout Sessions,
 
 - **On-site payment window.** `process_payment` redirects to WooCommerce's own order-pay page, where the XPay drop-in modal (`sdk.js` from checkout.xpay.app) opens over the store. One flow serves classic checkout, Blocks checkout, and admin pay links — and the pay page doubles as the retry surface. If the SDK cannot load within 6 seconds, the shopper is sent to the hosted checkout page for the same session: no dead ends.
 - **Signed webhook receiver** at `?wc-api=xpay_webhook`: HMAC-SHA256 `XPay-Signature` verification (constant-time, 300s replay window, fail-closed), per-order event dedupe, and an ownership check requiring the event's session id to match the id stored on the order. Response codes follow the caller's-fault-4xx / our-fault-5xx rule so XPay's ~3-day retry engine behaves correctly against a half-configured plugin.
-- **Refunds** (full and partial) from the order screen via `POST /refunds`, serialized per payment intent with a bounded MySQL `GET_LOCK` so two concurrent refund clicks cannot both reach the processor.
+- **Refunds** (full and partial) from the order screen via `POST /refunds`, recorded in WooCommerce only when the API answers `SUCCEEDED`. Deliberately no client-side lock: the platform serializes refunds per charge and re-validates the remaining refundable amount inside its own critical section, so over-refunding is impossible regardless of what any client does.
 - **Cart & Checkout Blocks** integration and **HPOS** compatibility declaration (`before_woocommerce_init`).
 - **Money helper** doing string-based minor-unit conversion (no float arithmetic on amounts; 3-decimal currencies handled).
 - **Redacting logger** rebuilt on `WC_Logger` with the v2 two-tier taxonomy plus a value-shape PAN scrub and v3 key-prefix patterns (`sk_`/`rk_`/`pk_`/`whsec_`).
@@ -28,7 +28,7 @@ Major version: complete rebuild against the XPay v3 platform (Checkout Sessions,
 ### Notes
 
 - Settings do NOT migrate from v2 (different API, different credentials). v2 merchants install fresh keys and a webhook.
-- Deliberately not in 3.0.0: embedded PaymentElement fields (planned 3.1), per-method gateway entries (blocked on platform adapters), Apple Pay/Google Pay (no platform adapters yet), subscriptions (platform saved-card charging not production-ready), automatic live-mode webhook provisioning (blocked on xpay#411 — guided manual setup ships instead).
+- Deliberately not in 3.0.0: embedded PaymentElement fields (planned 3.1), Apple Pay/Google Pay (no platform adapters yet), subscriptions (platform saved-card charging not production-ready), automatic live-mode webhook provisioning (blocked on xpay#411 — guided manual setup ships instead).
 - WordPress floor raised 6.0 → 6.2: the log store binds table identifiers with `wpdb::prepare()`'s `%i` placeholder (added in WP 6.2), and WooCommerce 8.3 — already our floor — requires a newer WordPress than 6.2 anyway.
 - `languages/xpay-for-woocommerce.pot` still contains v2 strings; regeneration is part of the release build before submission.
 

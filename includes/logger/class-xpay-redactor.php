@@ -68,6 +68,13 @@ final class XPay_Redactor {
 		'billing_last_name',
 		'billing_data',
 		'customerdetails',
+		'address',
+		'billing_address',
+		'shipping_address',
+		// Order keys grant order-received page access — traceable last-4
+		// keeps them matchable to an order without being replayable.
+		'order_key',
+		'wc_order_key',
 	);
 
 	/**

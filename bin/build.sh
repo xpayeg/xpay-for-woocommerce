@@ -58,13 +58,21 @@ fi
 # Cross-check against readme.txt Stable tag — WP.org requires they match
 # (otherwise WP.org will not consider the new version "stable" for users).
 README="$PLUGIN_DIR/readme.txt"
-if [[ -f "$README" ]]; then
-  STABLE_TAG=$(grep -E '^Stable tag:' "$README" | head -1 | sed -E 's/Stable tag:[[:space:]]*([0-9.]+).*/\1/')
-  if [[ -n "${STABLE_TAG:-}" && "$STABLE_TAG" != "$VERSION" ]]; then
-    echo "Error: Plugin header Version ($VERSION) != readme.txt Stable tag ($STABLE_TAG)." >&2
-    echo "Update Stable tag in readme.txt before building." >&2
-    exit 1
-  fi
+if [[ ! -f "$README" ]]; then
+  echo "Error: readme.txt not found — wp.org requires it." >&2
+  exit 1
+fi
+STABLE_TAG=$(grep -E '^Stable tag:' "$README" | head -1 | sed -E 's/Stable tag:[[:space:]]*([0-9.]+).*/\1/')
+if [[ -z "${STABLE_TAG:-}" ]]; then
+  # An unextractable tag must fail the build, not skip the check —
+  # otherwise a renamed/removed tag ships silently mismatched.
+  echo "Error: could not extract Stable tag from $README." >&2
+  exit 1
+fi
+if [[ "$STABLE_TAG" != "$VERSION" ]]; then
+  echo "Error: Plugin header Version ($VERSION) != readme.txt Stable tag ($STABLE_TAG)." >&2
+  echo "Update Stable tag in readme.txt before building." >&2
+  exit 1
 fi
 
 ZIP_NAME="${SLUG}-${VERSION}.zip"

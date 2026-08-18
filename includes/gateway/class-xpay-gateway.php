@@ -206,7 +206,11 @@ class XPay_Gateway extends WC_Payment_Gateway {
 	 * list, so it cannot double as the plugin-wide switch.
 	 */
 	protected function base_available(): bool {
-		return 'yes' === $this->get_option( 'enabled' );
+		// needs_setup() too: an enabled gateway with no keys can only dead-
+		// end the shopper at "payment could not be started" — hiding every
+		// XPay row (this check flows into the per-method rows and, via
+		// is_available, into Blocks) is the honest state until keys exist.
+		return 'yes' === $this->get_option( 'enabled' ) && ! $this->needs_setup();
 	}
 
 	/**
@@ -267,6 +271,9 @@ class XPay_Gateway extends WC_Payment_Gateway {
 
 		$key = $this->api_key();
 		if ( '' === $key ) {
+			// The one state guaranteed to hide checkout must not be the one
+			// state that saves without a word.
+			WC_Admin_Settings::add_error( __( 'XPay: no API key is saved for the selected mode, so XPay stays hidden at checkout until you add one.', 'xpay-for-woocommerce' ) );
 			return $saved;
 		}
 
@@ -412,21 +419,14 @@ class XPay_Gateway extends WC_Payment_Gateway {
 	 * Empty string when unavailable — callers must handle both.
 	 */
 	private function hosted_url_for( WC_Order $order ): string {
-		$session_id = (string) $order->get_meta( XPay_Constants::META_SESSION_ID );
-		if ( '' === $session_id ) {
-			return '';
-		}
-		// Prefer the URL the API returned for THIS session (persisted at
-		// creation): under a staging override the rebuilt production URL
-		// below would point the shopper at the wrong deployment.
+		// The URL the API returned for THIS session, persisted and
+		// allowlist-checked at creation. Re-checked here because order meta
+		// is writable by any other code on the site. No rebuilt fallback:
+		// every session ever written by a shipped build persists its URL in
+		// the same save as its id, so a rebuild branch would be a shim for
+		// a past that never shipped — and wrong under a staging override.
 		$stored = (string) $order->get_meta( XPay_Constants::META_SESSION_URL );
-		if ( '' !== $stored && XPay_Constants::is_allowed_xpay_url( $stored ) ) {
-			return $stored;
-		}
-		// Rebuild as a last resort (session predates URL persistence) —
-		// correct on production, and better than a dead end anywhere.
-		$url = 'https://checkout.xpay.app/c/' . rawurlencode( $session_id );
-		return XPay_Constants::is_allowed_xpay_url( $url ) ? $url : '';
+		return ( '' !== $stored && XPay_Constants::is_allowed_xpay_url( $stored ) ) ? $stored : '';
 	}
 
 	/* ── Refunds ─────────────────────────────────────────────────────── */

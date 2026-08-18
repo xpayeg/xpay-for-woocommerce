@@ -97,6 +97,18 @@ final class XPay_Blocks_Support extends AbstractPaymentMethodType {
 			XPAY_WC_VERSION,
 			true
 		);
+		// The row-id list the JS registers from — derived from the same
+		// registry as everything else, so a new SPLITTABLE method reaches
+		// Blocks without touching the JS (localizing twice is harmless:
+		// the second call overwrites with identical data).
+		wp_localize_script(
+			'xpay-blocks',
+			'xpayBlocksRowIds',
+			array_merge(
+				array( XPay_Constants::GATEWAY_ID ),
+				array_map( array( 'XPay_Payment_Methods', 'gateway_id' ), XPay_Payment_Methods::SPLITTABLE )
+			)
+		);
 		return array( 'xpay-blocks' );
 	}
 

@@ -97,11 +97,6 @@ class XPay_Api_Exception extends Exception {
 		return new self( 'XPay returned a URL outside the allowed hosts', XPay_Error_Codes::SESSION_URL_UNTRUSTED );
 	}
 
-	/** Another refund for the same payment is in flight (advisory lock busy). */
-	public static function refund_lock_busy(): self {
-		return new self( 'Another refund for this payment is already being processed', XPay_Error_Codes::REFUND_LOCK_BUSY, 409 );
-	}
-
 	/** Another process is applying a payment transition to this order (advisory lock busy). */
 	public static function order_lock_busy(): self {
 		return new self( 'Another process is updating this order payment state', XPay_Error_Codes::ORDER_LOCK_BUSY, 409 );

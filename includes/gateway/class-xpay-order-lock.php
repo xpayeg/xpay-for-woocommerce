@@ -9,9 +9,11 @@
  * payment_complete side effects, and concurrent processed-event saves
  * overwrite each other.
  *
- * Same primitive as XPay_Refund_Service's per-intent lock (the monorepo's
- * advisory-lock rule), different key space: this one is per ORDER. The two
- * lock scopes never nest in any code path, so pre-5.7.5 MySQL's
+ * The plugin's ONLY lock, and deliberately so: refund serialization lives
+ * on the platform (its per-charge advisory lock re-validates the remaining
+ * refundable amount inside the critical section), so each side locks what
+ * it owns — the platform locks the money, this locks WooCommerce order
+ * state. Nothing here ever nests locks, so pre-5.7.5 MySQL's
  * one-named-lock-per-connection limit is never hit.
  *
  * GET_LOCK is connection-scoped: if PHP dies mid-section, MySQL releases
@@ -34,7 +36,26 @@ final class XPay_Order_Lock {
 	public static function acquire( int $order_id, int $timeout_seconds ): bool {
 		global $wpdb;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- named MySQL advisory lock: connection-scoped and uncacheable by definition; no core API exists.
-		return '1' === (string) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, %d)', self::name( $order_id ), $timeout_seconds ) );
+		$result = $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, %d)', self::name( $order_id ), $timeout_seconds ) );
+
+		// NULL means GET_LOCK ERRORED (absent/forbidden on this host), not
+		// "busy". Collapsing that into false would make payment confirmation
+		// impossible forever on such a stack — the webhook would 500 on
+		// every delivery. Proceed unserialized instead: the fresh reload +
+		// is_paid()/dedupe rechecks inside the critical section still bound
+		// the race, and the log names the real problem.
+		if ( null === $result ) {
+			XPay_Logger::event(
+				'order_lock.unavailable',
+				array(
+					'order_id' => $order_id,
+					'db_error' => $wpdb->last_error,
+				)
+			);
+			return true;
+		}
+
+		return '1' === (string) $result;
 	}
 
 	public static function release( int $order_id ): void {

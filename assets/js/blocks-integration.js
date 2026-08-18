@@ -8,8 +8,9 @@
  *
  * The PHP side registers one payment method type per active row (combined
  * XPay, or Card/valU/Fawry in split mode); each publishes its data under
- * '<gateway id>_data'. This script registers whichever of those exist —
- * the row list is decided server-side, never here.
+ * '<gateway id>_data'. The candidate id list arrives from PHP too
+ * (xpayBlocksRowIds, built from the method registry), so adding a method
+ * server-side reaches Blocks without touching this file.
  */
 ( function () {
 	'use strict';
@@ -23,7 +24,7 @@
 	var decodeEntities = window.wp.htmlEntities.decodeEntities;
 	var createElement = window.wp.element.createElement;
 
-	var ROW_IDS = [ 'xpay', 'xpay_card', 'xpay_valu', 'xpay_fawry' ];
+	var ROW_IDS = window.xpayBlocksRowIds || [ 'xpay' ];
 
 	function labelElement( title, iconUrl ) {
 		if ( ! iconUrl ) {

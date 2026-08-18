@@ -68,7 +68,40 @@ class XPay_Checkout_Service {
 			}
 		}
 
-		return $this->create_session( $order, $pinned_types, $pin );
+		$session = $this->create_session( $order, $pinned_types, $pin );
+
+		// The order now points at the NEW session, but the old one stays
+		// OPEN (and payable!) on the platform for up to 24h. A shopper
+		// completing it from a second tab or an old hosted link would be
+		// charged while the webhook fails the ownership check and gets
+		// dropped — money taken, order never marked paid. Expire it.
+		// AFTER the new id is saved, so the old session's resulting
+		// checkout.session.expired event also fails ownership and cannot
+		// cancel this order. Best-effort: the new session is already live,
+		// and the old one dies on its own clock if this call fails.
+		if ( '' !== $existing_id && $existing_id !== (string) $session['id'] ) {
+			try {
+				$this->client->expire_checkout_session( $existing_id );
+				XPay_Logger::event(
+					'session.superseded_expired',
+					array(
+						'order_id'   => $order->get_id(),
+						'session_id' => $existing_id,
+					)
+				);
+			} catch ( XPay_Api_Exception $e ) {
+				XPay_Logger::event(
+					'session.expire_failed',
+					array(
+						'order_id'   => $order->get_id(),
+						'session_id' => $existing_id,
+						'code'       => $e->get_error_code(),
+					)
+				);
+			}
+		}
+
+		return $session;
 	}
 
 	/**
@@ -98,6 +131,10 @@ class XPay_Checkout_Service {
 		$attempt  = (int) $order->get_meta( XPay_Constants::META_ATTEMPT ) + 1;
 		$currency = strtoupper( $order->get_currency() );
 
+		// xpay_session_id is deliberately never read by plugin code: it puts
+		// the session id into the shopper's URL bar and browser history, so
+		// support can identify the exact session from a screenshot or a
+		// pasted link when a shopper reports "paid but still pending".
 		$return_url = add_query_arg(
 			array( 'xpay_session_id' => '{CHECKOUT_SESSION_ID}' ),
 			$order->get_checkout_order_received_url()

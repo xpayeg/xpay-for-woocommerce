@@ -43,8 +43,9 @@ class XPay_Method_Gateway extends XPay_Gateway {
 
 		// The payments-list toggle column reads $this->enabled. For a
 		// method row that must mean "is THIS row offered", never the
-		// shared plugin switch (see update_option below for the write side).
-		$this->enabled = $this->base_available() && in_array( $method_type, $this->split_types(), true ) ? 'yes' : 'no';
+		// shared plugin switch — same computed state the get_option
+		// override answers, so display and toggle behavior agree.
+		$this->enabled = $this->get_option( 'enabled' );
 	}
 
 	protected function gateway_id(): string {
@@ -68,6 +69,24 @@ class XPay_Method_Gateway extends XPay_Gateway {
 	/** A method row shows only when the merchant ticked it in split mode. */
 	public function is_available() {
 		return $this->base_available() && in_array( $this->method_type, $this->split_types(), true );
+	}
+
+	/**
+	 * The payments-list AJAX toggle decides enable-vs-disable from
+	 * get_option('enabled') — not from the $enabled property the list
+	 * displays. Without this read override the row would answer with the
+	 * SHARED plugin switch and the toggle acts on the wrong state in both
+	 * directions. Must call parent::get_option for the master switch:
+	 * routing through $this would recurse.
+	 *
+	 * @param string $key         Settings key.
+	 * @param mixed  $empty_value Default when the key is unset.
+	 */
+	public function get_option( $key, $empty_value = null ) {
+		if ( 'enabled' === $key ) {
+			return 'yes' === parent::get_option( 'enabled' ) && in_array( $this->method_type, $this->split_types(), true ) ? 'yes' : 'no';
+		}
+		return parent::get_option( $key, $empty_value );
 	}
 
 	/**

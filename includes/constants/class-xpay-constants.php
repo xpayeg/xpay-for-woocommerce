@@ -111,6 +111,15 @@ final class XPay_Constants {
 	 * @param string $url URL returned by the XPay API.
 	 */
 	public static function is_allowed_xpay_url( string $url ): bool {
+		// Parser-differential guard: PHP reads https://evil.com\@xpay.app/
+		// as host xpay.app, but a browser (WHATWG treats \ as /) navigates
+		// to evil.com — so a backslash or userinfo anywhere defeats the
+		// host check below. Neither ever appears in a legitimate XPay URL;
+		// reject on sight rather than trying to parse like a browser.
+		if ( false !== strpos( $url, '\\' ) || null !== wp_parse_url( $url, PHP_URL_USER ) ) {
+			return false;
+		}
+
 		$host = wp_parse_url( $url, PHP_URL_HOST );
 		if ( ! is_string( $host ) || '' === $host ) {
 			return false;
@@ -121,9 +130,14 @@ final class XPay_Constants {
 		$scheme = is_string( $scheme ) ? strtolower( $scheme ) : '';
 
 		// '[::1]' because wp_parse_url() keeps the brackets on IPv6 hosts.
+		// The loopback escape hatch opens ONLY when the API base itself
+		// points at loopback — a staging override to a real staging domain
+		// must not quietly start trusting localhost URLs.
 		$local_hosts = array( 'localhost', '127.0.0.1', '[::1]' );
 		if ( defined( 'XPAY_WC_API_BASE' ) && in_array( $host, $local_hosts, true ) ) {
-			return 'https' === $scheme || 'http' === $scheme;
+			$base_host = wp_parse_url( self::api_base(), PHP_URL_HOST );
+			$base_host = is_string( $base_host ) ? strtolower( $base_host ) : '';
+			return in_array( $base_host, $local_hosts, true ) && ( 'https' === $scheme || 'http' === $scheme );
 		}
 
 		if ( 'https' !== $scheme ) {

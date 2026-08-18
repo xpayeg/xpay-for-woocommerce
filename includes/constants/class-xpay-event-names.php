@@ -7,7 +7,9 @@
  *
  * To handle a new event type:
  *   1. Add the constant here.
- *   2. Add it to SUBSCRIBED (used when auto-provisioning the endpoint).
+ *   2. Add it to SUBSCRIBED (the list docs/WEBHOOKS.md and the settings
+ *      screen tell the merchant to subscribe their endpoint to — endpoint
+ *      creation itself is manual until xpayeg/xpay#411 lands).
  *   3. Add a case in XPay_Webhook_Controller::apply_event().
  *
  * Explicitly NOT handled (acknowledged with 200 and ignored): every other
@@ -24,7 +26,7 @@ final class XPay_Event_Names {
 	const CHECKOUT_SESSION_COMPLETED = 'checkout.session.completed';
 	const CHECKOUT_SESSION_EXPIRED   = 'checkout.session.expired';
 
-	/** Event types the plugin's webhook endpoint subscribes to. */
+	/** Event types the receiver applies; everything else is acknowledged and ignored. */
 	const SUBSCRIBED = array(
 		self::CHECKOUT_SESSION_COMPLETED,
 		self::CHECKOUT_SESSION_EXPIRED,

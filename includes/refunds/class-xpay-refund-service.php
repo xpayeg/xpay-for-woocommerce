@@ -4,12 +4,16 @@
  *
  * Processes admin-initiated refunds against the XPay Refunds API.
  *
- * Critical-section rule (ported from the monorepo's charge-refund lock):
- * validate → external processor call → record must be serialized per
- * payment intent. Two concurrent admin refund clicks could otherwise both
- * pass validation and both reach the processor — real money out twice.
- * MySQL GET_LOCK (bounded, non-blocking wait) is the WordPress-stack
- * equivalent of the Postgres advisory lock v3 uses.
+ * Deliberately NO client-side lock: the platform serializes the whole
+ * validate → processor call → commit critical section per charge with its
+ * own advisory lock (charge-refund-lock.util.ts) and re-validates the
+ * remaining refundable amount inside it, so concurrent refunds can never
+ * over-refund regardless of what any client does. A plugin-side lock was
+ * shipped and removed: it serialized but could not deduplicate (the second
+ * click just waited its turn and fired), so its only effect was a softer
+ * error message — machinery without function. Each side locks what it
+ * owns: the platform locks the money, XPay_Order_Lock locks WooCommerce
+ * order state.
  *
  * valU orders: the XPay platform cannot refund valU today. Rather than
  * guessing the method client-side, the API's typed rejection is mapped to
@@ -22,9 +26,6 @@
 defined( 'ABSPATH' ) || exit;
 
 class XPay_Refund_Service {
-
-	/** Max seconds to wait for the per-intent lock before giving up (mirrors v3's 5s bound). */
-	const LOCK_WAIT_SECONDS = 5;
 
 	/** @var XPay_Api_Client */
 	private $client;
@@ -46,88 +47,62 @@ class XPay_Refund_Service {
 			throw XPay_Api_Exception::not_configured( 'payment intent for this order' );
 		}
 
-		global $wpdb;
-		$lock_name = 'xpay_refund_' . $intent_id; // Namespaced: never collides with other plugin locks.
+		$body = array(
+			'paymentIntentId' => $intent_id,
+			'amount'          => XPay_Money::to_minor( (string) $amount, $order->get_currency() ),
+			'reason'          => XPay_Refund_Reason::REQUESTED_BY_CUSTOMER,
+		);
 
-		// Non-blocking poll with a wall-clock deadline instead of a blocking
-		// GET_LOCK timeout: keeps the PHP-FPM worker's worst case predictable
-		// and lets us answer "busy, retry" instead of hanging the admin.
-		$deadline = microtime( true ) + self::LOCK_WAIT_SECONDS;
-		$acquired = false;
-		do {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- named MySQL advisory lock: connection-scoped and uncacheable by definition; no core API exists.
-			$acquired = '1' === (string) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, 0)', $lock_name ) );
-			if ( $acquired ) {
-				break;
-			}
-			usleep( 150000 );
-		} while ( microtime( true ) < $deadline );
+		// UUID per admin action: transport-level retries inside this
+		// request replay safely; a second deliberate refund is a new key.
+		$refund = $this->client->create_refund( $body, 'wcref_' . str_replace( '-', '', wp_generate_uuid4() ) );
 
-		if ( ! $acquired ) {
-			throw XPay_Api_Exception::refund_lock_busy();
-		}
-
-		try {
-			$body = array(
-				'paymentIntentId' => $intent_id,
-				'amount'          => XPay_Money::to_minor( (string) $amount, $order->get_currency() ),
-				'reason'          => 'requested_by_customer',
-			);
-
-			// UUID per admin action: transport-level retries inside this
-			// request replay safely; a second deliberate refund is a new key.
-			$refund = $this->client->create_refund( $body, 'wcref_' . str_replace( '-', '', wp_generate_uuid4() ) );
-
-			// A 2xx create can still carry a non-completed status — the
-			// processor's synchronous decline (FAILED) is copied into the
-			// refund object, not turned into an HTTP error. Only SUCCEEDED
-			// may reach WooCommerce: returning true from process_refund()
-			// records a COMPLETED refund, so an in-flight state (unused by
-			// current adapters, reserved for future processors) must fail
-			// closed with a "do not resubmit" message instead.
-			$status = isset( $refund['status'] ) && is_string( $refund['status'] ) ? $refund['status'] : '';
-			if ( XPay_Refund_Status::SUCCEEDED !== $status ) {
-				XPay_Logger::event(
-					'refund.not_completed',
-					array(
-						'order_id'  => $order->get_id(),
-						'intent_id' => $intent_id,
-						'refund_id' => isset( $refund['id'] ) ? (string) $refund['id'] : '',
-						'status'    => $status,
-					)
-				);
-				if ( in_array( $status, XPay_Refund_Status::IN_FLIGHT, true ) ) {
-					throw XPay_Api_Exception::refund_pending();
-				}
-				throw XPay_Api_Exception::refund_rejected();
-			}
-
-			$refund_id = isset( $refund['id'] ) ? (string) $refund['id'] : '';
-			$order->add_order_note(
-				sprintf(
-					/* translators: 1: refund amount with currency, 2: XPay refund id, 3: admin-entered reason. */
-					__( 'XPay refund of %1$s submitted (%2$s). Reason: %3$s', 'xpay-for-woocommerce' ),
-					wc_price( $amount, array( 'currency' => $order->get_currency() ) ),
-					'' !== $refund_id ? $refund_id : '—',
-					'' !== $reason ? $reason : '—'
-				)
-			);
-
+		// A 2xx create can still carry a non-completed status — the
+		// processor's synchronous decline (FAILED) is copied into the
+		// refund object, not turned into an HTTP error. Only SUCCEEDED
+		// may reach WooCommerce: returning true from process_refund()
+		// records a COMPLETED refund, so an in-flight state (unused by
+		// current adapters, reserved for future processors) must fail
+		// closed with a "do not resubmit" message instead.
+		$status = isset( $refund['status'] ) && is_string( $refund['status'] ) ? $refund['status'] : '';
+		if ( XPay_Refund_Status::SUCCEEDED !== $status ) {
 			XPay_Logger::event(
-				'refund.submitted',
+				'refund.not_completed',
 				array(
 					'order_id'  => $order->get_id(),
 					'intent_id' => $intent_id,
-					'refund_id' => $refund_id,
-					'amount'    => $body['amount'],
+					'refund_id' => isset( $refund['id'] ) ? (string) $refund['id'] : '',
+					'status'    => $status,
 				)
 			);
-
-			return $refund;
-		} finally {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- releases the advisory lock acquired above; uncacheable by definition.
-			$wpdb->query( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $lock_name ) );
+			if ( in_array( $status, XPay_Refund_Status::IN_FLIGHT, true ) ) {
+				throw XPay_Api_Exception::refund_pending();
+			}
+			throw XPay_Api_Exception::refund_rejected();
 		}
+
+		$refund_id = isset( $refund['id'] ) ? (string) $refund['id'] : '';
+		$order->add_order_note(
+			sprintf(
+				/* translators: 1: refund amount with currency, 2: XPay refund id, 3: admin-entered reason. */
+				__( 'XPay refund of %1$s submitted (%2$s). Reason: %3$s', 'xpay-for-woocommerce' ),
+				wc_price( $amount, array( 'currency' => $order->get_currency() ) ),
+				'' !== $refund_id ? $refund_id : '—',
+				'' !== $reason ? $reason : '—'
+			)
+		);
+
+		XPay_Logger::event(
+			'refund.submitted',
+			array(
+				'order_id'  => $order->get_id(),
+				'intent_id' => $intent_id,
+				'refund_id' => $refund_id,
+				'amount'    => $body['amount'],
+			)
+		);
+
+		return $refund;
 	}
 
 	/**
@@ -139,8 +114,6 @@ class XPay_Refund_Service {
 	 */
 	public static function admin_message( XPay_Api_Exception $e ): string {
 		switch ( $e->get_error_code() ) {
-			case XPay_Error_Codes::REFUND_LOCK_BUSY:
-				return __( 'Another refund for this payment is still processing. Wait a few seconds and try again.', 'xpay-for-woocommerce' );
 			case XPay_Error_Codes::REFUND_REJECTED:
 				return __( 'XPay accepted the request but did not complete the refund. Check the payment in your XPay dashboard before retrying.', 'xpay-for-woocommerce' );
 			case XPay_Error_Codes::REFUND_PENDING:
