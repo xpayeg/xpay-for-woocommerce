@@ -43,6 +43,15 @@
 		}
 	}
 
+	// While the XPay window is open, the page is backdrop, not content:
+	// this class paints a scrim one layer under the SDK sheet (pay-page.css)
+	// so anything the window hosts — 3DS challenges especially — never
+	// fights the receipt behind it. The SDK's own glass is calibrated for
+	// light pages; dark themes keep too much contrast without this.
+	function setWindowOpen( open ) {
+		document.documentElement.classList.toggle( 'xpay-window-open', open );
+	}
+
 	function goHosted() {
 		if ( params.hostedUrl ) {
 			setStatus( params.i18n.fallback );
@@ -52,6 +61,7 @@
 		// No hosted URL to fall back to: stop claiming to open — a stuck
 		// "Opening…" spinner is a dead end. The paused receipt is the honest
 		// state: the order is saved and payable later (account, pay link).
+		setWindowOpen( false );
 		setPaused( true );
 		setStatus( params.i18n.closed );
 	}
@@ -73,6 +83,7 @@
 					window.location.href = params.returnUrl;
 				},
 				onClose: function () {
+					setWindowOpen( false );
 					setStatus( params.i18n.closed );
 					setPaused( true );
 					if ( payButton ) {
@@ -92,6 +103,7 @@
 					setStatus( params.i18n.preparing );
 					setPaused( false );
 					payButton.style.display = 'none';
+					setWindowOpen( true );
 					try {
 						modal.open();
 					} catch ( e ) {
@@ -101,6 +113,7 @@
 			}
 
 			setStatus( params.i18n.preparing );
+			setWindowOpen( true );
 			modal.open();
 		} catch ( e ) {
 			goHosted();

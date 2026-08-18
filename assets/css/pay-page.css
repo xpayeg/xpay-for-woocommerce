@@ -297,6 +297,32 @@
 	width: auto;
 }
 
+/* ── Scrim while the XPay window is open ─────────────────────────────── */
+
+/* checkout-modal.js toggles the class around modal.open()/onClose. The SDK
+   sheet pins itself to the max z-index (2147483647, sdk/runtime overlay.ts),
+   so one layer below is guaranteed to sit under the sheet and over
+   everything of ours and the theme's. Its dark glass alone leaves dark
+   themes too legible behind 3DS challenges — this adds the fade the sheet
+   assumes. pointer-events: none — purely visual, the sheet owns input. */
+html.xpay-window-open body::after {
+	-webkit-backdrop-filter: blur(4px);
+	animation: xpay-scrim-in 0.18s ease-out;
+	backdrop-filter: blur(4px);
+	background: rgba(10, 10, 13, 0.62);
+	content: "";
+	inset: 0;
+	pointer-events: none;
+	position: fixed;
+	z-index: 2147483646;
+}
+
+@keyframes xpay-scrim-in {
+	from {
+		opacity: 0;
+	}
+}
+
 @media (max-width: 480px) {
 	.xpay-pay {
 		border-radius: 0;
