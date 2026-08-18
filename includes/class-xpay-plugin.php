@@ -79,7 +79,18 @@ final class XPay_Plugin {
 	public function init(): void {
 		add_filter( 'woocommerce_payment_gateways', array( $this, 'register_gateway' ) );
 		if ( class_exists( 'XPay_Blocks_Support' ) ) {
-			add_action( 'woocommerce_blocks_loaded', array( 'XPay_Blocks_Support', 'register' ) );
+			// WooCommerce fires woocommerce_blocks_loaded from plugins_loaded
+			// priority 10 — one tick before this plugin boots at 11 — so by
+			// now the event is normally long gone and add_action alone would
+			// never run, leaving every XPay row invisible to the Cart &
+			// Checkout Blocks. Registering directly is safe here: register()
+			// only subscribes to the payment-method-type registration hook,
+			// which Blocks fires later (init, priority 5).
+			if ( did_action( 'woocommerce_blocks_loaded' ) ) {
+				XPay_Blocks_Support::register();
+			} else {
+				add_action( 'woocommerce_blocks_loaded', array( 'XPay_Blocks_Support', 'register' ) );
+			}
 		}
 
 		// Public webhook receiver: https://<site>/?wc-api=xpay_webhook
