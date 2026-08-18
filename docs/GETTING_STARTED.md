@@ -1,6 +1,6 @@
 # Getting started
 
-This guide takes you from a fresh WordPress + WooCommerce install to a successful test payment on the XPay staging environment. Going to production after this is a separate, shorter step covered in [GOING_LIVE.md](GOING_LIVE.md).
+This guide takes you from a fresh WordPress + WooCommerce install to a successful test payment in XPay's test mode. No real money moves at any point. Going live afterwards is a separate, shorter step covered in [GOING_LIVE.md](GOING_LIVE.md).
 
 ---
 
@@ -8,16 +8,12 @@ This guide takes you from a fresh WordPress + WooCommerce install to a successfu
 
 Before installing the plugin, make sure you have:
 
-- **WordPress 6.0 or newer** — the plugin uses WP HTTP, transient, and option APIs introduced or stabilized in 6.x
-- **WooCommerce 8.3 or newer** — required for HPOS (High-Performance Order Storage) and the block-based Cart/Checkout integration
-- **PHP 7.4 or newer** — PHP 8.0+ recommended; the plugin is tested on PHP 8.3
-- **An XPay merchant account** — sign up at <https://xpay.app/>. Once approved, XPay's onboarding team will give you:
-  - A **community ID** (short alphanumeric string identifying your XPay account)
-  - A **payment API key** (longer secret used to authenticate API calls)
-  - A **variable amount template ID** (numeric — used by the pay/variable-amount API)
-  - Access to XPay's **staging dashboard** at <https://staging.xpay.app/admin/login/> for testing
-  - Access to XPay's **production dashboard** at <https://community.xpay.app/admin/login/> when you go live
-- **HTTPS on your site** — required for the webhook receiver in production. Your hosting provider will offer a free Let's Encrypt certificate if you don't already have one. (Pure local dev on `http://localhost` is fine for testing.)
+- **WordPress 6.2 or newer**
+- **WooCommerce 8.3 or newer** — required for the block-based Cart/Checkout integration and HPOS (High-Performance Order Storage), both of which the plugin supports
+- **PHP 7.4 or newer** — PHP 8.0+ recommended
+- **HTTPS on your store** — payments will not work without it, and XPay only delivers webhooks to HTTPS URLs. Your hosting provider will offer a free Let's Encrypt certificate if you don't already have one.
+- **An XPay merchant account** — sign up at <https://xpay.app/>. Everything you need for this guide comes from **your XPay dashboard**: API keys, webhook setup, and the test-payment delivery log.
+- **A supported store currency** — EGP recommended (settlement is in EGP).
 
 ---
 
@@ -25,12 +21,10 @@ Before installing the plugin, make sure you have:
 
 ### Option A — manual upload (most common)
 
-1. Download the plugin `.zip` (`xpay-for-woocommerce-{VERSION}.zip` from the GitHub releases page or WordPress.org).
+1. Download the plugin `.zip`.
 2. WP Admin → **Plugins → Add New → Upload Plugin**, choose the `.zip`, click **Install Now**.
    - Or, extract the zip and copy the resulting `xpay-for-woocommerce/` folder to `wp-content/plugins/` over SFTP/SSH.
 3. WP Admin → **Plugins → Installed Plugins** — find **XPay for WooCommerce** and click **Activate**.
-
-On activation, the plugin auto-creates the directory `wp-content/uploads/xpay-logs/` (used by the diagnostic logger when you enable it later) and schedules a daily WP-Cron event to prune old log files.
 
 ### Option B — via WP-CLI
 
@@ -39,103 +33,93 @@ On activation, the plugin auto-creates the directory `wp-content/uploads/xpay-lo
 wp plugin activate xpay-for-woocommerce
 ```
 
+If you still have the old XPay plugin (v2) installed, deactivate it — otherwise shoppers see two separate XPay options at checkout, and this plugin shows you an admin warning until the legacy one is gone. Settings do not carry over from v2: this plugin uses the v3 platform's keys, which you'll get in the next step.
+
 ---
 
-## 3. Get your staging credentials
+## 3. Get your test keys
 
-Contact XPay support or check your XPay onboarding email for **staging** credentials. You need three values:
+Log in to your XPay dashboard and go to **Developers → API keys**. You need two values, both for **test mode**:
 
-| Field | Where to find it |
-|---|---|
-| `community_id` | XPay onboarding email or the XPay staging dashboard, top right |
-| `payment_api_key` | XPay staging dashboard → Settings → API Keys |
-| `variable_amount_id` | XPay staging dashboard → Variable Amount Templates → click your template, copy the numeric ID |
+| Field | What it looks like | Notes |
+|---|---|---|
+| Test secret key | `rk_test_…` | Create a **restricted key** with **Checkout Sessions** and **Refunds** access. This is a secret — never share it. |
+| Test publishable key | `pk_test_…` | Used by the secure payment window in the browser. Not a secret. |
 
-Keep these handy for the next step. You'll get a separate set of **production** credentials later when going live — never reuse staging credentials in production.
+You'll create the live key set (`rk_live_…`, `pk_live_…`) later when going live — test and live are completely separate, and the plugin keeps a field for each so you never have to overwrite one with the other.
 
 ---
 
 ## 4. Configure the gateway
 
-WP Admin → **WooCommerce → Settings → Payments → Xpay → Manage**.
+WP Admin → **WooCommerce → Settings → Payments → XPay → Manage**.
 
 Fill in the settings:
 
 | Setting | Value |
 |---|---|
-| Enable Xpay Payment | **Checked** |
-| Title | `Xpay Payment` (or whatever you want shown to customers at checkout) |
-| Description | Brief description shown under the title at checkout |
-| Community ID | Your staging `community_id` |
-| Variable Amount Template ID | Your staging `variable_amount_id` |
-| XPAY payment API key | Your staging `payment_api_key` |
-| Environment | **Staging** (`https://staging.xpay.app`) |
-| Callback URL (informational) | The plugin auto-displays this — you'll paste it into the XPay dashboard in step 5 |
-| Webhook secret | Leave empty for now — see step 6 |
-| Debug | Off (turn on temporarily if you need verbose `error_log` output) |
-| Diagnostic logger | Off (turn on if you hit any issues — see [TROUBLESHOOTING.md](TROUBLESHOOTING.md)) |
-| WPFunnels compatibility | Off (turn on if you also use WPFunnels — see [COMPATIBILITY.md](COMPATIBILITY.md)) |
+| Enable/Disable | **Checked** |
+| Title | `XPay` (or whatever you want shown to customers at checkout) |
+| Description | One sentence under the payment method name |
+| Mode | **Test** |
+| Test secret key | Your `rk_test_…` key |
+| Test publishable key | Your `pk_test_…` key |
+| Test webhook signing secret | Leave empty for now — you'll get it in step 5 |
+| Payment options | **One XPay option for all methods** (you can try separate Card/valU/Fawry options later) |
+| Confirmation page (WPFunnels) | Off (only relevant if you use WPFunnels — see [COMPATIBILITY.md](COMPATIBILITY.md)) |
+| Diagnostic logging | On, while you set things up — it records every step, redacted, viewable under WooCommerce → XPay Log |
 
-Click **Save changes**.
+Click **Save changes**. The plugin validates the key with a real API call — you should see **"XPay connected (test mode)."** If you instead see an error about a missing key, a key/mode mismatch, or a key that did not validate, fix that before continuing: XPay stays hidden at checkout until a valid key set is saved.
 
 For the full reference of every setting, see [CONFIGURATION.md](CONFIGURATION.md).
 
 ---
 
-## 5. Configure the callback URL on the XPay dashboard
+## 5. Set up the webhook
 
-XPay sends a webhook to your site after each transaction completes. Without this configured, orders will stay in `pending` forever even though customers' cards are charged.
+XPay confirms payments by sending your store a cryptographically signed webhook. This is what flips an order from *Pending payment* to *Processing* — without it, orders don't confirm automatically even though customers were charged. Do not skip this step.
 
-1. Copy the callback URL shown in the gateway settings page (the plugin generates it dynamically from its install path — always copy what the plugin displays, don't hardcode it from this doc). It looks like:
+1. Copy your store's webhook URL from the plugin settings (it's shown in the webhook-secret field description). It looks like:
+   ```text
+   https://your-store.example/?wc-api=xpay_webhook
    ```
-   https://yoursite.example/wp-content/plugins/xpay-for-woocommerce/update_order.php
-   ```
-2. Log into the **staging** dashboard at <https://staging.xpay.app/admin/login/>.
-3. Navigate to your community settings → **Callback URL** field.
-4. Paste the URL and save.
+2. In your XPay dashboard, go to **Developers → Webhooks** and add an endpoint pointing at that URL.
+3. Subscribe the endpoint to exactly these two events:
+   - `checkout.session.completed`
+   - `checkout.session.expired`
+4. Copy the endpoint's signing secret (`whsec_…`) and paste it into **Test webhook signing secret** in the plugin settings. Save.
+
+The plugin verifies the signature on every delivery and rejects anything unsigned — so the secret in the plugin must be the one for this exact endpoint. When you go live later, you'll create a second, separate endpoint with its own secret for live mode. Details in [WEBHOOKS.md](WEBHOOKS.md).
 
 ---
 
-## 6. (Recommended) Configure the webhook secret
+## 6. Place your first test payment
 
-Without a webhook secret, the plugin runs in **fail-open** mode — it accepts any well-formed POST to the callback URL as a legitimate webhook. This is fine for staging, but you should configure a secret before any real money flows.
-
-1. Generate a random secret. Any 32+ character string works. On macOS/Linux:
-   ```bash
-   openssl rand -hex 32
-   ```
-2. In XPay's staging dashboard, paste the secret into the field labelled **Secret** next to the callback URL.
-3. In the plugin settings (WC → Settings → Payments → Xpay), paste the same secret into **Webhook secret**, save.
-
-When both sides have a secret configured, the plugin verifies the `secret_key` echoed in every incoming webhook body using a constant-time compare against the saved `webhook_secret` and rejects mismatches with HTTP 401. See [CONFIGURATION.md](CONFIGURATION.md#webhook-secret) for details on the verification scheme.
-
----
-
-## 7. Place your first staging test payment
-
-1. From the WordPress admin, create or pick a **simple** product (under WooCommerce → Products) with a small price (e.g. 10 EGP). Set stock to a reasonable number.
+1. Create or pick a simple product (WooCommerce → Products) with a small price.
 2. Open your storefront in a private/incognito window so you're testing as a customer.
-3. Add the product to cart, go to checkout, fill billing details.
-4. Select **Xpay Payment** and confirm a list of payment methods appears (Card / Fawry / valU / etc. — the exact list depends on what's enabled on your XPay community).
-5. Click **Place order**. You'll be redirected to the XPay iframe.
-6. Use a staging test card. XPay's commonly-published staging cards include:
+3. Add the product to the cart, go to checkout, fill in billing details.
+4. Select **XPay** and click **Place order**.
+5. You land on your store's payment page — a branded receipt for your order — and the secure XPay payment window opens over it. (If the window can't load, for example due to a script blocker, the page automatically continues to XPay's hosted payment page after a few seconds — same payment, never a dead end.)
+6. Pay with one of XPay's **test cards** — the numbers are listed in your XPay dashboard's test-mode documentation. Test mode never charges real money.
+7. Complete the payment. You're taken to the order confirmation page.
 
-   | Card Number | Expiry | CVV | Notes |
-   |---|---|---|---|
-   | 5123450000000008 | 01/39 | 100 | NBE Mastercard |
-   | 4508750015741019 | 01/39 | 100 | Bank Misr Visa |
+---
 
-   Cardholder name can be anything. Use any future expiry.
-7. Submit. The XPay iframe will present the 3DS challenge — accept it.
-8. Wait. Within ~10 seconds, the plugin's modal will detect the success, show a 5-second countdown banner, then redirect you to the order-received page.
-9. As an admin, check **WooCommerce → Orders** — your test order should be in **Processing** status.
+## 7. What success looks like
 
-If something doesn't work as described, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md). Enable the diagnostic logger first; the resulting log usually pinpoints the issue immediately.
+Check these three places — together they prove the whole pipeline works:
+
+1. **The confirmation page** shows your receipt stamped **PAID** in green. (If it says **Confirming payment** instead, the webhook simply hasn't landed yet — the order will confirm as soon as it does. A receipt that *stays* unconfirmed means the webhook isn't reaching your store: recheck step 5.)
+2. **The XPay dashboard** → Developers → Webhooks → your endpoint's delivery log shows the `checkout.session.completed` delivery in green with a **200** response from your store.
+3. **WooCommerce → Orders** — the test order is in **Processing**, with an order note reading *"XPay payment confirmed via webhook"* followed by the payment intent id. (If the note says *"confirmed via thank-you page check"*, the payment is just as real — it means your shopper outran the webhook and the plugin's server-side re-check got there first.)
+
+If something doesn't match, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md). With diagnostic logging on, open **WooCommerce → XPay Log** — the entries usually pinpoint the issue immediately, and **Copy debug report** gives you a redacted bundle to paste into a support ticket.
 
 ---
 
 ## 8. What's next
 
-- **Test the full flow** before going live — try a successful payment, an abandoned payment (close the iframe), and a different payment method (Fawry, valU) if your community has them enabled.
-- **Read [GOING_LIVE.md](GOING_LIVE.md)** when you're ready to switch to production.
-- **Read [COMPATIBILITY.md](COMPATIBILITY.md)** if you use other plugins that touch the checkout flow (WPFunnels, caching plugins, security plugins, etc.) — there are some known interactions worth knowing about.
+- **Test more of the flow** — close the payment window and reopen it with the **Pay now** button; try a payment via the hosted page; if your account has valU or Fawry enabled, try the separate-options display mode ([CONFIGURATION.md](CONFIGURATION.md#checkout-display)).
+- **Try a refund** — full or partial, straight from the order screen. (valU refunds are not supported by the XPay platform; the plugin tells you so explicitly.)
+- **Read [GOING_LIVE.md](GOING_LIVE.md)** when you're ready to switch Mode to Live — you'll need the live key set and a second webhook endpoint.
+- **Read [COMPATIBILITY.md](COMPATIBILITY.md)** if you use other plugins that touch the checkout flow (WPFunnels, caching plugins, security plugins, script optimizers).

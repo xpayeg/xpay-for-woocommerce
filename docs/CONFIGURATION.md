@@ -1,13 +1,13 @@
 # Configuration reference
 
-Every setting on the **WooCommerce → Settings → Payments → Xpay** screen, what it controls, and what to do when something looks wrong.
+Every setting on the **WooCommerce → Settings → Payments → XPay** screen, where its value comes from, and what goes wrong when it's wrong.
 
-Settings are stored in the WordPress option `woocommerce_xpay_gateway_settings` (a serialized array). You can read or modify any of them from the command line with:
+Two things to know before you start:
 
-```bash
-wp option get woocommerce_xpay_gateway_settings --format=json
-wp option patch update woocommerce_xpay_gateway_settings <key> <value>
-```
+- **All XPay settings live on this one screen.** If you turn on separate checkout options per payment method (see [Checkout display](#checkout-display)), extra rows named "XPay — Card", "XPay — valU" and "XPay — Fawry" appear in the payments list, but they carry no settings of their own — their "Manage" pages are intentionally empty, and everything is controlled from the main XPay screen.
+- **XPay stays hidden at checkout until it is configured.** An enabled gateway with no keys can only dead-end your shoppers, so the plugin hides every XPay option until both a secret key and a publishable key are saved for the selected mode.
+
+Settings are stored in the WordPress option `woocommerce_xpay_settings` (a serialized array), shared by the combined option and all per-method rows.
 
 ---
 
@@ -15,123 +15,130 @@ wp option patch update woocommerce_xpay_gateway_settings <key> <value>
 
 These control how the gateway appears to your customers at checkout.
 
-### Enable Xpay Payment
+### Enable/Disable
 
-- **Default:** Yes
-- **What it does:** Standard WooCommerce gateway toggle. When off, XPay does not appear at checkout at all.
-- **Tip:** You can disable temporarily during a deploy or maintenance window without losing any other configuration.
+- **Default:** Off
+- **What it does:** The plugin-wide switch. When off, no XPay option appears at checkout — combined or per-method.
+- **Tip:** You can switch off temporarily during maintenance without losing any other configuration.
+- **When it's wrong:** Enabled but with no keys saved, XPay still stays hidden at checkout (see above), and saving the settings shows an explicit warning: *"no API key is saved for the selected mode, so XPay stays hidden at checkout until you add one."*
 
 ### Title
 
-- **Default:** `Xpay Payment`
-- **What it does:** The label customers see next to the gateway radio at checkout.
-- **Tip:** Most merchants change this to something brand-aligned like "Pay online with card" or "Credit / Debit card".
+- **Default:** `XPay`
+- **What it does:** The payment method name customers see at checkout when XPay appears as one combined option. (In split mode, each row uses the fixed method name — Card, valU, Fawry — instead.)
 
 ### Description
 
-- **Default:** *(generic placeholder)*
-- **What it does:** Short text shown under the title at checkout when this gateway is selected.
-- **Tip:** Use it to mention which payment methods are available ("Card, Fawry, valU, Apple Pay") so customers know what to expect.
-
-### Instructions
-
-- **Default:** Empty
-- **What it does:** Optional text added to the thank-you page and order emails after a successful payment. Same field as WooCommerce's standard "Instructions" pattern.
-- **Tip:** Useful for "Your transaction will appear on your card statement as XPAYEGP" or links to your support channels.
+- **Default:** `Pay securely by card or valU.`
+- **What it does:** One sentence under the payment method name at checkout.
+- **Tip:** Mention the methods your account actually accepts, so customers know what to expect.
 
 ---
 
-## XPay account credentials
+## Mode and API keys
 
-These tell the plugin which XPay account to authenticate as. You get all three from XPay during onboarding (separate values for staging and production).
+The plugin talks to XPay's API with keys from **your XPay dashboard → Developers → API keys**. Test and live are completely separate: separate keys, separate webhook secrets, separate payments and customers. You can keep both key sets saved at the same time — the **Mode** selector decides which set is used.
 
-### Community ID
+### Mode
 
-- **Required.** No default.
-- **Format:** Short alphanumeric string, typically 7 characters.
-- **Where to get it:** XPay onboarding email or the XPay dashboard top-right corner.
-- **What happens if wrong:** The preferences API call returns no payment methods. At checkout, the gateway radio appears with no method radios under it (or the cached default fallback list — see [TROUBLESHOOTING.md](TROUBLESHOOTING.md#empty-payment-method-list)).
+- **Default:** Test
+- **Options:** **Test** | **Live**
+- **What it does:** Selects which key set (and which webhook signing secret) the plugin uses. Test mode never charges real money.
+- **Switching:** Flip the mode and save — nothing else to re-enter, as long as the matching key set is filled in. See [GOING_LIVE.md](GOING_LIVE.md) for the full checklist.
+- **When it's wrong:** If the key saved for the selected mode belongs to the *other* mode, the save shows an error naming the mismatch (for example: *"the key in the selected mode is a LIVE key but the gateway is in Test mode"*). Fix it by pasting the key that matches the mode you selected.
 
-### Variable Amount Template ID
+### Test secret key / Live secret key
 
-- **Default:** Empty
-- **Format:** Numeric string (4-6 digits typically).
-- **Where to get it:** XPay dashboard → Variable Amount Templates → click your template → copy the numeric ID from the URL or detail page.
-- **What it does:** Tells XPay's `pay/variable-amount` API which template to use for fee/total calculation. Without it, the API returns 403.
-- **What happens if wrong:** Every payment attempt fails at the prepare-amount step. The customer sees "Payment processing failed."
+- **Required** (for the respective mode). No default.
+- **Format:** `rk_test_…` (test) or `rk_live_…` (live).
+- **Where to get it:** Your XPay dashboard → **Developers → API keys**. Create a **restricted key** with **Checkout Sessions** and **Refunds** access.
+- **What it does:** Authenticates your server's calls to XPay — creating payment sessions and submitting refunds. It never reaches the customer's browser.
+- **Sensitivity:** **Secret — never share it.** The field is masked in admin, and the diagnostic logger redacts it before anything is written.
+- **Validation:** Saving the settings validates the key with a real API call. You'll see *"XPay connected (test mode)"* / *"XPay connected (live mode)"* on success, or *"the API key did not validate"* with the reason on failure.
+- **When it's wrong:** Payments cannot start — shoppers see *"The payment could not be started. Please try again — your card has not been charged."* and the order gets a note with the real error.
 
-### XPAY payment API key
+### Test publishable key / Live publishable key
 
-- **Required.** No default.
-- **Format:** Long alphanumeric string with at least one dot (roughly `XXXXXXXX.YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY`).
-- **Where to get it:** XPay dashboard → Settings → API Keys.
-- **Sensitivity:** **This is a secret.** It is never echoed back to the browser by the plugin (a previous version did so via inline JS — that was a security bug, since fixed). Keep it secret. The diagnostic logger redacts it from log files.
-- **What happens if wrong:** All API calls return 401/403. Same symptoms as a bad community_id.
+- **Required** (for the respective mode). No default.
+- **Format:** `pk_test_…` or `pk_live_…`.
+- **Where to get it:** Same place — your XPay dashboard → **Developers → API keys**.
+- **What it does:** Used by the secure payment window in the customer's browser. It is not a secret, but it must match the mode and account of your secret key.
+- **When it's wrong:** Empty → XPay stays hidden at checkout. Mistyped → the payment window fails to open on the pay page. Re-copy it from the dashboard.
+
+### Test webhook signing secret / Live webhook signing secret
+
+- **Required for automatic order confirmation.** No default.
+- **Format:** `whsec_…`.
+- **Where to get it:** Your XPay dashboard → **Developers → Webhooks** — it's shown when you create the endpoint for your store (see below).
+- **What it does:** Lets the plugin verify that every incoming webhook was genuinely signed by XPay. Verification is fail-closed: an unsigned or wrongly-signed request is rejected, never trusted.
+- **Sensitivity:** **Secret — never share it.**
+- **When it's wrong or missing:** Orders stay **Pending payment** even though customers were charged, until the shopper happens to land on the confirmation page (which triggers a server-side re-check). With no secret saved, the plugin answers webhooks with HTTP 500 — XPay keeps retrying for about 3 days, so finishing the setup within that window recovers the missed events. With the *wrong* secret saved, deliveries show 401 in the XPay dashboard's delivery log. Details in [WEBHOOKS.md](WEBHOOKS.md).
+
+### The webhook endpoint (what you configure on XPay's side)
+
+This is not an editable plugin setting — it's the URL you give XPay. The exact URL for your store is shown in the webhook-secret field descriptions on the settings screen:
+
+```text
+https://<your-store>/?wc-api=xpay_webhook
+```
+
+In your XPay dashboard → **Developers → Webhooks**, add an endpoint pointing at that URL and subscribe it to the events `checkout.session.completed` and `checkout.session.expired`. **Test and live modes each need their own endpoint and their own signing secret.** XPay only delivers webhooks to HTTPS URLs, so your store must have a valid certificate.
 
 ---
 
-## Environment
+## Checkout display
 
-### Environment
+### Payment options
 
-- **Default:** Staging (`https://staging.xpay.app`)
+- **Default:** One XPay option for all methods
 - **Options:**
-  - **Local** (`http://127.0.0.1:8000`) — only useful if you're an XPay developer running the API locally
-  - **Development** (`https://new-dev.xpay.app`) — XPay's internal dev environment
-  - **Staging** (`https://staging.xpay.app`) — for testing with test cards before going live
-  - **Production** (`https://community.xpay.app`) — real money flows here
-- **What it does:** Sets the base URL for every XPay API call (`prepare-amount`, `pay/variable-amount`, `preferences`, `transactions`, promo validation). The iframe URL the customer's browser hits is returned in the pay-call response, so it follows the active environment automatically.
-- **Switching environments:** When you flip this setting, you also need to swap to the matching set of credentials (community_id, payment_api_key, variable_amount_id) from XPay. Staging credentials will not authenticate against production and vice versa. See [GOING_LIVE.md](GOING_LIVE.md).
+  - **One XPay option for all methods** — a single "XPay" choice at checkout; the customer picks their method inside the payment window.
+  - **A separate option per payment method** — dedicated Card / valU / Fawry rows, each with its logo. The payment window opens directly on the method the shopper picked.
 
-### Callback URL (informational, not editable)
+### Card / valU / Fawry checkboxes
 
-- **What you see:** A read-only field showing the URL XPay should send webhooks to. The plugin computes it dynamically from its own install path, so it's always correct regardless of the directory name. For a stock v2.0.0 install it looks like:
-  ```text
-  https://{your-domain}/wp-content/plugins/xpay-for-woocommerce/update_order.php
-  ```
-  …but if you installed under a different folder name, the field reflects that — always copy what the plugin shows you, not the example.
-- **What to do with it:** Copy the exact URL the plugin shows and paste it into the **Callback URL** field on your XPay dashboard (separately for staging and production accounts). Without this, XPay doesn't know where to send payment-confirmation webhooks, and orders will sit in `pending` even after the customer pays.
-- **HTTPS:** XPay requires HTTPS in production. If your site isn't on HTTPS, get a Let's Encrypt certificate before going live.
-
-### Webhook secret
-
-- **Default:** Empty
-- **Format:** Any random string ≥ 32 characters. Generate with `openssl rand -hex 32` or any password manager.
-- **What it does:** Enables constant-time secret verification on incoming webhooks. The exact behavior depends on whether the secret is set — see "Operating modes" below.
-- **Verification scheme:**
-  - **Field name in body:** `secret_key` (top-level, with `extra_details.secret_key` accepted as fallback)
-  - **Compare method:** constant-time compare using `hash_equals()` against configured `webhook_secret`
-  - **Encoding:** plain-text (the merchant configures their secret in the XPay dashboard; XPay echoes that value back in every webhook body)
-  - These constants and fallback paths are implemented in [`update_order.php`](../update_order.php).
-- **Operating modes:**
-  - **Unsigned (secret empty):** Every webhook is accepted without secret checks; the plugin logs `no_secret_configured` to the diagnostic logger. Used by merchants during initial integration testing or if XPay has not sent a secret.
-  - **Strict (secret set):** Every webhook must carry a matching `secret_key` in the request body. A missing secret or a mismatch is rejected with HTTP 401 — there is no silent fallback to unsigned, since that would defeat the merchant's choice to enable verification. This is the recommended posture for real-money traffic. The logger reports `verified`, `secret_missing_in_body`, or `secret_mismatch` accordingly.
-- **Strong recommendation:** Configure this before any real-money traffic. Without it, anyone who can guess a transaction UUID can mark orders paid by sending a crafted POST to the callback URL.
+- **Defaults:** Card on, valU on, Fawry off
+- **What they do:** In split mode, each ticked method gets its own row at checkout. (In combined mode the checkboxes have no effect.) Card covers Visa, Mastercard and Meeza.
+- **Only tick methods enabled for your XPay account.** If a shopper picks a method your account doesn't have, they are shown the full XPay window instead — the payment still has a path forward — and you get an admin notice telling you which method to enable in your XPay dashboard or untick here.
+- **Tip:** You can also toggle the per-method rows straight from the payments list (WooCommerce → Settings → Payments). Switching a method row on there automatically switches Payment options to split mode; switching every row off brings the combined XPay option back on its own — checkout never goes dark.
 
 ---
 
-## Diagnostics and compatibility
+## WPFunnels compatibility
 
-### Debug
-
-- **Default:** Off
-- **What it does:** When on, the plugin writes verbose entries to the WordPress `debug.log` (under `wp-content/debug.log` if `WP_DEBUG_LOG` is enabled in `wp-config.php`). Specifically, every outbound XPay HTTP call's HTTP code and first ~400 bytes of response body are logged.
-- **Tip:** Use the **Diagnostic logger** (below) instead for normal troubleshooting — it's structured and redacts secrets. The Debug toggle is mainly for cases where you need raw HTTP response bodies and don't trust the diagnostic logger to preserve them faithfully.
-
-### Diagnostic logger
+### Confirmation page
 
 - **Default:** Off
-- **What it does:** Records every step of the XPay flow to a daily-rotated log file at `wp-content/uploads/xpay-logs/xpay-flow-YYYY-MM-DD.log`. Each entry includes a timestamp, request ID, stage, order ID, and structured context. Secrets and PII are redacted at write time. Logs older than 30 days are auto-pruned by a daily WP-Cron event.
-- **Where to view it:** WP Admin → **Tools → XPay Logger** (admin-only). The page shows a live tail of the current day's log with stage filtering, free-text grep, "Run diagnostics" button, and download.
-- **Performance:** When the toggle is OFF, the logger is a true no-op — no listeners are attached, no file IO happens, no boot snapshot runs. Hot-path cost: a single option-cache lookup. Safe to leave installed but disabled in production.
-- **When to enable:** Turn on while reproducing an issue, then turn off. See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for what to do with the resulting logs.
+- **What it does:** Only relevant when the WPFunnels plugin is active. WPFunnels reroutes the after-payment page into its funnel flow; without a WPFunnels Pro upsell step, that bounces shoppers to the cart with no confirmation. Turn this on to force the standard WooCommerce order-received page after payment. Applies to XPay orders only.
+- **When to leave OFF:** If you run a working WPFunnels Pro upsell flow that XPay customers should enter after paying. See [COMPATIBILITY.md](COMPATIBILITY.md) for the full background.
 
-### WPFunnels compatibility
+---
+
+## Diagnostic logging
+
+### Diagnostic logging
 
 - **Default:** Off
-- **What it does:** Only relevant if you also have WPFunnels active. WPFunnels filters the post-payment URL through its own funnel-routing format. On WPFunnels Free without a configured upsell step, this rewrite causes XPay customers to land on `/cart/` instead of a "Thank you for your order" page. Turn this on to force the standard WooCommerce order-received URL for XPay orders.
-- **When to leave OFF:** If you have a configured WPFunnels Pro upsell flow that you want XPay customers to enter after paying.
-- **Detection:** The plugin shows a one-time admin notice nudging you to enable this whenever WPFunnels is detected and the setting is still off. Dismissal is per-user and persistent. See [COMPATIBILITY.md](COMPATIBILITY.md#wpfunnels-confirmed) for the full background.
+- **What it does:** Records every step of the XPay flow — session creation, webhook deliveries, order transitions, refunds. Keys, secrets, card numbers and personal data are redacted **before** anything is written, and nothing is ever transmitted anywhere automatically.
+- **Where to view it:**
+  - **WooCommerce → XPay Log** — the built-in viewer. Filter by order number, request id, or stage (e.g. `webhook.`); click **Copy debug report** for a one-click, redacted bundle to paste into a support ticket; **Clear log** wipes all entries.
+  - **The order screen** — every XPay order has an XPay panel showing its payment identifiers and recent log entries, so "what happened to this payment" is answered on the order itself.
+  - **WooCommerce → Status → Logs**, source `xpay` — the same events in WooCommerce's standard log stream, for developers.
+- **Retention:** Entries live in a bounded database table — kept for 14 days, capped at 10,000 rows, pruned daily. Safe to leave on; safe to leave installed and off.
+- **When to enable:** Turn on before reproducing an issue, then check the viewer. See [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
+
+---
+
+## Configured elsewhere (no plugin setting)
+
+Some things merchants look for on this screen are deliberately not here:
+
+| What | Where it's controlled |
+|---|---|
+| Pay-page brand color | Your XPay dashboard. The pay page follows your merchant primary color automatically — the dashboard is the source of truth, and changes sync on their own. |
+| Which payment methods your account accepts | Your XPay dashboard / XPay support. The plugin never shows a method your account cannot accept. |
+| Refunds | The WooCommerce order screen — full and partial refunds go through the XPay API from there. valU payments cannot be refunded by the XPay platform yet; the plugin tells you so explicitly instead of failing silently. |
+| Language | The payment window and receipts follow your store language (full Arabic and English, including right-to-left receipts). |
 
 ---
 
@@ -139,41 +146,41 @@ These tell the plugin which XPay account to authenticate as. You get all three f
 
 | Setting | Required? | Sensitive? | Storage key |
 |---|---|---|---|
-| Enable | yes | no | `enabled` |
+| Enable/Disable | yes | no | `enabled` |
 | Title | no (has default) | no | `title` |
-| Description | no | no | `description` |
-| Instructions | no | no | `instructions` |
-| Community ID | **yes** | low (identifies your account) | `community_id` |
-| Variable Amount Template ID | **yes** for variable-amount API | no | `variable_amount_id` |
-| XPAY payment API key | **yes** | **HIGH** — never share | `payment_api_key` |
-| Environment | yes | no | `iframe_base_url` |
-| Webhook secret | recommended | **HIGH** — never share | `webhook_secret` |
-| Debug | no | no | `debug` |
-| Diagnostic logger | no | no | `logger_enabled` |
-| WPFunnels compatibility | no | no | `wpfunnels_force_standard_redirect` |
+| Description | no (has default) | no | `description` |
+| Mode | yes | no | `mode` |
+| Test secret key | **yes** in test mode | **HIGH** — never share | `test_api_key` |
+| Test publishable key | **yes** in test mode | no | `test_publishable_key` |
+| Test webhook signing secret | **yes** for order confirmation | **HIGH** — never share | `test_webhook_secret` |
+| Live secret key | **yes** in live mode | **HIGH** — never share | `live_api_key` |
+| Live publishable key | **yes** in live mode | no | `live_publishable_key` |
+| Live webhook signing secret | **yes** for order confirmation | **HIGH** — never share | `live_webhook_secret` |
+| Payment options | no (default: combined) | no | `display_mode` |
+| Card as its own option | no | no | `split_card` |
+| valU as its own option | no | no | `split_valu` |
+| Fawry as its own option | no | no | `split_fawry` |
+| WPFunnels: Confirmation page | no | no | `wpfunnels_force_standard_redirect` |
+| Diagnostic logging | no | no | `debug` |
 
 ---
 
 ## Programmatic configuration
 
-For provisioning automation, multi-site rollouts, or staging-environment scripts:
+For provisioning automation or multi-site rollouts, the settings are ordinary WordPress options:
 
 ```bash
 # Read the whole settings blob
-wp option get woocommerce_xpay_gateway_settings --format=json
+wp option get woocommerce_xpay_settings --format=json
 
 # Update a single key
-wp option patch update woocommerce_xpay_gateway_settings community_id "ABC123"
-
-# Insert a new key (use 'insert' instead of 'update' the first time)
-wp option patch insert woocommerce_xpay_gateway_settings webhook_secret "your-32-char-secret"
-
-# Replace the whole blob from a JSON file
-wp option update woocommerce_xpay_gateway_settings "$(cat settings.json)" --format=json
+wp option patch update woocommerce_xpay_settings mode "live"
 ```
 
 For multisite, scope to the right site:
 
 ```bash
-wp --url=https://shop.example.com option patch update woocommerce_xpay_gateway_settings ...
+wp --url=https://shop.example.com option patch update woocommerce_xpay_settings ...
 ```
+
+Note that scripted changes skip the save-time checks the settings screen performs (key/mode mismatch detection and live key validation) — after a scripted rollout, open the settings screen once and save to confirm *"XPay connected"*.

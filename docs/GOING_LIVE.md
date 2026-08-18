@@ -1,22 +1,22 @@
 # Going live
 
-Switching from XPay's staging environment to production. This guide assumes you've already gone through [GETTING_STARTED.md](GETTING_STARTED.md) and have the plugin working end-to-end against staging.
+Switching the plugin from Test mode to Live mode. This guide assumes you've already gone through [GETTING_STARTED.md](GETTING_STARTED.md) and have the plugin working end-to-end in Test mode.
 
-The actual switch is small (a few setting changes). Most of the work is the pre-flight verification that nothing breaks when real money starts flowing.
+The actual switch is small (one Mode setting plus the live keys). Most of the work is the pre-flight verification that nothing breaks when real money starts flowing.
 
 ---
 
 ## Pre-flight checklist
 
-Before you flip the environment to Production, confirm all of the following. Each failure here is something a real customer would experience as a broken payment.
+Before you flip Mode to Live, confirm all of the following. Each failure here is something a real customer would experience as a broken payment.
 
-- [ ] **HTTPS is enabled** on your site, and the certificate is valid. The webhook callback URL must be reachable over HTTPS in production. Take the exact callback URL from the plugin settings (WC → Settings → Payments → Xpay → Manage), then test with `curl -i -X POST -H 'Content-Type: application/json' -d '{}' <THAT_URL>` — you should get back HTTP 400 with a "Missing transaction_id" body. That confirms TLS works and the endpoint is alive. Any TLS error or 5xx means the URL is unreachable.
-- [ ] **Production credentials obtained** from XPay: production `community_id`, production `payment_api_key`, production `variable_amount_id`. These are different values from your staging credentials.
-- [ ] **Production webhook secret** generated (32+ random characters; `openssl rand -hex 32` works) and ready to paste into both XPay's production dashboard and the plugin's setting.
-- [ ] **Staging end-to-end verified** — at minimum, one successful payment with a test card, with the order moving from `pending` to `processing` automatically (proves the webhook reached your site and was processed).
+- [ ] **HTTPS is enabled** on your site, and the certificate is valid. XPay only delivers webhooks to `https` URLs. Take the exact webhook URL from the plugin settings (it looks like `https://your-domain.example/?wc-api=xpay_webhook`), then test with `curl -i -X POST -H 'Content-Type: application/json' -d '{}' '<THAT_URL>'` — with a signing secret already saved in the plugin, you should get back HTTP 401 (unsigned request rejected). That confirms TLS works and the receiver is alive. A TLS error means the URL is unreachable; a 500 means the plugin has no webhook secret saved yet.
+- [ ] **Live keys obtained** from your XPay dashboard → Developers → API keys: a live **restricted key** (`rk_live_…`) with Checkout Sessions and Refunds access, and the live **publishable key** (`pk_live_…`). These are different values from your test keys.
+- [ ] **Live webhook endpoint created** — in your XPay dashboard → Developers → Webhooks, add a **live-mode** endpoint pointing at your store's `/?wc-api=xpay_webhook` URL (copy it character-for-character from the plugin settings), subscribed to `checkout.session.completed` and `checkout.session.expired`. Copy its signing secret (`whsec_…`) — the live endpoint has its own secret, separate from the test endpoint's.
+- [ ] **Test mode verified end-to-end** — at minimum, one successful test payment with the order moving from `pending` to `processing` automatically (proves the webhook reached your site and verified), and one refund issued from the WooCommerce order screen.
 - [ ] **Site backup taken** — most managed hosts (WP Engine, Kinsta, etc.) offer one-click backups. Take one before any production change.
-- [ ] **Production payment methods enabled on the XPay community** — log into the XPay production dashboard and verify that the payment methods you want offered (Card, Fawry, valU, Apple Pay, Wallets, Installments) are actually enabled for your community. The plugin renders whatever XPay's preferences endpoint returns.
-- [ ] **Logger ON for cutover** — enable the diagnostic logger before switching, leave it on for 24-48 hours, then disable. This lets you debug the first real payments quickly.
+- [ ] **Payment methods confirmed on your live XPay account** — especially if you use the per-method checkout rows (Card / valU / Fawry): only tick methods your live account actually has enabled. A shopper who picks a missing method falls back to the full XPay window, so nothing breaks, but you'll collect admin notices you don't need.
+- [ ] **Diagnostic logging ON for cutover** — tick it in the gateway settings before switching, leave it on for 24-48 hours, then disable. This lets you debug the first real payments quickly from WooCommerce → XPay Log.
 
 ---
 
@@ -24,38 +24,34 @@ Before you flip the environment to Production, confirm all of the following. Eac
 
 This is the actual cutover. Plan for 15-30 minutes of focused attention.
 
-### 1. Update the XPay production dashboard
+### 1. Create the live webhook endpoint in your XPay dashboard
 
-Log into <https://community.xpay.app/admin/login/> with your production credentials.
+If you didn't already do this during pre-flight: in your XPay dashboard, go to **Developers → Webhooks** and add a **live-mode** endpoint.
 
-1. Find your community settings.
-2. **Callback URL** field: paste your production callback URL — copy it directly from the plugin settings (WC → Settings → Payments → Xpay → Manage). The plugin computes the URL from its own install path so it's always correct. For a stock v2.0.0 install it looks like:
+1. **URL**: your store's webhook URL, copied exactly from the plugin settings:
    ```text
-   https://your-domain.example/wp-content/plugins/xpay-for-woocommerce/update_order.php
+   https://your-domain.example/?wc-api=xpay_webhook
    ```
-   (use your real production domain, not staging or localhost)
-3. **Secret** field (next to the callback URL): paste the 32-character webhook secret you generated above.
-4. Save.
+   (use your real production domain, not a staging copy or localhost)
+2. **Events**: subscribe it to `checkout.session.completed` and `checkout.session.expired`.
+3. Save, then copy the endpoint's signing secret (`whsec_…`). You'll paste it into the plugin next.
 
 ### 2. Update the plugin settings
 
-WP Admin → **WooCommerce → Settings → Payments → Xpay**.
+WP Admin → **WooCommerce → Settings → Payments → XPay**.
 
 Change ONLY these fields:
 
 | Setting | New value |
 |---|---|
-| Community ID | Your **production** community ID |
-| Variable Amount Template ID | Your **production** variable amount ID |
-| XPAY payment API key | Your **production** API key |
-| Environment | **Production** (`https://community.xpay.app`) |
-| Webhook secret | The same 32-character secret you pasted into XPay's dashboard |
+| Live secret key | Your `rk_live_…` restricted key |
+| Live publishable key | Your `pk_live_…` key |
+| Live webhook signing secret | The `whsec_…` of the live endpoint you just created |
+| Mode | **Live** |
 
-Leave **Title**, **Description**, **Instructions**, and other display fields as-is.
+Leave **Title**, **Description**, the checkout display options, and everything else as-is. Your test keys stay saved in their own fields — Mode picks which set is used, so switching back later is a one-field change.
 
-Click **Save changes**.
-
-The plugin's preferences cache is keyed by environment + community + api_key, so this combination of changes invalidates the staging cache and the next checkout-page load will hit production's `/api/communities/preferences/` endpoint to fetch the live payment-method list.
+Click **Save changes**. The plugin validates the saved key with a real API call: you should see **"XPay connected (live mode)."** If you pasted a test key while Mode is Live (or the other way around), the settings page tells you so at save time — fix the mismatch before going any further.
 
 ### 3. Smoke-test with a real card
 
@@ -64,42 +60,41 @@ The most important step. Do NOT skip this.
 1. Open your storefront in a private/incognito window.
 2. Add a small-priced product to cart (or temporarily create a 10-EGP test product). Use a real product so the test exercises the same WC pipeline a customer would.
 3. Go to checkout, fill billing details with your real info.
-4. Select Xpay Payment, place the order.
-5. The XPay iframe should load with your production-environment branding.
+4. Select XPay (or the Card row, if you use per-method options) and place the order.
+5. You land on the branded pay page and the XPay payment window opens over it by itself.
 6. Pay with a real card you own (we recommend a debit card with a small balance for the smoke test).
 7. Complete 3DS in your bank's actual challenge flow.
 8. Watch:
-   - The modal should detect success within ~10s and show the 5-second countdown banner.
-   - You're redirected to the order-received "Thank you for your order" page.
+   - You're taken to the order-received page, where the receipt is stamped **PAID**. (If you outrun the webhook you may briefly see **Confirming payment** — the signed webhook and the server-side session check race, and either one confirms the order.)
    - As an admin, **WooCommerce → Orders** shows the order in **Processing** status.
-9. **Important:** refund the test order from your XPay production dashboard so you don't ship a real product to yourself.
+9. **Important:** refund the test order from the WooCommerce order screen (Refund → Refund via XPay) so you don't ship a real product to yourself.
 
-### 4. Verify the logger captured the flow correctly
+### 4. Verify the logs captured the flow
 
-WP Admin → **Tools → XPay Logger**. You should see:
+WP Admin → **WooCommerce → XPay Log** (needs Diagnostic logging on). For your test order you should see:
 
-- A `boot` snapshot showing `wc_version`, `php_version`, and your active plugins
-- A `prefs.fetch` entry showing HTTP 200 from the production preferences endpoint
-- A `process_payment.start` → `.prepare` → `.pay` → `.end` chain for your test order
-- A `webhook.received` entry showing `has_body_secret: true` (XPay included the secret in the webhook body)
-- A `webhook.lookup` entry showing `signature_state: verified` (this is where verification status appears in the success flow)
-- A `webhook.applied` entry showing `branch: successful`
+- A `session.created` entry — the checkout session was minted against the live API
+- A `webhook.received` entry for the `checkout.session.completed` event with `livemode: true`
+- An `order.paid` entry — the paid transition fired exactly once
 
-If `webhook.lookup` shows `signature_state: no_secret_configured`, `secret_missing_in_body`, or `secret_mismatch`, **stop and fix this before any more orders flow**. Anyone could mark random orders paid by sending crafted POSTs to your callback URL.
+Also check the webhook delivery log in your XPay dashboard: the live endpoint should show green 200s.
+
+If you see `webhook.rejected` instead, **stop and fix this before any more orders flow**: `webhook_signature_invalid` means the `whsec_…` pasted into the plugin doesn't match the endpoint's; `webhook_timestamp_out_of_tolerance` means your server clock is off by more than 5 minutes (fix NTP). The receiver is fail-closed — nothing gets marked paid by an unverified request — so until this is fixed, orders confirm only when the shopper reaches the order-received page (and, on funnel checkouts, not even then; see below).
 
 ---
 
 ## First 24-48 hours
 
-Keep the diagnostic logger on. Check it at least once per day for:
+Keep Diagnostic logging on. Check **WooCommerce → XPay Log** at least once per day for:
 
-- **`webhook.lookup` entries with `signature_state` other than `verified`** — every webhook in production should verify successfully. `no_secret_configured` means the plugin has no secret set; anything else (`secret_missing_in_body`, `secret_mismatch`) is either XPay misconfiguration or a hostile probe.
-- **`webhook.applied` entries with `branch: secret_missing_in_body` or `branch: secret_mismatch`** — these are explicit security rejections (the webhook was rejected before any order lookup). Both are worth investigating immediately.
-- **`process_payment.pay` entries with `duration_ms` over 20000** — sustained slowness from XPay. If frequent, raise it with XPay support.
-- **`process_payment.end` entries with `branch: pay_failed` and `upstream_status_code: null`** — pay-call timeouts. The plugin keeps the concurrent-attempt fingerprint to block retries; affected customers will see "A previous payment attempt is still being processed" until the 10-minute window expires.
-- **`webhook.applied` entries with `branch: order_not_found`** — webhook arrived for a transaction the plugin doesn't know about. Could indicate a race (webhook before process_payment finished saving) or, in very rare cases, hostile probing.
+- **`webhook.rejected` entries** — every live delivery should verify. Persistent rejections mean a wrong secret, clock skew, or a hostile probe; the delivery log in your XPay dashboard tells you whether real deliveries are failing. XPay retries for ~3 days, so fixing a wrong secret recovers the missed events.
+- **`webhook.ownership_mismatch` or `webhook.order_not_found` entries** — an event arrived whose session doesn't match the order's stored session (or matches no order at all). This should never happen organically; investigate immediately.
+- **`order.amount_mismatch` entries** — XPay reported a charged amount that disagrees with the order total, so the plugin parked the order **on-hold** with a note instead of marking it paid. Resolve by hand: check the payment in your XPay dashboard, then complete or refund the order.
+- **`process_payment.failed` or `api.transport_error` entries** — sessions failing to create, or connectivity trouble reaching `api.xpay.app`. Occasional blips resolve themselves (the shopper retries from the pay page); a sustained pattern is worth raising with XPay support.
 
-Once you're comfortable everything is stable, **disable the diagnostic logger** in the gateway settings. Logs will continue to be auto-pruned after 30 days but no new entries will be written.
+Also glance at the webhook delivery log in your XPay dashboard daily — sustained non-200s there mean orders are confirming late, or on funnel checkouts not at all.
+
+Once you're comfortable everything is stable, **untick Diagnostic logging** in the gateway settings. Existing log rows age out automatically (14-day / 10,000-row retention) but no new entries will be written.
 
 ---
 
@@ -130,23 +125,20 @@ webhook as a launch blocker, not a cosmetic issue.
 
 ## Rollback
 
-If something goes badly wrong, you can roll back to staging in under a minute:
+If something goes badly wrong, you can roll back in under a minute:
 
-1. WP Admin → **WooCommerce → Settings → Payments → Xpay**
-2. Set **Environment** back to **Staging**, paste the staging credentials back in
-3. **Disable Xpay Payment** entirely while you investigate (uncheck the **Enable Xpay Payment** toggle and save)
+1. WP Admin → **WooCommerce → Settings → Payments → XPay**
+2. Untick **Enable XPay** and save — the gateway (and any per-method rows) disappears from checkout while you investigate.
+3. Alternatively, if you want to keep exercising the flow yourself without charging anyone, switch **Mode** back to **Test** — your live keys stay saved for when you return.
 
-Customers attempting to check out will not see the gateway. Existing orders that were marked `processing` from real payments are still real; XPay has the funds. Refund them from the XPay production dashboard and from WC if needed.
+Customers attempting to check out will not see the gateway. Existing orders that were paid with real money are still real; XPay has the funds. Refund them from the WooCommerce order screen (or your XPay dashboard) if needed.
 
-Then take a look at the diagnostic logger and identify what went wrong before flipping back on.
+Then read WooCommerce → XPay Log and identify what went wrong before flipping back on.
 
 ---
 
 ## After launch
 
-- Disable the diagnostic logger once you're confident in stability (typically 1-2 weeks).
-- Plan for periodic webhook secret rotation (annually is reasonable). Rotate by:
-  1. Generate a new secret
-  2. Paste it into BOTH XPay's dashboard AND the plugin setting at the same time
-  3. There will be a brief window where in-flight webhooks may fail signature verification — schedule the rotation during low-traffic hours
+- Untick Diagnostic logging once you're confident in stability (typically 1-2 weeks).
+- If you ever rotate the live endpoint's signing secret in your XPay dashboard, paste the new `whsec_…` into the plugin right away. Deliveries signed with the other secret are rejected with 401 and retried — XPay retries for ~3 days, so a short overlap loses nothing, but schedule the rotation during low-traffic hours anyway.
 - Keep an eye on the [CHANGELOG](../CHANGELOG.md) when updating the plugin so you know what's changing.

@@ -26,9 +26,13 @@ XPay for WooCommerce connects your store to [XPay](https://xpay.app/), the Egypt
 
 * Works with both the classic checkout and the block-based Cart and Checkout (WooCommerce 8.3+).
 * Compatible with High-Performance Order Storage (HPOS).
+* One XPay option at checkout, or a separate option per method (Card, valU, Fawry) with its logo.
+* An order confirmation that tells the truth: the receipt from the payment page returns stamped PAID once the money settles — or "Confirming payment" while it does.
+* The payment page follows your merchant brand color, synced automatically from your XPay dashboard.
 * Full and partial refunds from the WooCommerce order screen.
-* Arabic and English payment window, following your store language.
+* Fully bilingual: the payment window, the receipts, and every plugin screen ship in Arabic and English, with proper right-to-left layout.
 * Separate test and live modes with separate keys, so you can test safely before going live.
+* Plays well with others: WPFunnels safeguard built in, script-optimizer opt-outs on the payment scripts, and a warning if the legacy XPay plugin is still active.
 * Redacted diagnostic logging: card numbers, keys and secrets are stripped before anything is written to disk.
 * Built-in log viewer (WooCommerce → XPay Log) with a one-click debug report for support, plus an XPay panel on every order showing its payment events.
 
@@ -69,14 +73,26 @@ Your XPay dashboard → Developers → Webhooks. Add an endpoint pointing at the
 
 XPay cannot refund valU payments yet. The plugin tells you this instead of failing silently; refund those orders through your own arrangement with the customer.
 
+= My checkout runs on WPFunnels — does it work? =
+
+Yes. If you use WPFunnels without a Pro upsell flow, turn on the WPFunnels safeguard in the XPay settings so shoppers land on the standard order confirmation instead of being bounced to the cart. With a working Pro upsell flow, leave it off — the funnel routing is preserved. See COMPATIBILITY.md in the plugin's docs folder.
+
+= I still have the old XPay plugin installed — what happens? =
+
+Nothing breaks, but shoppers see two separate XPay options at checkout, and the plugin shows you an admin warning until the legacy plugin is deactivated. Settings do not carry over: this plugin uses the v3 API's keys.
+
 == Changelog ==
 
 = 3.0.0 =
 * Complete rebuild on the XPay v3 platform: Checkout Sessions, signed webhooks, and API-based refunds.
-* New on-site payment window (drop-in modal) with automatic hosted-page fallback.
+* New on-site payment window (drop-in modal) with automatic hosted-page fallback, on a branded pay page that follows your XPay dashboard's merchant color.
+* Optional separate checkout options per method (Card, valU, Fawry), each with its logo.
+* Order confirmation redesigned as the pay page's receipt, stamped PAID or "Confirming payment" — the page never claims more than the money has done.
+* Full Arabic translation with right-to-left receipt layout, alongside English.
 * Cart/Checkout Blocks support and HPOS compatibility declared from this release.
 * Full and partial refunds from the order screen.
 * Orders are confirmed only by signed webhooks or a server-side session check, never by the browser redirect.
+* Compatibility built in: WPFunnels safeguard, script-optimizer opt-outs on payment scripts, and a legacy-plugin warning.
 * Breaking: the v2 (community API) integration is removed. v2 merchants: install this version, paste your v3 keys, and configure the webhook — settings do not carry over.
 
 = 2.0.1 =

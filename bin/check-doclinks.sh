@@ -48,7 +48,7 @@ while IFS= read -r mdfile; do
       broken=$((broken + 1))
     fi
   done < <(grep -oE '\[[^]]+\]\([^)]+\)' "$mdfile" || true)
-done < <(find . -name "*.md" -not -path "./.git/*" -not -path "./node_modules/*")
+done < <(find . -name "*.md" -not -path "./.git/*" -not -path "./node_modules/*" -not -path "./vendor/*")
 
 echo
 echo "Checked: $checked links across all .md files"
