@@ -66,6 +66,7 @@ final class XPay_Plugin {
 
 		// WooCommerce surfaces.
 		require_once $dir . 'gateway/class-xpay-pay-page.php';
+		require_once $dir . 'gateway/class-xpay-thankyou-notice.php';
 		require_once $dir . 'gateway/class-xpay-gateway.php';
 		require_once $dir . 'gateway/class-xpay-method-gateway.php';
 		if ( class_exists( \Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType::class ) ) {
@@ -102,6 +103,8 @@ final class XPay_Plugin {
 		// trusting the redirect. Webhook remains the authoritative writer;
 		// this closes the gap when the shopper outruns the webhook.
 		add_action( 'woocommerce_before_thankyou', array( 'XPay_Order_Sync', 'verify_on_thankyou' ) );
+		// Priority 20: the status strip must read post-verification truth.
+		add_action( 'woocommerce_before_thankyou', array( 'XPay_Thankyou_Notice', 'render' ), 20 );
 
 		// Prune runs from WP-Cron (any request context, not just admin).
 		add_action( XPay_Log_Store::CRON_HOOK, array( 'XPay_Log_Store', 'prune' ) );
