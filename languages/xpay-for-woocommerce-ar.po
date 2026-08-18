@@ -132,6 +132,18 @@ msgstr "لا توجد إدخالات سجل لهذا الطلب. فعِّل ال
 msgid "View full log for this order"
 msgstr "عرض السجل الكامل لهذا الطلب"
 
+#: includes/compat/class-xpay-legacy-notice.php:56
+msgid "XPay: the legacy XPay plugin is still active alongside this one. Shoppers currently see two separate XPay options at checkout. Deactivate the legacy plugin — its settings are separate, and this plugin keeps its own keys and orders."
+msgstr "XPay: إضافة XPay القديمة ما زالت مفعّلة إلى جانب هذه الإضافة. يرى المتسوقون حاليًا خيارَي XPay منفصلين عند إتمام الشراء. عطّل الإضافة القديمة — إعداداتها منفصلة، وهذه الإضافة تحتفظ بمفاتيحها وطلباتها الخاصة."
+
+#: includes/compat/class-xpay-legacy-notice.php:58
+msgid "Open the Plugins page"
+msgstr "فتح صفحة الإضافات"
+
+#: includes/compat/class-xpay-legacy-notice.php:59
+msgid "Dismiss — I am mid-migration and know"
+msgstr "تجاهل — أنا في منتصف عملية الانتقال وأعلم بذلك"
+
 #: includes/compat/class-xpay-wpfunnels-compat.php:106
 msgid "XPay: WPFunnels is active. Unless you run a WPFunnels Pro upsell flow, shoppers who pay with XPay can land on the cart page instead of the order confirmation. Turn on the WPFunnels safeguard in the XPay settings."
 msgstr "XPay: إضافة WPFunnels مفعّلة. ما لم تكن تستخدم مسار بيع إضافي (Upsell) من WPFunnels Pro، فقد يصل المتسوقون الذين يدفعون عبر XPay إلى صفحة السلة بدلًا من تأكيد الطلب. فعِّل خيار حماية WPFunnels من إعدادات XPay."

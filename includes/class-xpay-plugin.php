@@ -67,6 +67,7 @@ final class XPay_Plugin {
 		// Compatibility shims (third-party conflicts the field taught us).
 		require_once $dir . 'compat/class-xpay-wpfunnels-compat.php';
 		require_once $dir . 'compat/class-xpay-script-guard.php';
+		require_once $dir . 'compat/class-xpay-legacy-notice.php';
 
 		// WooCommerce surfaces.
 		require_once $dir . 'gateway/class-xpay-pay-page.php';
@@ -129,6 +130,7 @@ final class XPay_Plugin {
 			add_action( 'add_meta_boxes', array( 'XPay_Order_Panel', 'register' ) );
 			add_action( 'admin_notices', array( 'XPay_Method_Gateway', 'render_pin_rejected_notice' ) );
 			XPay_WPFunnels_Compat::register_admin();
+			XPay_Legacy_Notice::register_admin();
 		}
 
 		XPay_Logger::init();

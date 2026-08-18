@@ -174,6 +174,21 @@ logger's boot snapshot will flag both via the `cartflows_active` and
 
 ---
 
+## The legacy XPay plugin (v2)
+
+The retired "WooCommerce XPAY Gateway" plugin coexists with this one
+without crashing — different class names, different gateway id — which is
+exactly the trap: a store running both quietly shows **two separate XPay
+options at checkout**, two settings screens, and the legacy webhook
+endpoint. This plugin shows a persistent admin notice while the legacy
+plugin is detected; deactivate the legacy plugin once v3 is configured.
+
+Settings are deliberately not migrated: v2 stored v2-API credentials,
+and this plugin authenticates with the v3 API's `rk_…`/`pk_…` keys. Get
+fresh keys from the XPay dashboard rather than copying old values.
+
+---
+
 ## Caching plugins
 
 ### WP Rocket / LiteSpeed Cache / W3 Total Cache

@@ -107,13 +107,24 @@ Once you're comfortable everything is stable, **disable the diagnostic logger** 
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| First real payment hangs at "Processing payment…" forever | Callback URL on XPay dashboard still pointing at staging or `localhost` | Update XPay dashboard to your production callback URL |
+| Orders stay "pending" until the shopper reaches the confirmation page | Webhook endpoint on the XPay dashboard missing, or still pointing at staging or `localhost` | Point a live-mode endpoint at the `/?wc-api=xpay_webhook` URL shown in the plugin settings |
 | First real payment marks the order paid but customer lands on `/cart/` | WPFunnels active, compatibility setting still off | Enable **WPFunnels compatibility** in gateway settings (see [COMPATIBILITY.md](COMPATIBILITY.md)) |
-| Customer sees "Payment processing failed" | Production credentials still set to staging values, or vice versa | Re-check community_id, payment_api_key, variable_amount_id are all the production set |
-| No payment methods show on checkout | Production community has no methods enabled, or API key is wrong | Log into XPay production dashboard, enable methods, verify API key |
-| Webhook returns 401 | Plugin's webhook_secret doesn't match XPay's secret field | Re-paste the secret on both sides; they must be byte-for-byte identical |
-| Webhook returns 404 | Path issue — usually a security plugin (Wordfence/Sucuri) blocking direct PHP file access | Whitelist the callback path shown in the plugin settings (e.g. `/wp-content/plugins/xpay-for-woocommerce/update_order.php`) in your security plugin |
-| Iframe doesn't open in customer's browser | Cookie consent banner blocking iframe cookies, or theme loading conflicting Bootstrap | See [COMPATIBILITY.md](COMPATIBILITY.md) for cookie-consent and Bootstrap notes |
+| Customer sees "The payment could not be started" | Live keys missing, or Test keys pasted into Live mode (or vice versa) | The settings page shows a key/mode mismatch notice — paste the matching `rk_live_…` / `pk_live_…` pair for the selected mode |
+| No payment methods show on checkout | Production account has no methods enabled, or the API key is wrong | Log into the XPay production dashboard, enable methods, verify the key |
+| Webhook returns 401 | The plugin's signing secret doesn't match the endpoint's `whsec_…` on the XPay dashboard | Re-paste the secret on both sides; they must be byte-for-byte identical |
+| Webhook returns 404 | The endpoint URL on the XPay dashboard doesn't carry the exact `/?wc-api=xpay_webhook` query — a dropped `?` or a dash instead of the underscore is the usual culprit | Copy the URL character-for-character from the plugin settings; the receiver itself only ever answers 200, 400, or 401 |
+| Payment window doesn't open | A JS optimizer delaying scripts (the plugin stamps opt-out attributes, but some optimizers ignore them), or a browser extension | Check the browser console; the page auto-continues to the hosted XPay checkout after ~6 seconds either way, so shoppers are never stranded |
+
+### Funnel builders make the webhook mandatory
+
+On a standard store the plugin has a second confirmation path: when the
+shopper lands on WooCommerce's order-received page, it re-verifies the
+session server-side even if the webhook hasn't arrived yet. **A funnel
+builder with a custom thank-you step (WPFunnels Pro upsells, CartFlows,
+FunnelKit) bypasses that page, so the webhook becomes the only thing that
+confirms orders.** If you run funnels, do not go live until the webhook
+delivery log on the XPay dashboard shows green 200s — treat a failing
+webhook as a launch blocker, not a cosmetic issue.
 
 ---
 
