@@ -36,10 +36,17 @@ class XPay_Method_Gateway extends XPay_Gateway {
 		$this->description = XPay_Payment_Methods::description( $method_type );
 		$this->icon        = XPay_Payment_Methods::icon_url( $method_type );
 
-		// Identity the admin sees in the payments list.
-		/* translators: %s is the payment method name (Card, valU, Fawry). */
-		$this->method_title       = sprintf( __( 'XPay — %s', 'xpay-for-woocommerce' ), XPay_Payment_Methods::label( $method_type ) );
-		$this->method_description = __( 'A dedicated checkout option managed from the main XPay settings.', 'xpay-for-woocommerce' );
+		// Deliberately NO admin identity: an empty method title AND
+		// description makes this row a "shell" gateway to WooCommerce's
+		// Payments settings page (PaymentsProviders::is_shell_payment_gateway),
+		// which hides it there as long as the main XPay gateway — a
+		// non-shell from the same plugin — is registered. One row in the
+		// merchant's gateway list, three rows at shopper checkout: the same
+		// pattern WooPayments and PayPal use for their sub-methods.
+		// (Older WooCommerce renders the legacy table with no shell rule;
+		// XPay_Plugin::register_gateway covers that side.)
+		$this->method_title       = '';
+		$this->method_description = '';
 
 		// The payments-list toggle column reads $this->enabled. For a
 		// method row that must mean "is THIS row offered", never the

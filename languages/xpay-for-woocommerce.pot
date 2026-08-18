@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-18T22:06:57+00:00\n"
+"POT-Creation-Date: 2026-08-18T22:36:37+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: xpay-for-woocommerce\n"
@@ -431,18 +431,8 @@ msgstr ""
 msgid "Refund amount is required."
 msgstr ""
 
-#. translators: %s is the payment method name (Card, valU, Fawry).
-#: includes/gateway/class-xpay-method-gateway.php:41
-#, php-format
-msgid "XPay — %s"
-msgstr ""
-
-#: includes/gateway/class-xpay-method-gateway.php:42
-msgid "A dedicated checkout option managed from the main XPay settings."
-msgstr ""
-
 #. translators: %s is a comma-separated list of payment method names (for example "valU, Fawry").
-#: includes/gateway/class-xpay-method-gateway.php:146
+#: includes/gateway/class-xpay-method-gateway.php:153
 #, php-format
 msgid "XPay: your XPay account does not have %s enabled. Shoppers who picked it were shown the full XPay payment window instead. Enable the method in your XPay dashboard, or untick it under WooCommerce → Settings → Payments → XPay."
 msgstr ""

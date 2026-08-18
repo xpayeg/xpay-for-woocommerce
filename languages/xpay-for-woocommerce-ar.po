@@ -425,18 +425,8 @@ msgstr "تم حفظ طلبك. ادفع متى كنت مستعدًا."
 msgid "Refund amount is required."
 msgstr "مبلغ الاسترداد مطلوب."
 
-#. translators: %s is the payment method name (Card, valU, Fawry).
-#: includes/gateway/class-xpay-method-gateway.php:41
-#, php-format
-msgid "XPay — %s"
-msgstr "XPay — %s"
-
-#: includes/gateway/class-xpay-method-gateway.php:42
-msgid "A dedicated checkout option managed from the main XPay settings."
-msgstr "خيار دفع مخصص يُدار من إعدادات XPay الرئيسية."
-
 #. translators: %s is a comma-separated list of payment method names (for example "valU, Fawry").
-#: includes/gateway/class-xpay-method-gateway.php:146
+#: includes/gateway/class-xpay-method-gateway.php:153
 #, php-format
 msgid "XPay: your XPay account does not have %s enabled. Shoppers who picked it were shown the full XPay payment window instead. Enable the method in your XPay dashboard, or untick it under WooCommerce → Settings → Payments → XPay."
 msgstr "XPay: حساب XPay الخاص بك لا يتضمن تفعيل %s. المتسوقون الذين اختاروها ظهرت لهم نافذة دفع XPay الكاملة بدلًا منها. فعِّل الوسيلة من لوحة تحكم XPay، أو ألغِ تحديدها من WooCommerce ← الإعدادات ← المدفوعات ← XPay."

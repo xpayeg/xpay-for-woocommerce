@@ -137,17 +137,30 @@ final class XPay_Plugin {
 	}
 
 	/**
-	 * The combined gateway plus one row per splittable method. All are
-	 * always registered — each row's is_available() decides what checkout
-	 * actually shows, so mode switches never need cache-sensitive
-	 * registration logic. WooCommerce accepts instances here, which the
-	 * per-method rows need (their constructor takes the method type).
+	 * The combined gateway plus one row per splittable method. On shopper
+	 * surfaces all are always registered — each row's is_available()
+	 * decides what checkout actually shows, so mode switches never need
+	 * cache-sensitive registration logic. WooCommerce accepts instances
+	 * here, which the per-method rows need (their constructor takes the
+	 * method type).
+	 *
+	 * Plain admin page requests get ONLY the main gateway: merchants see
+	 * one XPay row in the Payments list and the order screens, exactly
+	 * like PayPal's and Paymob's multi-method plugins. Modern WooCommerce
+	 * hides the per-method rows there anyway via its shell-gateway rule
+	 * (see XPay_Method_Gateway), but the legacy settings table on older
+	 * WooCommerce has no such rule — skipping registration covers it.
+	 * AJAX stays fully registered: refunds for per-method orders run
+	 * through admin-ajax and need the row's gateway instance.
 	 *
 	 * @param array $gateways Registered gateway class names/instances.
 	 * @return array
 	 */
 	public function register_gateway( array $gateways ): array {
 		$gateways[] = 'XPay_Gateway';
+		if ( is_admin() && ! wp_doing_ajax() ) {
+			return $gateways;
+		}
 		foreach ( XPay_Payment_Methods::SPLITTABLE as $type ) {
 			$gateways[] = new XPay_Method_Gateway( $type );
 		}

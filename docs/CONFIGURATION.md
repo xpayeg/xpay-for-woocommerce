@@ -4,7 +4,7 @@ Every setting on the **WooCommerce → Settings → Payments → XPay** screen, 
 
 Two things to know before you start:
 
-- **All XPay settings live on this one screen.** If you turn on separate checkout options per payment method (see [Checkout display](#checkout-display)), extra rows named "XPay — Card", "XPay — valU" and "XPay — Fawry" appear in the payments list, but they carry no settings of their own — their "Manage" pages are intentionally empty, and everything is controlled from the main XPay screen.
+- **All XPay settings live on this one screen — and only one XPay row appears in the payments list**, even when you turn on separate checkout options per payment method (see [Checkout display](#checkout-display)). The Card, valU and Fawry options exist for shoppers at checkout; in admin, everything is controlled from the main XPay screen.
 - **XPay stays hidden at checkout until it is configured.** An enabled gateway with no keys can only dead-end your shoppers, so the plugin hides every XPay option until both a secret key and a publishable key are saved for the selected mode.
 
 Settings are stored in the WordPress option `woocommerce_xpay_settings` (a serialized array), shared by the combined option and all per-method rows.
@@ -100,7 +100,7 @@ In your XPay dashboard → **Developers → Webhooks**, add an endpoint pointing
 - **Defaults:** Card on, valU on, Fawry off
 - **What they do:** In split mode, each ticked method gets its own row at checkout. (In combined mode the checkboxes have no effect.) Card covers Visa, Mastercard and Meeza.
 - **Only tick methods enabled for your XPay account.** If a shopper picks a method your account doesn't have, they are shown the full XPay window instead — the payment still has a path forward — and you get an admin notice telling you which method to enable in your XPay dashboard or untick here.
-- **Tip:** You can also toggle the per-method rows straight from the payments list (WooCommerce → Settings → Payments). Switching a method row on there automatically switches Payment options to split mode; switching every row off brings the combined XPay option back on its own — checkout never goes dark.
+- **Checkout never goes dark:** with every method unticked in split mode, the combined XPay option returns on its own.
 
 ---
 
