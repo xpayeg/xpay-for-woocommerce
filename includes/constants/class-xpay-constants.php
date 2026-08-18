@@ -18,6 +18,19 @@ defined( 'ABSPATH' ) || exit;
 final class XPay_Constants {
 
 	/**
+	 * Cache-busting version for an enqueued plugin asset. The plugin
+	 * version alone left browsers serving stale CSS/JS whenever a file
+	 * changed within one release (every dev/test iteration); the mtime
+	 * suffix changes the URL the moment the file does.
+	 *
+	 * @param string $rel_path Asset path relative to the plugin root.
+	 */
+	public static function asset_version( string $rel_path ): string {
+		$mtime = @filemtime( XPAY_WC_PLUGIN_DIR . $rel_path );
+		return XPAY_WC_VERSION . ( false === $mtime ? '' : '.' . $mtime );
+	}
+
+	/**
 	 * Business API base. Overridable for staging via the XPAY_WC_API_BASE
 	 * wp-config constant — a deploy-time choice, deliberately NOT a settings
 	 * field: merchants must never be able to point live credentials at an

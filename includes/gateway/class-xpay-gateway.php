@@ -399,13 +399,13 @@ class XPay_Gateway extends WC_Payment_Gateway {
 			'xpay-pay-page',
 			XPAY_WC_PLUGIN_URL . 'assets/css/pay-page.css',
 			array(),
-			XPAY_WC_VERSION
+			XPay_Constants::asset_version( 'assets/css/pay-page.css' )
 		);
 		wp_enqueue_script(
 			'xpay-checkout-modal',
 			XPAY_WC_PLUGIN_URL . 'assets/js/checkout-modal.js',
 			array(),
-			XPAY_WC_VERSION,
+			XPay_Constants::asset_version( 'assets/js/checkout-modal.js' ),
 			true
 		);
 		wp_localize_script(

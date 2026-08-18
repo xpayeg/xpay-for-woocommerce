@@ -94,7 +94,7 @@ final class XPay_Blocks_Support extends AbstractPaymentMethodType {
 			'xpay-blocks',
 			XPAY_WC_PLUGIN_URL . 'assets/js/blocks-integration.js',
 			array( 'wc-blocks-registry', 'wc-settings', 'wp-element', 'wp-html-entities' ),
-			XPAY_WC_VERSION,
+			XPay_Constants::asset_version( 'assets/js/blocks-integration.js' ),
 			true
 		);
 		// The row-id list the JS registers from — derived from the same
