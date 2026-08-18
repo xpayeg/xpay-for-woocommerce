@@ -48,10 +48,14 @@
 		if ( params.hostedUrl ) {
 			setStatus( params.i18n.fallback );
 			window.location.href = params.hostedUrl;
-		} else if ( hostedLink ) {
-			// Paused too: the actions container only renders in the paused
-			// state, so revealing the link without it would show nothing.
-			setPaused( true );
+			return;
+		}
+		// No hosted URL to fall back to: stop claiming to open — a stuck
+		// "Opening…" spinner is a dead end. The paused receipt is the honest
+		// state: the order is saved and payable later (account, pay link).
+		setPaused( true );
+		setStatus( params.i18n.closed );
+		if ( hostedLink ) {
 			hostedLink.style.display = '';
 		}
 	}

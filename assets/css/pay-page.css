@@ -269,8 +269,10 @@
 	align-items: center;
 	color: #737373;
 	display: flex;
+	flex: none;
 	font-size: 12px;
 	gap: 7px;
+	white-space: nowrap;
 }
 
 .xpay-pay__lock {
