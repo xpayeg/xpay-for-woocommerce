@@ -487,26 +487,33 @@
 
 /* ── Switches ────────────────────────────────────────────────────────── */
 
+/* The dashboard's own Switch, sm size (packages/ui switch.tsx +
+   checkout-components.css .cn-switch): 24×14 track on the --input
+   neutral, transparent 1px border insetting a 12px thumb, shadow-xs,
+   thumb travel = thumb width − 2px. Slimmer than a stock WP toggle
+   and identical to the control merchants use in the XPay dashboard. */
 .xpay-adm__switch {
-	background: #d4d4d4;
-	border-radius: 10px;
+	background: var(--bd);
+	border: 1px solid transparent;
+	border-radius: 9999px;
+	box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 	flex: none;
-	height: 20px;
+	height: 14px;
 	position: relative;
 	transition: background 0.15s ease;
-	width: 36px;
+	width: 24px;
 }
 
 .xpay-adm__switch::after {
 	background: #fff;
 	border-radius: 50%;
 	content: "";
-	height: 16px;
-	left: 2px;
+	height: 12px;
+	inset-inline-start: 0;
 	position: absolute;
-	top: 2px;
-	transition: left 0.15s ease;
-	width: 16px;
+	top: 0;
+	transition: transform 0.15s ease;
+	width: 12px;
 }
 
 .xpay-adm__tile input:checked ~ .xpay-adm__switch,
@@ -516,7 +523,13 @@
 
 .xpay-adm__tile input:checked ~ .xpay-adm__switch::after,
 .xpay-adm__toggle input:checked ~ .xpay-adm__switch::after {
-	left: 18px;
+	transform: translateX(10px);
+}
+
+/* RTL admin: the thumb starts at the inline start (right) and travels left. */
+body.rtl .xpay-adm__tile input:checked ~ .xpay-adm__switch::after,
+body.rtl .xpay-adm__toggle input:checked ~ .xpay-adm__switch::after {
+	transform: translateX(-10px);
 }
 
 .xpay-adm__toggle {
