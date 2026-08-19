@@ -89,10 +89,15 @@
 				clientSecret: params.clientSecret,
 				mode: 'modal',
 				locale: params.locale || 'en',
-				onComplete: function () {
+				onComplete: function ( result ) {
 					// The thank-you page re-verifies server-side; this redirect
-					// carries no authority of its own.
-					window.location.href = params.returnUrl;
+					// carries no authority of its own. Prefer the payload's
+					// redirectUrl: it is the session's afterCompletion URL with
+					// the REAL session id substituted in, so support's
+					// xpay_session_id breadcrumb reaches the thank-you page on
+					// the modal path too — previously only the hosted fallback
+					// carried it.
+					window.location.href = ( result && result.redirectUrl ) || params.returnUrl;
 				},
 				onClose: function () {
 					setWindowOpen( false );

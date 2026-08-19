@@ -106,7 +106,7 @@ final class XPay_WPFunnels_Compat {
 		echo esc_html__( 'XPay: WPFunnels is active. Unless you run a WPFunnels Pro upsell flow, shoppers who pay with XPay can land on the cart page instead of the order confirmation. Turn on the WPFunnels safeguard in the XPay settings.', 'xpay-for-woocommerce' );
 		echo '</p><p>';
 		echo '<a class="button button-primary" href="' . esc_url( $settings_url ) . '">' . esc_html__( 'Open XPay settings', 'xpay-for-woocommerce' ) . '</a> ';
-		echo '<a href="' . esc_url( $dismiss_url ) . '">' . esc_html__( 'Dismiss — I run a WPFunnels Pro upsell flow', 'xpay-for-woocommerce' ) . '</a>';
+		echo '<a href="' . esc_url( $dismiss_url ) . '">' . esc_html__( 'Dismiss: I run a WPFunnels Pro upsell flow', 'xpay-for-woocommerce' ) . '</a>';
 		echo '</p></div>';
 	}
 

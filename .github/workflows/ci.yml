@@ -30,14 +30,16 @@ jobs:
           tools: composer
       - run: composer install --no-progress --no-interaction
       - run: composer lint
+      - run: bash bin/check-voice.sh
 
   phpunit:
     name: PHPUnit (PHP ${{ matrix.php }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # 7.4 is the plugin's floor; 8.3 the current mainstream. Both must pass.
-        php: [ '7.4', '8.3' ]
+        # 7.4 is the plugin's floor; 8.3 the current mainstream; 8.4 catches
+        # deprecations (fputcsv escape et al.) before merchants' hosts do.
+        php: [ '7.4', '8.3', '8.4' ]
     steps:
       - uses: actions/checkout@v4
         with:

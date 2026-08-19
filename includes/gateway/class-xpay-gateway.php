@@ -408,7 +408,7 @@ class XPay_Gateway extends WC_Payment_Gateway {
 			WC_Admin_Settings::add_error(
 				sprintf(
 					/* translators: %s is the error returned while validating the API key. */
-					__( 'XPay: the API key did not validate — %s', 'xpay-for-woocommerce' ),
+					__( 'XPay: the API key did not validate. %s', 'xpay-for-woocommerce' ),
 					$e->getMessage()
 				)
 			);
@@ -450,7 +450,7 @@ class XPay_Gateway extends WC_Payment_Gateway {
 			);
 			// Shopper-safe message only — the real error is in the log and
 			// the order note; internals never reach wc_add_notice().
-			wc_add_notice( __( 'The payment could not be started. Please try again — your card has not been charged.', 'xpay-for-woocommerce' ), 'error' );
+			wc_add_notice( __( 'The payment could not be started. Please try again. Your card has not been charged.', 'xpay-for-woocommerce' ), 'error' );
 			$order->add_order_note(
 				sprintf(
 					/* translators: 1: XPay error code, 2: error message. */
@@ -491,6 +491,24 @@ class XPay_Gateway extends WC_Payment_Gateway {
 				$session       = $service->get_or_create_session( $order, $this->pinned_method_types() );
 				$client_secret = (string) $session['clientSecret'];
 			} catch ( XPay_Api_Exception $e ) {
+				// Same observability as the checkout path: to the shopper
+				// this is the identical failure, so it must leave the same
+				// log event and order note — it used to vanish silently.
+				XPay_Logger::event(
+					'receipt_page.session_failed',
+					array(
+						'order_id' => $order->get_id(),
+						'code'     => $e->get_error_code(),
+					)
+				);
+				$order->add_order_note(
+					sprintf(
+						/* translators: 1: XPay error code, 2: error message. */
+						__( 'XPay session creation failed [%1$s]: %2$s', 'xpay-for-woocommerce' ),
+						$e->get_error_code(),
+						$e->getMessage()
+					)
+				);
 				echo '<p>' . esc_html__( 'The payment could not be started. Please refresh the page to try again.', 'xpay-for-woocommerce' ) . '</p>';
 				return;
 			}

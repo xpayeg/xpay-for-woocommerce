@@ -117,8 +117,16 @@ class XPay_Checkout_Service {
 		$expired = ! empty( $session['isExpired'] );
 		$total   = isset( $session['amountTotal'] ) ? (int) $session['amountTotal'] : -1;
 
+		// Currency must match, not just the minor-unit total: a
+		// multi-currency plugin can recalculate an order into a different
+		// currency whose minor units happen to equal the old total, and a
+		// matching number in the wrong currency is the worst kind of match.
+		$currency_matches = isset( $session['currency'] )
+			&& strtoupper( (string) $session['currency'] ) === strtoupper( $order->get_currency() );
+
 		return XPay_Session_Status::OPEN === $status
 			&& ! $expired
+			&& $currency_matches
 			&& XPay_Money::to_minor( $order->get_total(), $order->get_currency() ) === $total;
 	}
 
@@ -163,6 +171,12 @@ class XPay_Checkout_Service {
 				'redirect' => array( 'url' => $return_url ),
 			),
 			'cancelUrl'       => $order->get_checkout_payment_url(),
+			// The hosted checkout renders server-side in the session's
+			// locale. Without this, only the modal (which receives the
+			// locale directly) followed the storefront language — the
+			// hosted fallback and emailed pay links, used exactly when
+			// things go wrong, fell back to the account default.
+			'locale'          => 0 === strpos( get_locale(), 'ar' ) ? 'ar' : 'en',
 			'metadata'        => array(
 				'wc_order_id'  => (string) $order->get_id(),
 				'wc_order_key' => $order->get_order_key(),

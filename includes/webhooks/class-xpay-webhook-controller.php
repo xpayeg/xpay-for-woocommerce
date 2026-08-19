@@ -55,7 +55,7 @@ class XPay_Webhook_Controller {
 		}
 
 		$event = json_decode( $raw_body, true );
-		if ( ! is_array( $event ) || empty( $event['type'] ) || ! isset( $event['data']['object'] ) || ! is_array( $event['data']['object'] ) ) {
+		if ( ! is_array( $event ) || empty( $event['type'] ) || ! is_string( $event['type'] ) || ! isset( $event['data']['object'] ) || ! is_array( $event['data']['object'] ) ) {
 			self::respond( 400, array( 'error' => XPay_Error_Codes::WEBHOOK_PAYLOAD_MALFORMED ) );
 		}
 

@@ -117,7 +117,7 @@ class XPay_Refund_Service {
 			case XPay_Error_Codes::REFUND_REJECTED:
 				return __( 'XPay accepted the request but did not complete the refund. Check the payment in your XPay dashboard before retrying.', 'xpay-for-woocommerce' );
 			case XPay_Error_Codes::REFUND_PENDING:
-				return __( 'XPay accepted this refund and is still processing it. Do not submit it again — check the payment in your XPay dashboard and record the refund here once it completes.', 'xpay-for-woocommerce' );
+				return __( 'XPay accepted this refund and is still processing it. Do not submit it again. Check the payment in your XPay dashboard and record the refund here once it completes.', 'xpay-for-woocommerce' );
 			case XPay_Error_Codes::API_RESOURCE_INVALID_STATE:
 				return __( 'XPay cannot refund this payment in its current state. Check the payment in your XPay dashboard.', 'xpay-for-woocommerce' );
 			default:

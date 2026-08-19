@@ -2,12 +2,13 @@
 /**
  * Plugin Name: XPay for WooCommerce
  * Plugin URI: https://xpay.app/
- * Description: Accept payments on your WooCommerce store via XPay (Egypt) — cards, valU and more, in a secure on-site checkout.
+ * Description: Accept payments on your WooCommerce store via XPay (Egypt): cards, valU and more, in a secure on-site checkout.
  * Author: XPay
  * Author URI: https://xpay.app/
  * Version: 3.0.0
  * Requires at least: 6.2
  * Requires PHP: 7.4
+ * Requires Plugins: woocommerce
  * WC requires at least: 8.3
  * WC tested up to: 10.4
  * License: GPL-2.0-or-later

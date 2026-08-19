@@ -121,7 +121,7 @@ final class XPay_Log_Viewer {
 		if ( self::has_filters( $filters ) ) {
 			echo '<a class="xpay-adm__filters-clear" href="' . esc_url( admin_url( 'admin.php?page=xpay-log' ) ) . '">' . esc_html__( 'Clear filters', 'xpay-for-woocommerce' ) . '</a>';
 		}
-		echo '<button type="button" class="xpay-adm__btn" id="xpay-copy-report" data-copied="' . esc_attr__( 'Copied — paste it into your support ticket', 'xpay-for-woocommerce' ) . '">' . esc_html__( 'Copy debug report', 'xpay-for-woocommerce' ) . '</button>';
+		echo '<button type="button" class="xpay-adm__btn" id="xpay-copy-report" data-copied="' . esc_attr__( 'Copied. Paste it into your support ticket', 'xpay-for-woocommerce' ) . '">' . esc_html__( 'Copy debug report', 'xpay-for-woocommerce' ) . '</button>';
 		echo '<form method="get" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="xpay-adm__export">';
 		echo '<input type="hidden" name="action" value="xpay_log_export">';
 		wp_nonce_field( 'xpay-log-export' );
@@ -249,7 +249,7 @@ final class XPay_Log_Viewer {
 
 		if ( count( $rows ) === self::TAIL_ROWS ) {
 			/* translators: %d is the number of log entries shown. */
-			echo '<p class="xpay-adm__table-note">' . esc_html( sprintf( __( 'Showing the latest %d entries — narrow with the filters, or Export CSV for everything retained.', 'xpay-for-woocommerce' ), self::TAIL_ROWS ) ) . '</p>';
+			echo '<p class="xpay-adm__table-note">' . esc_html( sprintf( __( 'Showing the latest %d entries. Narrow with the filters, or Export CSV for everything retained.', 'xpay-for-woocommerce' ), self::TAIL_ROWS ) ) . '</p>';
 		}
 
 		self::render_entry_dialog();
@@ -445,7 +445,7 @@ final class XPay_Log_Viewer {
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- streaming CSV to the response body; WP_Filesystem writes files, it cannot stream php://output.
 		$out = fopen( 'php://output', 'w' );
-		fputcsv( $out, array( 'time_utc', 'request_id', 'stage', 'order_id', 'message', 'context' ) );
+		fputcsv( $out, array( 'time_utc', 'request_id', 'stage', 'order_id', 'message', 'context' ), ',', '"', '' );
 		foreach ( $rows as $row ) {
 			$cells = array(
 				(string) $row['created_at'],
@@ -455,7 +455,7 @@ final class XPay_Log_Viewer {
 				(string) $row['message'],
 				(string) $row['context'],
 			);
-			fputcsv( $out, array_map( array( __CLASS__, 'csv_cell' ), $cells ) );
+			fputcsv( $out, array_map( array( __CLASS__, 'csv_cell' ), $cells ), ',', '"', '' );
 		}
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- closes the php://output stream opened above.
 		fclose( $out );

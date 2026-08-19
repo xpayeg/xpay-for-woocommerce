@@ -53,10 +53,10 @@ final class XPay_Legacy_Notice {
 		$dismiss_url = wp_nonce_url( add_query_arg( self::DISMISS_ARG, '1' ), self::DISMISS_ARG );
 
 		echo '<div class="notice notice-warning"><p>';
-		echo esc_html__( 'XPay: the legacy XPay plugin is still active alongside this one. Shoppers currently see two separate XPay options at checkout. Deactivate the legacy plugin — its settings are separate, and this plugin keeps its own keys and orders.', 'xpay-for-woocommerce' );
+		echo esc_html__( 'XPay: the legacy XPay plugin is still active alongside this one. Shoppers currently see two separate XPay options at checkout. Deactivate the legacy plugin. Its settings are separate, and this plugin keeps its own keys and orders.', 'xpay-for-woocommerce' );
 		echo '</p><p>';
 		echo '<a class="button button-primary" href="' . esc_url( $plugins_url ) . '">' . esc_html__( 'Open the Plugins page', 'xpay-for-woocommerce' ) . '</a> ';
-		echo '<a href="' . esc_url( $dismiss_url ) . '">' . esc_html__( 'Dismiss — I am mid-migration and know', 'xpay-for-woocommerce' ) . '</a>';
+		echo '<a href="' . esc_url( $dismiss_url ) . '">' . esc_html__( 'Dismiss: I am mid-migration and know', 'xpay-for-woocommerce' ) . '</a>';
 		echo '</p></div>';
 	}
 
