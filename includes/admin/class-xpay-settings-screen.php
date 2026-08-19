@@ -115,9 +115,6 @@ final class XPay_Settings_Screen {
 	 * always for the environment the merchant is configuring.
 	 */
 	private static function help_dialogs(): void {
-		$test = __( 'Test Mode', 'xpay-for-woocommerce' );
-		$liv  = __( 'Live Mode', 'xpay-for-woocommerce' );
-
 		// ── Keys ─────────────────────────────────────────────────────
 		echo '<div class="xpay-adm__dialog-backdrop xpay-adm__help-dialog" id="xpay-help-keys" hidden>';
 		echo '<div class="xpay-adm__dialog" role="dialog" aria-modal="true" aria-labelledby="xpay-help-keys-title">';
@@ -132,9 +129,14 @@ final class XPay_Settings_Screen {
 				echo '<p class="xpay-adm__help-intro">' . esc_html__( 'Live keys move real money, and live mode unlocks only after XPay activates your account — if your dashboard still shows "Request payment activation", finish that first.', 'xpay-for-woocommerce' ) . '</p>';
 			}
 			echo '<ol class="xpay-adm__help-steps">';
-			/* translators: %s is the dashboard mode toggle: "Test Mode" or "Live Mode". */
-			echo '<li>' . esc_html( sprintf( __( 'Open your XPay dashboard and switch the toggle at the top to %s.', 'xpay-for-woocommerce' ), 'test' === $mode ? $test : $liv ) ) . '</li>';
-			echo '<li>' . esc_html__( 'In the left sidebar, open Developer hub, then the API keys tab.', 'xpay-for-woocommerce' ) . '</li>';
+			// The dashboard's single Test Mode switch sits at the BOTTOM of
+			// the left menu (on = test data, off = the live account).
+			if ( 'test' === $mode ) {
+				echo '<li>' . esc_html__( 'Open your XPay dashboard — in the left menu, at the very bottom, make sure the Test Mode toggle is on.', 'xpay-for-woocommerce' ) . '</li>';
+			} else {
+				echo '<li>' . esc_html__( 'Open your XPay dashboard — in the left menu, at the very bottom, turn the Test Mode toggle off to switch to your live account.', 'xpay-for-woocommerce' ) . '</li>';
+			}
+			echo '<li>' . esc_html__( 'Open Developer hub from the bottom-left corner of the page, then the API keys tab.', 'xpay-for-woocommerce' ) . '</li>';
 			echo '<li>' . esc_html__( 'Under Restricted keys, click Create restricted key: name it (for example, WooCommerce), allow Checkout Sessions and Refunds, then click Create key.', 'xpay-for-woocommerce' ) . '</li>';
 			/* translators: %s is the key prefix, rk_test_ or rk_live_. */
 			echo '<li>' . esc_html( sprintf( __( 'Copy the new key — it starts with %s — and paste it into the Secret key field here. Revealing a key later first emails you a 6-digit code.', 'xpay-for-woocommerce' ), 'test' === $mode ? 'rk_test_' : 'rk_live_' ) ) . '</li>';
@@ -159,9 +161,12 @@ final class XPay_Settings_Screen {
 		foreach ( array( 'test', 'live' ) as $mode ) {
 			echo '<div class="xpay-adm__help-body" data-xpay-mode="' . esc_attr( $mode ) . '">';
 			echo '<ol class="xpay-adm__help-steps">';
-			/* translators: %s is the dashboard mode toggle: "Test Mode" or "Live Mode". */
-			echo '<li>' . esc_html( sprintf( __( 'Open your XPay dashboard and switch the toggle at the top to %s.', 'xpay-for-woocommerce' ), 'test' === $mode ? $test : $liv ) ) . '</li>';
-			echo '<li>' . esc_html__( 'In the left sidebar, open Developer hub, then the Webhooks tab, and click Add endpoint.', 'xpay-for-woocommerce' ) . '</li>';
+			if ( 'test' === $mode ) {
+				echo '<li>' . esc_html__( 'Open your XPay dashboard — in the left menu, at the very bottom, make sure the Test Mode toggle is on.', 'xpay-for-woocommerce' ) . '</li>';
+			} else {
+				echo '<li>' . esc_html__( 'Open your XPay dashboard — in the left menu, at the very bottom, turn the Test Mode toggle off to switch to your live account.', 'xpay-for-woocommerce' ) . '</li>';
+			}
+			echo '<li>' . esc_html__( 'Open Developer hub from the bottom-left corner of the page, then the Webhooks tab, and click Add endpoint.', 'xpay-for-woocommerce' ) . '</li>';
 			echo '<li>' . esc_html__( 'Paste your store\'s address above into the Endpoint URL field.', 'xpay-for-woocommerce' ) . '</li>';
 			echo '<li>' . esc_html__( 'Under "Select events to listen to", tick exactly these two, then click Add endpoint:', 'xpay-for-woocommerce' );
 			echo '<span class="xpay-adm__help-events"><code class="xpay-adm__mono">checkout.session.completed</code><code class="xpay-adm__mono">checkout.session.expired</code></span></li>';
