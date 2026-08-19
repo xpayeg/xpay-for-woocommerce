@@ -119,6 +119,10 @@ final class XPay_Blocks_Support extends AbstractPaymentMethodType {
 			'icon'        => $this->row['icon'],
 			'name'        => $this->name,
 			'supports'    => array( 'products', 'refunds' ),
+			// Blocks' Place Order button label while an XPay row is
+			// selected — the same string classic checkout gets from the
+			// gateway's order_button_text.
+			'buttonLabel' => __( 'Pay now', 'xpay-for-woocommerce' ),
 		);
 	}
 }

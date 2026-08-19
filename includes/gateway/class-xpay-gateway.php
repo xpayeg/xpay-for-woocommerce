@@ -58,6 +58,11 @@ class XPay_Gateway extends WC_Payment_Gateway {
 		$this->method_title       = __( 'XPay', 'xpay-for-woocommerce' );
 		$this->method_description = __( 'Accept cards, valU and more via XPay (Egypt). Customers pay in a secure XPay window without leaving your store.', 'xpay-for-woocommerce' );
 		$this->supports           = array( 'products', 'refunds' );
+		// The checkout button says what happens next when an XPay row is
+		// selected: the payment window opens. Classic checkout reads this
+		// property; Blocks gets the same label via payment method data.
+		// The msgid is shared with the pay page's button on purpose.
+		$this->order_button_text = __( 'Pay now', 'xpay-for-woocommerce' );
 		// The brand tile WooCommerce's Payments page shows on the provider
 		// row (it falls back to a generic placeholder icon without one).
 		// The per-method rows overwrite this with their own artwork.

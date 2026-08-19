@@ -260,6 +260,11 @@ class XPay_Checkout_Service {
 			// things go wrong, fell back to the account default.
 			'locale'          => 0 === strpos( get_locale(), 'ar' ) ? 'ar' : 'en',
 			'metadata'        => array(
+				// Which integration created the session. Support reads it in
+				// the Workbench today; it is also the forward-compatible data
+				// source for a dashboard "integration" badge the moment the
+				// platform starts reading a reserved metadata key or field.
+				'integration'  => 'woocommerce',
 				'wc_order_id'  => (string) $order->get_id(),
 				'wc_order_key' => $order->get_order_key(),
 				'site_url'     => home_url(),

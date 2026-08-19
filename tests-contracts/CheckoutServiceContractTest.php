@@ -40,6 +40,7 @@ class CheckoutServiceContractTest extends ContractTestCase {
 		$this->assertStringContainsString( 'xpay_session_id={CHECKOUT_SESSION_ID}', $body['afterCompletion']['redirect']['url'], 'The support breadcrumb placeholder must survive URL building.' );
 		$this->assertSame( '14', $body['metadata']['wc_order_id'] );
 		$this->assertSame( $order->get_order_key(), $body['metadata']['wc_order_key'] );
+		$this->assertSame( 'woocommerce', $body['metadata']['integration'], 'The integration marker is a support/dashboard contract, not decoration.' );
 		$this->assertArrayNotHasKey( 'paymentMethodTypes', $body, 'The combined row never pins methods.' );
 		$this->assertArrayNotHasKey( 'phoneNumberCollection', $body );
 

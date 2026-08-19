@@ -57,6 +57,11 @@
 			ariaLabel: title,
 			content: createElement( 'p', { style: { margin: 0 } }, description ),
 			edit: createElement( 'p', { style: { margin: 0 } }, description ),
+			// Blocks swaps the Place Order label for this while the row is
+			// selected — same string classic checkout shows via the
+			// gateway's order_button_text.
+			placeOrderButtonLabel:
+				decodeEntities( settings.buttonLabel || '' ) || undefined,
 			canMakePayment: function () {
 				return true;
 			},
