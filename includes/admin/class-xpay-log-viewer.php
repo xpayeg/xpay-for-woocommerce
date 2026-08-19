@@ -178,15 +178,58 @@ final class XPay_Log_Viewer {
 			if ( ! empty( $row['message'] ) ) {
 				$details = $row['message'] . ' ' . $details;
 			}
-			echo '<tr>';
+			// The row carries its full values; cells show a truncated line
+			// and the details button opens the dialog with everything.
+			echo '<tr'
+				. ' data-time="' . esc_attr( (string) $row['created_at'] ) . '"'
+				. ' data-request="' . esc_attr( (string) $row['request_id'] ) . '"'
+				. ' data-stage="' . esc_attr( (string) $row['stage'] ) . '"'
+				. ' data-order="' . esc_attr( ! empty( $row['order_id'] ) ? (string) (int) $row['order_id'] : '' ) . '"'
+				. ' data-message="' . esc_attr( (string) $row['message'] ) . '"'
+				. ' data-context="' . esc_attr( (string) $row['context'] ) . '"'
+				. '>';
 			echo '<td class="xpay-adm__cell-muted">' . esc_html( (string) $row['created_at'] ) . '</td>';
 			echo '<td class="xpay-adm__mono">' . esc_html( (string) $row['request_id'] ) . '</td>';
 			echo '<td class="xpay-adm__mono">' . esc_html( (string) $row['stage'] ) . '</td>';
 			echo '<td>' . wp_kses_post( $order_cell ) . '</td>';
-			echo '<td class="xpay-adm__mono xpay-adm__cell-details">' . esc_html( $details ) . '</td>';
+			if ( '' === trim( $details ) ) {
+				echo '<td class="xpay-adm__mono xpay-adm__cell-details">—</td>';
+			} else {
+				echo '<td class="xpay-adm__mono xpay-adm__cell-details"><button type="button" class="xpay-adm__cell-more" aria-haspopup="dialog" title="' . esc_attr__( 'View the full entry', 'xpay-for-woocommerce' ) . '">' . esc_html( $details ) . '</button></td>';
+			}
 			echo '</tr>';
 		}
 		echo '</tbody></table>';
+		echo '</div>';
+
+		self::render_entry_dialog();
+	}
+
+	/**
+	 * The full-entry dialog the details cells open. One empty skeleton;
+	 * admin-log-viewer.js fills it from the clicked row's data attributes
+	 * (values land via textContent, never markup) and pretty-prints the
+	 * context JSON.
+	 */
+	private static function render_entry_dialog(): void {
+		echo '<div class="xpay-adm__dialog-backdrop" id="xpay-log-dialog" hidden>';
+		echo '<div class="xpay-adm__dialog" role="dialog" aria-modal="true" aria-labelledby="xpay-log-dialog-title">';
+		echo '<div class="xpay-adm__dialog-head">';
+		echo '<h2 class="xpay-adm__dialog-title" id="xpay-log-dialog-title">' . esc_html__( 'Log entry', 'xpay-for-woocommerce' ) . '</h2>';
+		echo '<button type="button" class="xpay-adm__dialog-close" aria-label="' . esc_attr__( 'Close', 'xpay-for-woocommerce' ) . '">&times;</button>';
+		echo '</div>';
+		echo '<div class="xpay-adm__dialog-meta">';
+		echo '<span class="xpay-adm__dialog-label">' . esc_html__( 'Time (UTC)', 'xpay-for-woocommerce' ) . '</span><span class="xpay-adm__mono" data-xpay-dlg="time"></span>';
+		echo '<span class="xpay-adm__dialog-label">' . esc_html__( 'Request', 'xpay-for-woocommerce' ) . '</span><span class="xpay-adm__mono" data-xpay-dlg="request"></span>';
+		echo '<span class="xpay-adm__dialog-label">' . esc_html__( 'Stage', 'xpay-for-woocommerce' ) . '</span><span class="xpay-adm__mono" data-xpay-dlg="stage"></span>';
+		echo '<span class="xpay-adm__dialog-label">' . esc_html__( 'Order', 'xpay-for-woocommerce' ) . '</span><span class="xpay-adm__mono" data-xpay-dlg="order"></span>';
+		echo '</div>';
+		echo '<p class="xpay-adm__dialog-message" data-xpay-dlg="message" hidden></p>';
+		echo '<pre class="xpay-adm__dialog-context xpay-adm__mono" data-xpay-dlg="context"></pre>';
+		echo '<div class="xpay-adm__dialog-foot">';
+		echo '<button type="button" id="xpay-log-copy-entry" class="xpay-adm__btn xpay-adm__btn--secondary xpay-adm__btn--sm" data-copied="' . esc_attr__( 'Copied', 'xpay-for-woocommerce' ) . '">' . esc_html__( 'Copy entry', 'xpay-for-woocommerce' ) . '</button>';
+		echo '</div>';
+		echo '</div>';
 		echo '</div>';
 	}
 

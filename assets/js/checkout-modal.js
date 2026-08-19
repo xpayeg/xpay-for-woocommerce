@@ -49,7 +49,19 @@
 	// fights the receipt behind it. The SDK's own glass is calibrated for
 	// light pages; dark themes keep too much contrast without this.
 	function setWindowOpen( open ) {
-		document.documentElement.classList.toggle( 'xpay-window-open', open );
+		// The SDK's scroll lock fixes the <body>, which drops the document
+		// scrollbar — the page silently re-centers a scrollbar-width wider
+		// and everything behind the sheet jumps sideways. Only when the
+		// page actually had a scrollbar: keep an inert track on <html>
+		// (the xpay-keep-gutter rule in pay-page.css) so the viewport
+		// width never changes while the window is open.
+		var doc = document.documentElement;
+		if ( open ) {
+			doc.classList.toggle( 'xpay-keep-gutter', doc.scrollHeight > doc.clientHeight );
+		} else {
+			doc.classList.remove( 'xpay-keep-gutter' );
+		}
+		doc.classList.toggle( 'xpay-window-open', open );
 	}
 
 	function goHosted() {

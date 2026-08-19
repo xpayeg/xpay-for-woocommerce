@@ -113,35 +113,59 @@ msgstr "هل تريد حذف جميع إدخالات سجل XPay؟ لا يمكن
 msgid "Clear log"
 msgstr "مسح السجل"
 
-#: includes/admin/class-xpay-log-viewer.php:152
+#: includes/admin/class-xpay-log-viewer.php:155
+#: includes/admin/class-xpay-log-viewer.php:222
 msgid "Time (UTC)"
 msgstr "الوقت (UTC)"
 
-#: includes/admin/class-xpay-log-viewer.php:153
+#: includes/admin/class-xpay-log-viewer.php:156
+#: includes/admin/class-xpay-log-viewer.php:223
 msgid "Request"
 msgstr "المعرّف"
 
-#: includes/admin/class-xpay-log-viewer.php:154
+#: includes/admin/class-xpay-log-viewer.php:157
+#: includes/admin/class-xpay-log-viewer.php:224
 msgid "Stage"
 msgstr "المرحلة"
 
-#: includes/admin/class-xpay-log-viewer.php:155
+#: includes/admin/class-xpay-log-viewer.php:158
+#: includes/admin/class-xpay-log-viewer.php:225
 msgid "Order"
 msgstr "الطلب"
 
-#: includes/admin/class-xpay-log-viewer.php:156
+#: includes/admin/class-xpay-log-viewer.php:159
 msgid "Details"
 msgstr "التفاصيل"
 
-#: includes/admin/class-xpay-log-viewer.php:160
+#: includes/admin/class-xpay-log-viewer.php:163
 msgid "No log entries match. New entries appear here as payments run."
 msgstr "لا توجد إدخالات مطابقة في السجل. ستظهر الإدخالات الجديدة هنا مع تشغيل المدفوعات."
 
-#: includes/admin/class-xpay-log-viewer.php:200
+#: includes/admin/class-xpay-log-viewer.php:198
+msgid "View the full entry"
+msgstr "عرض الإدخال كاملًا"
+
+#: includes/admin/class-xpay-log-viewer.php:218
+msgid "Log entry"
+msgstr "إدخال السجل"
+
+#: includes/admin/class-xpay-log-viewer.php:219
+msgid "Close"
+msgstr "إغلاق"
+
+#: includes/admin/class-xpay-log-viewer.php:230
+msgid "Copied"
+msgstr "تم النسخ"
+
+#: includes/admin/class-xpay-log-viewer.php:230
+msgid "Copy entry"
+msgstr "نسخ الإدخال"
+
+#: includes/admin/class-xpay-log-viewer.php:247
 msgid "XPay log cleared."
 msgstr "تم مسح سجل XPay."
 
-#: includes/admin/class-xpay-log-viewer.php:339
+#: includes/admin/class-xpay-log-viewer.php:386
 msgid "You are not allowed to export the XPay log."
 msgstr "غير مسموح لك بتصدير سجل XPay."
 

@@ -951,9 +951,18 @@ body.rtl .xpay-adm .xpay-adm__welcome-cap-label {
 	overflow-x: auto;
 }
 
+/* Fixed layout so long values truncate inside their column instead of
+   stretching it; the full entry is one click away in the dialog. */
 .xpay-adm__table {
 	border-collapse: collapse;
+	table-layout: fixed;
 	width: 100%;
+}
+
+.xpay-adm__table td {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .xpay-adm__table th {
@@ -988,7 +997,152 @@ body.rtl .xpay-adm .xpay-adm__welcome-cap-label {
 
 .xpay-adm__cell-details {
 	color: var(--mut);
-	word-break: break-all;
+}
+
+/* The truncated details line is a button: the native ellipsis says
+   "there is more", the hover shift says "click for it". */
+.xpay-adm .xpay-adm__cell-more {
+	background: none;
+	border: 0;
+	color: var(--mut);
+	cursor: pointer;
+	display: block;
+	font: inherit;
+	max-width: 100%;
+	overflow: hidden;
+	padding: 0;
+	text-align: start;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	width: 100%;
+}
+
+.xpay-adm .xpay-adm__cell-more:hover {
+	color: var(--fg);
+}
+
+.xpay-adm .xpay-adm__cell-more:focus-visible {
+	border-radius: 4px;
+	outline: 2px solid var(--p-line);
+	outline-offset: 1px;
+}
+
+/* ── Full-entry dialog ───────────────────────────────────────────────── */
+
+.xpay-adm__dialog-backdrop {
+	align-items: center;
+	background: rgba(10, 10, 13, 0.5);
+	display: flex;
+	inset: 0;
+	justify-content: center;
+	padding: 24px;
+	position: fixed;
+	z-index: 100100; /* over the admin bar (99999) */
+}
+
+.xpay-adm__dialog-backdrop[hidden] {
+	display: none;
+}
+
+.xpay-adm__dialog {
+	animation: xpay-adm-dialog-in 0.15s ease-out;
+	background: #fff;
+	border-radius: var(--r-card);
+	box-shadow: 0 20px 50px rgba(10, 10, 13, 0.25);
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	max-height: min(80vh, 640px);
+	max-width: 640px;
+	padding: 20px 22px;
+	width: 100%;
+}
+
+@keyframes xpay-adm-dialog-in {
+	from {
+		opacity: 0;
+		transform: scale(0.98);
+	}
+}
+
+.xpay-adm__dialog-head {
+	align-items: center;
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+}
+
+.xpay-adm .xpay-adm__dialog-title {
+	color: var(--fg);
+	font-size: 15px;
+	font-weight: 600;
+	margin: 0;
+	padding: 0;
+}
+
+.xpay-adm .xpay-adm__dialog-close {
+	align-items: center;
+	background: none;
+	border: 0;
+	border-radius: var(--r-ctl);
+	color: var(--mut);
+	cursor: pointer;
+	display: inline-flex;
+	font-size: 22px;
+	height: 32px;
+	justify-content: center;
+	line-height: 1;
+	padding: 0;
+	width: 32px;
+}
+
+.xpay-adm .xpay-adm__dialog-close:hover {
+	background: #f5f5f5;
+	color: var(--fg);
+}
+
+.xpay-adm__dialog-meta {
+	column-gap: 16px;
+	display: grid;
+	font-size: 13px;
+	grid-template-columns: auto minmax(0, 1fr);
+	row-gap: 8px;
+}
+
+.xpay-adm__dialog-meta .xpay-adm__mono {
+	font-size: 12px;
+	overflow-wrap: anywhere;
+}
+
+.xpay-adm__dialog-label {
+	color: var(--mut);
+	font-size: 12px;
+}
+
+.xpay-adm__dialog-message {
+	color: var(--fg);
+	font-size: 13px;
+	line-height: 1.5;
+	margin: 0;
+}
+
+.xpay-adm pre.xpay-adm__dialog-context {
+	background: #fafafa;
+	border: 1px solid var(--bd);
+	border-radius: var(--r-row);
+	color: var(--fg);
+	font-size: 12px;
+	line-height: 1.55;
+	margin: 0;
+	overflow: auto;
+	padding: 12px 14px;
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.xpay-adm__dialog-foot {
+	display: flex;
+	justify-content: flex-end;
 }
 
 .xpay-adm__table-empty {

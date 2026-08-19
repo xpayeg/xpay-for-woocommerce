@@ -344,6 +344,35 @@ html.xpay-window-open body::after {
 	}
 }
 
+/* ── No sideways jump while the window is open ───────────────────────── */
+
+/* The SDK's scroll lock sets body{position:fixed;width:100%} inline
+   (sdk/runtime overlay.ts lockScroll). Two side effects shift the page
+   behind the sheet, and both are neutralized here:
+
+   1. A fixed body loses auto-margin centering, so themes that center a
+      boxed <body> watch the whole page jump to the left edge. Pinning
+      both insets restores true centering for fixed elements — and is a
+      no-op for ordinary full-width bodies. !important beats theme CSS;
+      the SDK's inline styles never touch these four properties.
+
+   2. Fixing the body drops the document scrollbar, so the viewport
+      grows a scrollbar-width and centered content re-centers a few
+      pixels over. checkout-modal.js adds xpay-keep-gutter (only when
+      the page actually had a scrollbar); the inert track keeps the
+      viewport width constant. Overlay-scrollbar platforms are a no-op
+      either way. */
+html.xpay-window-open body {
+	left: 0 !important;
+	margin-left: auto !important;
+	margin-right: auto !important;
+	right: 0 !important;
+}
+
+html.xpay-window-open.xpay-keep-gutter {
+	overflow-y: scroll;
+}
+
 @media (max-width: 480px) {
 	.xpay-pay {
 		border-radius: 0;

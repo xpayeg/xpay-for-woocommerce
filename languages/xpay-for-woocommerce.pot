@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-19T07:19:44+00:00\n"
+"POT-Creation-Date: 2026-08-19T07:39:04+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: xpay-for-woocommerce\n"
@@ -119,35 +119,59 @@ msgstr ""
 msgid "Clear log"
 msgstr ""
 
-#: includes/admin/class-xpay-log-viewer.php:152
+#: includes/admin/class-xpay-log-viewer.php:155
+#: includes/admin/class-xpay-log-viewer.php:222
 msgid "Time (UTC)"
 msgstr ""
 
-#: includes/admin/class-xpay-log-viewer.php:153
+#: includes/admin/class-xpay-log-viewer.php:156
+#: includes/admin/class-xpay-log-viewer.php:223
 msgid "Request"
 msgstr ""
 
-#: includes/admin/class-xpay-log-viewer.php:154
+#: includes/admin/class-xpay-log-viewer.php:157
+#: includes/admin/class-xpay-log-viewer.php:224
 msgid "Stage"
 msgstr ""
 
-#: includes/admin/class-xpay-log-viewer.php:155
+#: includes/admin/class-xpay-log-viewer.php:158
+#: includes/admin/class-xpay-log-viewer.php:225
 msgid "Order"
 msgstr ""
 
-#: includes/admin/class-xpay-log-viewer.php:156
+#: includes/admin/class-xpay-log-viewer.php:159
 msgid "Details"
 msgstr ""
 
-#: includes/admin/class-xpay-log-viewer.php:160
+#: includes/admin/class-xpay-log-viewer.php:163
 msgid "No log entries match. New entries appear here as payments run."
 msgstr ""
 
-#: includes/admin/class-xpay-log-viewer.php:200
+#: includes/admin/class-xpay-log-viewer.php:198
+msgid "View the full entry"
+msgstr ""
+
+#: includes/admin/class-xpay-log-viewer.php:218
+msgid "Log entry"
+msgstr ""
+
+#: includes/admin/class-xpay-log-viewer.php:219
+msgid "Close"
+msgstr ""
+
+#: includes/admin/class-xpay-log-viewer.php:230
+msgid "Copied"
+msgstr ""
+
+#: includes/admin/class-xpay-log-viewer.php:230
+msgid "Copy entry"
+msgstr ""
+
+#: includes/admin/class-xpay-log-viewer.php:247
 msgid "XPay log cleared."
 msgstr ""
 
-#: includes/admin/class-xpay-log-viewer.php:339
+#: includes/admin/class-xpay-log-viewer.php:386
 msgid "You are not allowed to export the XPay log."
 msgstr ""
 
