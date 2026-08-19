@@ -32,7 +32,7 @@ XPay for WooCommerce connects your store to [XPay](https://xpay.app/), the Egypt
 * Full and partial refunds from the WooCommerce order screen.
 * Fully bilingual: the payment window, the receipts, and every plugin screen ship in Arabic and English, with proper right-to-left layout.
 * Separate test and live modes with separate keys, so you can test safely before going live.
-* A guided setup screen in XPay's own dashboard style: three steps on a fresh install, then a status view whose green lights are backed by real checks — validated keys, verified webhooks, an actual paid order.
+* A guided setup screen in XPay's own dashboard style: three steps on a fresh install, then a status view whose green lights are backed by real checks — validated keys, verified webhooks, an actual paid order. Help icons walk you through your XPay dashboard step by step, separately for test and live.
 * Plays well with others: WPFunnels safeguard built in, script-optimizer opt-outs on the payment scripts, and a warning if the legacy XPay plugin is still active.
 * Redacted diagnostic logging: card numbers, keys and secrets are stripped before anything is written to disk.
 * Built-in log viewer (WooCommerce → XPay Log) with search, date and order filters, a one-click debug report for support and a CSV export — both honoring your filters — plus an XPay panel on every order showing its payment events.

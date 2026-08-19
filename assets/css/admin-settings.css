@@ -1180,6 +1180,107 @@ body.rtl .xpay-adm .xpay-adm__welcome-cap-label {
 	justify-content: flex-end;
 }
 
+.xpay-adm a.xpay-adm__btn--secondary {
+	color: var(--fg);
+	text-decoration: none;
+}
+
+/* ── Help icons & dialogs ────────────────────────────────────────────── */
+
+.xpay-adm .xpay-adm__help {
+	align-items: center;
+	background: #fff;
+	border: 1px solid var(--bd);
+	border-radius: 50%;
+	color: var(--mut);
+	cursor: pointer;
+	display: inline-flex;
+	flex: none;
+	font-family: inherit;
+	font-size: 11px;
+	font-weight: 700;
+	height: 18px;
+	justify-content: center;
+	line-height: 1;
+	margin-inline-start: 8px;
+	padding: 0;
+	vertical-align: 2px;
+	width: 18px;
+}
+
+.xpay-adm .xpay-adm__help:hover {
+	background: var(--p-tint);
+	border-color: var(--p-line);
+	color: var(--p);
+}
+
+.xpay-adm__help-dialog .xpay-adm__dialog {
+	max-width: 560px;
+}
+
+.xpay-adm__help-intro {
+	color: var(--mut);
+	font-size: 13px;
+	line-height: 1.55;
+	margin: 0;
+}
+
+.xpay-adm__help-steps {
+	color: #404040;
+	display: grid;
+	font-size: 13px;
+	gap: 10px;
+	line-height: 1.55;
+	margin: 0;
+	padding-inline-start: 20px;
+}
+
+.xpay-adm__help-steps li::marker {
+	color: var(--p);
+	font-weight: 700;
+}
+
+.xpay-adm__help-url {
+	align-items: center;
+	border: 1px solid var(--bd);
+	border-radius: var(--r-row);
+	display: flex;
+	gap: 12px;
+	padding: 10px 14px;
+}
+
+.xpay-adm__help-url code {
+	background: none;
+	color: var(--fg);
+	flex: 1 1 auto;
+	font-size: 12px;
+	overflow-wrap: anywhere;
+	padding: 0;
+}
+
+.xpay-adm__help-events {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 6px;
+}
+
+.xpay-adm__help-events code {
+	background: #fafafa;
+	border: 1px solid var(--bd);
+	border-radius: 6px;
+	color: var(--fg);
+	font-size: 12px;
+	padding: 2px 8px;
+}
+
+/* The dialogs' mode blocks follow the screen's mode, same as the rows:
+   the base [data-xpay-mode] rules hide the inactive one; this re-shows
+   the live block when the screen is in live mode. */
+.xpay-adm--live .xpay-adm__help-body[data-xpay-mode="live"] {
+	display: block;
+}
+
 .xpay-adm__table-empty {
 	color: var(--faint);
 	padding: 28px 10px;

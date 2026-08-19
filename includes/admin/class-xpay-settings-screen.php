@@ -89,7 +89,88 @@ final class XPay_Settings_Screen {
 			self::configured( $gateway, $live );
 		}
 		echo '</div>';
+		if ( ! $welcome ) {
+			self::help_dialogs();
+		}
 		echo '</div>';
+	}
+
+	/**
+	 * A "?" beside a title, opening one of the help dialogs below.
+	 *
+	 * @param string $topic 'keys' or 'webhook' — matched to a dialog id.
+	 * @param string $label Accessible name for the icon.
+	 */
+	private static function help_icon( string $topic, string $label ): void {
+		echo '<button type="button" class="xpay-adm__help" data-xpay-help="' . esc_attr( $topic ) . '" aria-haspopup="dialog" aria-label="' . esc_attr( $label ) . '">?</button>';
+	}
+
+	/**
+	 * The two help dialogs the "?" icons open. Every step names the REAL
+	 * dashboard controls — labels lifted from the dashboard's own strings
+	 * (Developer hub, Restricted keys, Add endpoint, …), so a merchant
+	 * reading here and looking there sees the same words. Each dialog
+	 * carries a full test block and a full live block; the screen's
+	 * existing mode mechanics show exactly one, so the instructions are
+	 * always for the environment the merchant is configuring.
+	 */
+	private static function help_dialogs(): void {
+		$test = __( 'Test Mode', 'xpay-for-woocommerce' );
+		$liv  = __( 'Live Mode', 'xpay-for-woocommerce' );
+
+		// ── Keys ─────────────────────────────────────────────────────
+		echo '<div class="xpay-adm__dialog-backdrop xpay-adm__help-dialog" id="xpay-help-keys" hidden>';
+		echo '<div class="xpay-adm__dialog" role="dialog" aria-modal="true" aria-labelledby="xpay-help-keys-title">';
+		echo '<div class="xpay-adm__dialog-head"><h2 class="xpay-adm__dialog-title" id="xpay-help-keys-title">' . esc_html__( 'Get your API keys', 'xpay-for-woocommerce' ) . '</h2>';
+		echo '<button type="button" class="xpay-adm__dialog-close" aria-label="' . esc_attr__( 'Close', 'xpay-for-woocommerce' ) . '">&times;</button></div>';
+
+		foreach ( array( 'test', 'live' ) as $mode ) {
+			echo '<div class="xpay-adm__help-body" data-xpay-mode="' . esc_attr( $mode ) . '">';
+			if ( 'test' === $mode ) {
+				echo '<p class="xpay-adm__help-intro">' . esc_html__( 'Test keys work on test data only — no real money ever moves.', 'xpay-for-woocommerce' ) . '</p>';
+			} else {
+				echo '<p class="xpay-adm__help-intro">' . esc_html__( 'Live keys move real money, and live mode unlocks only after XPay activates your account — if your dashboard still shows "Request payment activation", finish that first.', 'xpay-for-woocommerce' ) . '</p>';
+			}
+			echo '<ol class="xpay-adm__help-steps">';
+			/* translators: %s is the dashboard mode toggle: "Test Mode" or "Live Mode". */
+			echo '<li>' . esc_html( sprintf( __( 'Open your XPay dashboard and switch the toggle at the top to %s.', 'xpay-for-woocommerce' ), 'test' === $mode ? $test : $liv ) ) . '</li>';
+			echo '<li>' . esc_html__( 'In the left sidebar, open Developer hub, then the API keys tab.', 'xpay-for-woocommerce' ) . '</li>';
+			echo '<li>' . esc_html__( 'Under Restricted keys, click Create restricted key: name it (for example, WooCommerce), allow Checkout Sessions and Refunds, then click Create key.', 'xpay-for-woocommerce' ) . '</li>';
+			/* translators: %s is the key prefix, rk_test_ or rk_live_. */
+			echo '<li>' . esc_html( sprintf( __( 'Copy the new key — it starts with %s — and paste it into the Secret key field here. Revealing a key later first emails you a 6-digit code.', 'xpay-for-woocommerce' ), 'test' === $mode ? 'rk_test_' : 'rk_live_' ) ) . '</li>';
+			/* translators: %s is the key prefix, pk_test_ or pk_live_. */
+			echo '<li>' . esc_html( sprintf( __( 'Copy the matching Publishable key (starts with %s) from the Standard keys table on the same page.', 'xpay-for-woocommerce' ), 'test' === $mode ? 'pk_test_' : 'pk_live_' ) ) . '</li>';
+			echo '</ol>';
+			echo '</div>';
+		}
+		echo '<div class="xpay-adm__dialog-foot"><a class="xpay-adm__btn xpay-adm__btn--secondary xpay-adm__btn--sm" href="' . esc_url( XPay_Constants::DASHBOARD_URL ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Open XPay dashboard ↗', 'xpay-for-woocommerce' ) . '</a></div>';
+		echo '</div></div>';
+
+		// ── Webhook ──────────────────────────────────────────────────
+		$url = home_url( '/?wc-api=' . XPay_Constants::WEBHOOK_ENDPOINT );
+		echo '<div class="xpay-adm__dialog-backdrop xpay-adm__help-dialog" id="xpay-help-webhook" hidden>';
+		echo '<div class="xpay-adm__dialog" role="dialog" aria-modal="true" aria-labelledby="xpay-help-webhook-title">';
+		echo '<div class="xpay-adm__dialog-head"><h2 class="xpay-adm__dialog-title" id="xpay-help-webhook-title">' . esc_html__( 'Connect the webhook', 'xpay-for-woocommerce' ) . '</h2>';
+		echo '<button type="button" class="xpay-adm__dialog-close" aria-label="' . esc_attr__( 'Close', 'xpay-for-woocommerce' ) . '">&times;</button></div>';
+
+		echo '<p class="xpay-adm__help-intro">' . esc_html__( 'XPay confirms payments by sending signed events to this address — it is what marks orders paid. Each mode needs its own endpoint with its own secret.', 'xpay-for-woocommerce' ) . '</p>';
+		echo '<div class="xpay-adm__help-url"><code class="xpay-adm__mono">' . esc_html( $url ) . '</code><button type="button" class="xpay-adm__link" data-xpay-copy="' . esc_attr( $url ) . '" data-xpay-copied-label="' . esc_attr__( 'Copied', 'xpay-for-woocommerce' ) . '">' . esc_html__( 'Copy', 'xpay-for-woocommerce' ) . '</button></div>';
+
+		foreach ( array( 'test', 'live' ) as $mode ) {
+			echo '<div class="xpay-adm__help-body" data-xpay-mode="' . esc_attr( $mode ) . '">';
+			echo '<ol class="xpay-adm__help-steps">';
+			/* translators: %s is the dashboard mode toggle: "Test Mode" or "Live Mode". */
+			echo '<li>' . esc_html( sprintf( __( 'Open your XPay dashboard and switch the toggle at the top to %s.', 'xpay-for-woocommerce' ), 'test' === $mode ? $test : $liv ) ) . '</li>';
+			echo '<li>' . esc_html__( 'In the left sidebar, open Developer hub, then the Webhooks tab, and click Add endpoint.', 'xpay-for-woocommerce' ) . '</li>';
+			echo '<li>' . esc_html__( 'Paste your store\'s address above into the Endpoint URL field.', 'xpay-for-woocommerce' ) . '</li>';
+			echo '<li>' . esc_html__( 'Under "Select events to listen to", tick exactly these two, then click Add endpoint:', 'xpay-for-woocommerce' );
+			echo '<span class="xpay-adm__help-events"><code class="xpay-adm__mono">checkout.session.completed</code><code class="xpay-adm__mono">checkout.session.expired</code></span></li>';
+			echo '<li>' . esc_html__( 'The Webhook signing secret is shown only once, right after the endpoint is created — copy the whsec_… value immediately and paste it into the signing secret field here, then save.', 'xpay-for-woocommerce' ) . '</li>';
+			echo '</ol>';
+			echo '</div>';
+		}
+		echo '<div class="xpay-adm__dialog-foot"><a class="xpay-adm__btn xpay-adm__btn--secondary xpay-adm__btn--sm" href="' . esc_url( XPay_Constants::DASHBOARD_URL ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Open XPay dashboard ↗', 'xpay-for-woocommerce' ) . '</a></div>';
+		echo '</div></div>';
 	}
 
 	/** The guided-activation URL — where every explicit setup intent lands. */
@@ -252,7 +333,9 @@ final class XPay_Settings_Screen {
 
 		// Step 1 — active: the test keys.
 		echo '<div class="xpay-adm__step xpay-adm__step--active">';
-		echo '<div class="xpay-adm__step-head"><span class="xpay-adm__step-no xpay-adm__step-no--active">1</span><span class="xpay-adm__step-title">' . esc_html__( 'Connect your test keys', 'xpay-for-woocommerce' ) . '</span></div>';
+		echo '<div class="xpay-adm__step-head"><span class="xpay-adm__step-no xpay-adm__step-no--active">1</span><span class="xpay-adm__step-title">' . esc_html__( 'Connect your test keys', 'xpay-for-woocommerce' ) . '</span>';
+		self::help_icon( 'keys', __( 'How to get your API keys', 'xpay-for-woocommerce' ) );
+		echo '</div>';
 		echo '<p class="xpay-adm__step-sub">' . esc_html__( 'From your XPay dashboard → Developers → API keys. Test keys never move real money.', 'xpay-for-woocommerce' ) . '</p>';
 		echo '<div class="xpay-adm__grid2 xpay-adm__step-body">';
 		echo '<div><label class="xpay-adm__label" for="xpay-adm-test-key">' . esc_html__( 'Secret key', 'xpay-for-woocommerce' ) . '</label>';
@@ -264,7 +347,9 @@ final class XPay_Settings_Screen {
 		echo '</div>';
 
 		// Steps 2 and 3 — pending.
-		echo '<div class="xpay-adm__step xpay-adm__step--pending"><span class="xpay-adm__step-no">2</span><span class="xpay-adm__step-title xpay-adm__step-title--muted">' . esc_html__( 'Connect the webhook', 'xpay-for-woocommerce' ) . '</span><span class="xpay-adm__step-hint">' . esc_html__( 'Unlocks after your keys validate — one URL to paste, one secret to copy back', 'xpay-for-woocommerce' ) . '</span></div>';
+		echo '<div class="xpay-adm__step xpay-adm__step--pending"><span class="xpay-adm__step-no">2</span><span class="xpay-adm__step-title xpay-adm__step-title--muted">' . esc_html__( 'Connect the webhook', 'xpay-for-woocommerce' ) . '</span>';
+		self::help_icon( 'webhook', __( 'How to set up the webhook', 'xpay-for-woocommerce' ) );
+		echo '<span class="xpay-adm__step-hint">' . esc_html__( 'Unlocks after your keys validate — one URL to paste, one secret to copy back', 'xpay-for-woocommerce' ) . '</span></div>';
 		echo '<div class="xpay-adm__step xpay-adm__step--pending xpay-adm__step--last"><span class="xpay-adm__step-no">3</span><span class="xpay-adm__step-title xpay-adm__step-title--muted">' . esc_html__( 'Place a test payment', 'xpay-for-woocommerce' ) . '</span><span class="xpay-adm__step-hint">' . esc_html__( 'We confirm the whole loop — window, webhook, receipt — end to end', 'xpay-for-woocommerce' ) . '</span></div>';
 
 		echo '</div>';
@@ -370,7 +455,9 @@ final class XPay_Settings_Screen {
 	private static function keys_section( XPay_Gateway $gateway, bool $live ): void {
 		echo '<div class="xpay-adm__section">';
 		echo '<div class="xpay-adm__section-head">';
-		echo '<div><div class="xpay-adm__section-title">' . esc_html__( 'Account & keys', 'xpay-for-woocommerce' ) . '</div>';
+		echo '<div><div class="xpay-adm__section-title">' . esc_html__( 'Account & keys', 'xpay-for-woocommerce' );
+		self::help_icon( 'keys', __( 'How to get your API keys', 'xpay-for-woocommerce' ) );
+		echo '</div>';
 		echo '<div class="xpay-adm__section-sub">' . esc_html__( 'Each mode keeps its own keys — switching never overwrites anything.', 'xpay-for-woocommerce' ) . '</div></div>';
 		self::segment(
 			self::name( $gateway, 'mode' ),
@@ -404,7 +491,9 @@ final class XPay_Settings_Screen {
 
 		echo '<div class="xpay-adm__section">';
 		echo '<div class="xpay-adm__section-head"><div>';
-		echo '<div class="xpay-adm__section-title">' . esc_html__( 'Webhook', 'xpay-for-woocommerce' ) . '</div>';
+		echo '<div class="xpay-adm__section-title">' . esc_html__( 'Webhook', 'xpay-for-woocommerce' );
+		self::help_icon( 'webhook', __( 'How to set up the webhook', 'xpay-for-woocommerce' ) );
+		echo '</div>';
 		echo '<div class="xpay-adm__section-sub">' . esc_html__( 'XPay confirms orders through this endpoint — it is what marks orders paid.', 'xpay-for-woocommerce' ) . '</div>';
 		echo '</div></div>';
 

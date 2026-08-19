@@ -60,6 +60,30 @@
 		root.addEventListener( 'click', function ( event ) {
 			var target = event.target;
 
+			var helpButton = target.closest( '[data-xpay-help]' );
+			if ( helpButton ) {
+				var helpDialog = document.getElementById( 'xpay-help-' + helpButton.getAttribute( 'data-xpay-help' ) );
+				if ( helpDialog ) {
+					helpDialog.hidden = false;
+					var closer = helpDialog.querySelector( '.xpay-adm__dialog-close' );
+					if ( closer ) {
+						closer.focus();
+					}
+				}
+				return;
+			}
+
+			if ( target.classList.contains( 'xpay-adm__dialog-close' ) ) {
+				target.closest( '.xpay-adm__dialog-backdrop' ).hidden = true;
+				return;
+			}
+
+			// A click on the dimmed backdrop itself (not the card) closes.
+			if ( target.classList.contains( 'xpay-adm__dialog-backdrop' ) ) {
+				target.hidden = true;
+				return;
+			}
+
 			if ( target.hasAttribute( 'data-xpay-reveal' ) || target.hasAttribute( 'data-xpay-replace' ) ) {
 				openSecret( target.closest( '[data-xpay-secret]' ), target.hasAttribute( 'data-xpay-replace' ) );
 				target.remove();
@@ -107,6 +131,16 @@
 			var tile = target.closest( '.xpay-adm__tile' );
 			if ( tile ) {
 				tile.classList.toggle( 'is-on', target.checked );
+			}
+		} );
+
+		document.addEventListener( 'keydown', function ( event ) {
+			if ( 'Escape' !== event.key ) {
+				return;
+			}
+			var open = document.querySelector( '.xpay-adm__help-dialog:not([hidden])' );
+			if ( open ) {
+				open.hidden = true;
 			}
 		} );
 	}
