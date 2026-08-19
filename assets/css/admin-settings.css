@@ -643,10 +643,13 @@
 	font-size: 13px;
 }
 
+/* Two deliberate rows: the filter bar, then the actions right-aligned
+   beneath it. Six filter inputs plus three actions can never share one
+   line, and letting flex wrap decide where to break looked ragged. */
 .xpay-adm__toolbar {
-	align-items: center;
+	align-items: stretch;
 	display: flex;
-	flex-wrap: wrap;
+	flex-direction: column;
 	gap: 12px;
 }
 
@@ -669,12 +672,36 @@
 	width: 150px;
 }
 
+.xpay-adm input.xpay-adm__input--grow {
+	flex: 1 1 140px;
+	min-width: 140px;
+	width: auto;
+}
+
+/* Quiet escape hatch on the actions row — a link, not a button, because
+   it removes state rather than applying it. Anchors the row's start while
+   the action buttons anchor its end. */
+.xpay-adm__filters-clear {
+	color: var(--mut);
+	flex: none;
+	font-size: 13px;
+	font-weight: 500;
+	margin-inline-end: auto;
+	padding: 0 4px;
+	text-decoration: none;
+}
+
+.xpay-adm__filters-clear:hover {
+	color: var(--fg);
+	text-decoration: underline;
+}
+
 .xpay-adm__toolbar-actions {
 	align-items: center;
 	display: flex;
 	flex: none;
 	gap: 12px;
-	margin-left: auto;
+	justify-content: flex-end;
 }
 
 .xpay-adm__toolbar-actions form {

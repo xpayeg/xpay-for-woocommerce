@@ -128,6 +128,9 @@ final class XPay_Plugin {
 			// cached option read on admin loads.
 			add_action( 'admin_init', array( 'XPay_Log_Store', 'install' ) );
 			add_action( 'admin_menu', array( 'XPay_Log_Viewer', 'register_menu' ) );
+			// admin-post.php is an is_admin() request, so this wiring lives
+			// here; the handler re-checks capability and nonce itself.
+			add_action( 'admin_post_xpay_log_export', array( 'XPay_Log_Viewer', 'handle_export' ) );
 			add_action( 'admin_enqueue_scripts', array( 'XPay_Settings_Screen', 'enqueue' ) );
 			add_action( 'add_meta_boxes', array( 'XPay_Order_Panel', 'register' ) );
 			add_action( 'admin_notices', array( 'XPay_Method_Gateway', 'render_pin_rejected_notice' ) );

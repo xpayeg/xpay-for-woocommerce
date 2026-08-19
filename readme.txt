@@ -35,7 +35,7 @@ XPay for WooCommerce connects your store to [XPay](https://xpay.app/), the Egypt
 * A guided setup screen in XPay's own dashboard style: three steps on a fresh install, then a status view whose green lights are backed by real checks — validated keys, verified webhooks, an actual paid order.
 * Plays well with others: WPFunnels safeguard built in, script-optimizer opt-outs on the payment scripts, and a warning if the legacy XPay plugin is still active.
 * Redacted diagnostic logging: card numbers, keys and secrets are stripped before anything is written to disk.
-* Built-in log viewer (WooCommerce → XPay Log) with a one-click debug report for support, plus an XPay panel on every order showing its payment events.
+* Built-in log viewer (WooCommerce → XPay Log) with search, date and order filters, a one-click debug report for support and a CSV export — both honoring your filters — plus an XPay panel on every order showing its payment events.
 
 = Requirements =
 

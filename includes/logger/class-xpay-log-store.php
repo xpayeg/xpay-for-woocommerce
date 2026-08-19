@@ -126,15 +126,24 @@ final class XPay_Log_Store {
 	}
 
 	/**
-	 * Newest-first rows for the viewer.
+	 * Newest-first rows for the viewer, the debug report, and the CSV export.
 	 *
-	 * @param array $args { order_id?: int, request_id?: string, stage?: string, limit?: int }.
+	 * Dates are UTC calendar days (the table stores gmdate timestamps and the
+	 * viewer labels its time column UTC): date_from starts at 00:00:00,
+	 * date_to ends at 23:59:59, both inclusive. The caller has already
+	 * validated the Y-m-d shape — this method only binds.
+	 *
+	 * @param array $args { order_id?: int, request_id?: string, stage?: string,
+	 *                      search?: string, date_from?: string, date_to?: string,
+	 *                      limit?: int }.
 	 * @return array<int, array<string, mixed>>
 	 */
 	public static function query( array $args = array() ): array {
 		global $wpdb;
 
-		$limit = isset( $args['limit'] ) ? min( max( (int) $args['limit'], 1 ), 500 ) : 100;
+		// The viewer tails 100; only the explicit CSV export asks for the
+		// full table, and the row cap bounds what that can ever cost.
+		$limit = isset( $args['limit'] ) ? min( max( (int) $args['limit'], 1 ), self::MAX_ROWS ) : 100;
 
 		$where  = array( '1=1' );
 		$values = array();
@@ -151,6 +160,23 @@ final class XPay_Log_Store {
 			$where[]  = 'stage LIKE %s';
 			$values[] = $wpdb->esc_like( (string) $args['stage'] ) . '%';
 		}
+		if ( ! empty( $args['search'] ) ) {
+			// One free-text needle across the two human-readable columns.
+			// Substring match, not prefix: the merchant searches for an order
+			// key or an error word buried mid-JSON.
+			$where[]  = '(message LIKE %s OR context LIKE %s)';
+			$needle   = '%' . $wpdb->esc_like( (string) $args['search'] ) . '%';
+			$values[] = $needle;
+			$values[] = $needle;
+		}
+		if ( ! empty( $args['date_from'] ) ) {
+			$where[]  = 'created_at >= %s';
+			$values[] = $args['date_from'] . ' 00:00:00';
+		}
+		if ( ! empty( $args['date_to'] ) ) {
+			$where[]  = 'created_at <= %s';
+			$values[] = $args['date_to'] . ' 23:59:59';
+		}
 
 		$values[] = $limit;
 
@@ -158,8 +184,10 @@ final class XPay_Log_Store {
 		// every runtime value is placeholder-bound and the table name goes
 		// through %i (WP 6.2+), so the interpolation the sniff sees is static.
 		// The placeholder-count sniff cannot count through implode()+array_merge
-		// either: placeholders and values are built in lockstep above (one push
-		// to $where per push to $values), so the counts match by construction.
+		// either: placeholders and values are built in lockstep above (each
+		// pushed fragment is followed by exactly as many value pushes as the
+		// placeholders it declares — the search fragment declares two), so the
+		// counts match by construction.
 		// Plugin Check's own DirectDB sniff shares the implode() blindness, so
 		// its code is silenced on the same justification.
 		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- custom plugin table, no core API and no cache layer; see fragment notes above.

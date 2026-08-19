@@ -88,7 +88,7 @@ final class XPay_Log_Viewer {
 		}
 
 		self::render_toolbar( $filters );
-		self::render_debug_report();
+		self::render_debug_report( $filters );
 		self::render_rows( $rows );
 
 		echo '</div>';
@@ -108,12 +108,31 @@ final class XPay_Log_Viewer {
 		echo '<input class="xpay-adm__input xpay-adm__input--w110" type="number" name="order_id" value="' . esc_attr( $filters['order_id'] ? (string) $filters['order_id'] : '' ) . '" placeholder="' . esc_attr__( 'Order #', 'xpay-for-woocommerce' ) . '" aria-label="' . esc_attr__( 'Order #', 'xpay-for-woocommerce' ) . '">';
 		echo '<input class="xpay-adm__input xpay-adm__input--w150 xpay-adm__mono" type="text" name="request_id" value="' . esc_attr( $filters['request_id'] ) . '" placeholder="' . esc_attr__( 'Request id', 'xpay-for-woocommerce' ) . '" aria-label="' . esc_attr__( 'Request id', 'xpay-for-woocommerce' ) . '">';
 		echo '<input class="xpay-adm__input xpay-adm__input--w150 xpay-adm__mono" type="text" name="stage" value="' . esc_attr( $filters['stage'] ) . '" placeholder="webhook." aria-label="' . esc_attr__( 'Stage starts with', 'xpay-for-woocommerce' ) . '">';
+		echo '<input class="xpay-adm__input xpay-adm__input--grow" type="search" name="s" value="' . esc_attr( $filters['search'] ) . '" placeholder="' . esc_attr__( 'Search', 'xpay-for-woocommerce' ) . '" aria-label="' . esc_attr__( 'Search messages and details', 'xpay-for-woocommerce' ) . '">';
+		// The table's time column is UTC; the date bounds mean the same days.
+		echo '<input class="xpay-adm__input xpay-adm__input--w150" type="date" name="date_from" value="' . esc_attr( $filters['date_from'] ) . '" title="' . esc_attr__( 'From date (UTC)', 'xpay-for-woocommerce' ) . '" aria-label="' . esc_attr__( 'From date (UTC)', 'xpay-for-woocommerce' ) . '">';
+		echo '<input class="xpay-adm__input xpay-adm__input--w150" type="date" name="date_to" value="' . esc_attr( $filters['date_to'] ) . '" title="' . esc_attr__( 'To date (UTC)', 'xpay-for-woocommerce' ) . '" aria-label="' . esc_attr__( 'To date (UTC)', 'xpay-for-woocommerce' ) . '">';
 		echo '<button type="submit" class="xpay-adm__btn xpay-adm__btn--secondary">' . esc_html__( 'Filter', 'xpay-for-woocommerce' ) . '</button>';
 		echo '</form>';
 
-		// Actions: copy (no form) and clear (its own POST form).
+		// Actions row: "Clear filters" anchors the start (only while filters
+		// are active), the copy / export / clear controls anchor the end.
 		echo '<div class="xpay-adm__toolbar-actions">';
+		if ( self::has_filters( $filters ) ) {
+			echo '<a class="xpay-adm__filters-clear" href="' . esc_url( admin_url( 'admin.php?page=xpay-log' ) ) . '">' . esc_html__( 'Clear filters', 'xpay-for-woocommerce' ) . '</a>';
+		}
 		echo '<button type="button" class="xpay-adm__btn" id="xpay-copy-report" data-copied="' . esc_attr__( 'Copied — paste it into your support ticket', 'xpay-for-woocommerce' ) . '">' . esc_html__( 'Copy debug report', 'xpay-for-woocommerce' ) . '</button>';
+		echo '<form method="get" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="xpay-adm__export">';
+		echo '<input type="hidden" name="action" value="xpay_log_export">';
+		wp_nonce_field( 'xpay-log-export' );
+		foreach ( array( 'order_id', 'request_id', 'stage', 'search', 'date_from', 'date_to' ) as $field ) {
+			$value = 'order_id' === $field ? ( $filters['order_id'] ? (string) $filters['order_id'] : '' ) : $filters[ $field ];
+			if ( '' !== $value ) {
+				echo '<input type="hidden" name="' . esc_attr( 'search' === $field ? 's' : $field ) . '" value="' . esc_attr( $value ) . '">';
+			}
+		}
+		echo '<button type="submit" class="xpay-adm__btn xpay-adm__btn--secondary">' . esc_html__( 'Export CSV', 'xpay-for-woocommerce' ) . '</button>';
+		echo '</form>';
 		echo '<form method="post" class="xpay-adm__clear" onsubmit="return window.confirm(this.dataset.msg)" data-msg="' . esc_attr__( 'Delete all XPay log entries? This cannot be undone.', 'xpay-for-woocommerce' ) . '">';
 		wp_nonce_field( 'xpay-log-clear' );
 		echo '<input type="hidden" name="xpay_log_action" value="clear">';
@@ -124,8 +143,8 @@ final class XPay_Log_Viewer {
 		echo '</div>';
 	}
 
-	private static function render_debug_report(): void {
-		echo '<textarea id="xpay-debug-report" class="xpay-adm__report xpay-adm__mono" readonly rows="4">' . esc_textarea( self::build_debug_report() ) . '</textarea>';
+	private static function render_debug_report( array $filters ): void {
+		echo '<textarea id="xpay-debug-report" class="xpay-adm__report xpay-adm__mono" readonly rows="4">' . esc_textarea( self::build_debug_report( $filters ) ) . '</textarea>';
 	}
 
 	private static function render_rows( array $rows ): void {
@@ -181,35 +200,77 @@ final class XPay_Log_Viewer {
 		echo '<div class="notice notice-success"><p>' . esc_html__( 'XPay log cleared.', 'xpay-for-woocommerce' ) . '</p></div>';
 	}
 
-	/** @return array{order_id:int, request_id:string, stage:string} */
+	/** @return array{order_id:int, request_id:string, stage:string, search:string, date_from:string, date_to:string} */
 	private static function read_filters(): array {
-		$empty = array(
-			'order_id'   => 0,
-			'request_id' => '',
-			'stage'      => '',
-		);
 		// Read-only filters still carry a nonce (set by the filter form) so
 		// the whole screen has zero unverified request reads.
 		if ( ! isset( $_GET['_xpaynonce'] ) || ! wp_verify_nonce( sanitize_key( wp_unslash( $_GET['_xpaynonce'] ) ), 'xpay-log-filter' ) ) {
-			return $empty;
+			return array(
+				'order_id'   => 0,
+				'request_id' => '',
+				'stage'      => '',
+				'search'     => '',
+				'date_from'  => '',
+				'date_to'    => '',
+			);
 		}
+		return self::sanitize_filters();
+	}
+
+	/**
+	 * Pure sanitization of the filter query args — shared by the screen
+	 * (after its filter nonce) and the CSV export (after its export nonce).
+	 * Every caller has ALREADY verified a nonce; this reads values only.
+	 */
+	private static function sanitize_filters(): array {
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- both callers verified their action's nonce before calling.
 		return array(
 			'order_id'   => isset( $_GET['order_id'] ) ? absint( $_GET['order_id'] ) : 0,
 			'request_id' => isset( $_GET['request_id'] ) ? sanitize_text_field( wp_unslash( $_GET['request_id'] ) ) : '',
 			'stage'      => isset( $_GET['stage'] ) ? sanitize_text_field( wp_unslash( $_GET['stage'] ) ) : '',
+			'search'     => isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '',
+			'date_from'  => isset( $_GET['date_from'] ) ? self::sanitize_date( sanitize_text_field( wp_unslash( $_GET['date_from'] ) ) ) : '',
+			'date_to'    => isset( $_GET['date_to'] ) ? self::sanitize_date( sanitize_text_field( wp_unslash( $_GET['date_to'] ) ) ) : '',
 		);
+		// phpcs:enable
+	}
+
+	/** A real calendar date in Y-m-d, or ''. Hand-edited URLs get '' — never a string MySQL has to guess about. */
+	private static function sanitize_date( string $value ): string {
+		if ( ! preg_match( '/^(\d{4})-(\d{2})-(\d{2})$/', $value, $m ) || ! checkdate( (int) $m[2], (int) $m[3], (int) $m[1] ) ) {
+			return '';
+		}
+		return $value;
+	}
+
+	private static function has_filters( array $filters ): bool {
+		return $filters['order_id'] > 0
+			|| '' !== $filters['request_id']
+			|| '' !== $filters['stage']
+			|| '' !== $filters['search']
+			|| '' !== $filters['date_from']
+			|| '' !== $filters['date_to'];
 	}
 
 	/**
 	 * The paste-into-a-ticket bundle: environment, redacted gateway config,
 	 * and the recent tail. Plain text on purpose — it must survive email,
-	 * Slack, and ticket systems without mangling.
+	 * Slack, and ticket systems without mangling. Deliberately untranslated:
+	 * it is read by XPay support, and a fixed format is what they grep.
+	 *
+	 * The tail honors the screen's active filters, so "filter to the broken
+	 * order, copy, paste" sends support exactly the story in question —
+	 * with a filter line saying so, because a report that silently omits
+	 * rows reads as "nothing else happened".
+	 *
+	 * @param array $filters The screen's active filters (read_filters shape).
 	 */
-	public static function build_debug_report(): string {
+	public static function build_debug_report( array $filters = array() ): string {
 		global $wp_version;
 
 		$gateway  = XPay_Plugin::instance()->gateway();
 		$settings = XPay_Redactor::redact( get_option( 'woocommerce_' . XPay_Constants::GATEWAY_ID . '_settings', array() ) );
+		$filtered = array() !== $filters && self::has_filters( $filters );
 
 		$lines   = array();
 		$lines[] = '=== XPay for WooCommerce debug report ===';
@@ -219,9 +280,10 @@ final class XPay_Log_Viewer {
 		$lines[] = 'mode: ' . ( $gateway->is_test_mode() ? 'test' : 'live' ) . ' | gateway_enabled: ' . $gateway->get_option( 'enabled' ) . ' | needs_setup: ' . ( $gateway->needs_setup() ? 'yes' : 'no' );
 		$lines[] = 'webhook_url: ' . home_url( '/?wc-api=' . XPay_Constants::WEBHOOK_ENDPOINT );
 		$lines[] = 'settings: ' . wp_json_encode( $settings );
-		$lines[] = '--- last ' . self::REPORT_ROWS . ' log entries (newest first, redacted at write time) ---';
+		$lines[] = 'log_filter: ' . ( $filtered ? self::describe_filters( $filters ) : 'none (latest entries)' );
+		$lines[] = '--- last ' . self::REPORT_ROWS . ' log entries' . ( $filtered ? ' matching the filter' : '' ) . ' (newest first, redacted at write time) ---';
 
-		foreach ( XPay_Log_Store::query( array( 'limit' => self::REPORT_ROWS ) ) as $row ) {
+		foreach ( XPay_Log_Store::query( array_merge( $filters, array( 'limit' => self::REPORT_ROWS ) ) ) as $row ) {
 			$lines[] = sprintf(
 				'[%s] [%s] %s%s%s %s',
 				$row['created_at'],
@@ -236,5 +298,86 @@ final class XPay_Log_Viewer {
 		}
 
 		return implode( "\n", $lines );
+	}
+
+	/** One-line untranslated summary of active filters for the debug report. */
+	private static function describe_filters( array $filters ): string {
+		$parts = array();
+		if ( $filters['order_id'] > 0 ) {
+			$parts[] = 'order=' . $filters['order_id'];
+		}
+		if ( '' !== $filters['request_id'] ) {
+			$parts[] = 'request=' . $filters['request_id'];
+		}
+		if ( '' !== $filters['stage'] ) {
+			$parts[] = 'stage=' . $filters['stage'] . '*';
+		}
+		if ( '' !== $filters['search'] ) {
+			$parts[] = 'search="' . $filters['search'] . '"';
+		}
+		if ( '' !== $filters['date_from'] ) {
+			$parts[] = 'from=' . $filters['date_from'];
+		}
+		if ( '' !== $filters['date_to'] ) {
+			$parts[] = 'to=' . $filters['date_to'];
+		}
+		return implode( ' ', $parts );
+	}
+
+	/* ── CSV export ──────────────────────────────────────────────────── */
+
+	/**
+	 * Stream the filtered rows as CSV (admin-post.php?action=xpay_log_export).
+	 * Runs before any admin output, so headers are still ours to send. The
+	 * export honors the same filters as the screen — the hidden fields in the
+	 * export form carry them — and spans the whole retained table, not just
+	 * the 100-row tail. Rows were redacted at write time; the cell guard
+	 * below only defuses spreadsheet formula injection.
+	 */
+	public static function handle_export(): void {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_die( esc_html__( 'You are not allowed to export the XPay log.', 'xpay-for-woocommerce' ), '', array( 'response' => 403 ) );
+		}
+		check_admin_referer( 'xpay-log-export' );
+
+		$rows = XPay_Log_Store::query( array_merge( self::sanitize_filters(), array( 'limit' => XPay_Log_Store::MAX_ROWS ) ) );
+
+		nocache_headers();
+		header( 'Content-Type: text/csv; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="xpay-log-' . gmdate( 'Ymd-His' ) . '.csv"' );
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- streaming CSV to the response body; WP_Filesystem writes files, it cannot stream php://output.
+		$out = fopen( 'php://output', 'w' );
+		fputcsv( $out, array( 'time_utc', 'request_id', 'stage', 'order_id', 'message', 'context' ) );
+		foreach ( $rows as $row ) {
+			$cells = array(
+				(string) $row['created_at'],
+				(string) $row['request_id'],
+				(string) $row['stage'],
+				! empty( $row['order_id'] ) ? (string) (int) $row['order_id'] : '',
+				(string) $row['message'],
+				(string) $row['context'],
+			);
+			fputcsv( $out, array_map( array( __CLASS__, 'csv_cell' ), $cells ) );
+		}
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- closes the php://output stream opened above.
+		fclose( $out );
+		exit;
+	}
+
+	/**
+	 * Defuse spreadsheet formula injection: log text can contain
+	 * attacker-influenced strings (API error bodies, webhook payload
+	 * fragments), and Excel/Sheets execute cells starting with = + - @ or a
+	 * tab. A leading apostrophe makes the cell inert text; honest data
+	 * starting with those characters survives, just displayed as text.
+	 *
+	 * @param string $cell Raw cell value.
+	 */
+	private static function csv_cell( string $cell ): string {
+		if ( '' !== $cell && strpbrk( $cell[0], "=+-@\t\r" ) !== false ) {
+			return "'" . $cell;
+		}
+		return $cell;
 	}
 }
