@@ -94,6 +94,7 @@ In your XPay dashboard → **Developers → Webhooks**, add an endpoint pointing
 - **Options:**
   - **One XPay option for all methods** — a single "XPay" choice at checkout; the customer picks their method inside the payment window.
   - **A separate option per payment method** — dedicated Card / valU / Fawry rows, each with its logo. The payment window opens directly on the method the shopper picked.
+  - **valU and phone numbers:** valU accounts are tied to a registered phone number, so the valU row's payment window shows a phone field — prefilled with the order's billing phone and still editable, in case the shopper's valU account uses a different number. (In combined mode the billing phone is passed to XPay behind the scenes instead; the field only appears on the dedicated valU row.)
 
 ### Card / valU / Fawry checkboxes
 

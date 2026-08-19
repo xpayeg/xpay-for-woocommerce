@@ -172,6 +172,19 @@ class XPay_Checkout_Service {
 
 		if ( null !== $pinned_types && array() !== $pinned_types ) {
 			$body['paymentMethodTypes'] = array_values( $pinned_types );
+
+			// valU pays with the shopper's registered wallet phone, so the
+			// valU row asks the payment window to SHOW the phone field: it
+			// arrives prefilled with the order's billing phone (sent in
+			// customerDetails below) and stays editable, instead of the
+			// platform default of charging with the carried phone invisibly
+			// — where a mistyped WooCommerce phone would be uncorrectable.
+			// The flag is session-wide, not per-method, which is why the
+			// combined session deliberately doesn't set it: it would make
+			// phone a required field for card shoppers too.
+			if ( array( XPay_Payment_Methods::VALU ) === $body['paymentMethodTypes'] ) {
+				$body['phoneNumberCollection'] = true;
+			}
 		}
 
 		$body = $this->apply_customer_fields( $body, $order );
@@ -193,7 +206,9 @@ class XPay_Checkout_Service {
 			// as a fingerprint mismatch.
 			if ( isset( $body['paymentMethodTypes'] ) && XPay_Error_Codes::API_PARAMETER_INVALID === $e->get_error_code() && 'paymentMethodTypes' === $e->get_param() ) {
 				$this->record_pin_rejection( $order, $body['paymentMethodTypes'] );
-				unset( $body['paymentMethodTypes'] );
+				// The phone-collection flag rode on the valU pin; the
+				// unpinned fallback session must not keep it.
+				unset( $body['paymentMethodTypes'], $body['phoneNumberCollection'] );
 				$pin     = '';
 				$session = $this->client->create_checkout_session( $body, sprintf( 'wc_%d_a%dp', $order->get_id(), $attempt ) );
 			} elseif ( isset( $body['customerId'] ) && XPay_Error_Codes::API_RESOURCE_MISSING === $e->get_error_code() ) {
