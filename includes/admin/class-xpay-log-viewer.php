@@ -148,6 +148,9 @@ final class XPay_Log_Viewer {
 	}
 
 	private static function render_rows( array $rows ): void {
+		// The wrapper scrolls sideways on narrow screens; without it the
+		// details column gets crushed to a one-character sliver.
+		echo '<div class="xpay-adm__tablewrap">';
 		echo '<table class="xpay-adm__table"><thead><tr>';
 		echo '<th style="width:150px">' . esc_html__( 'Time (UTC)', 'xpay-for-woocommerce' ) . '</th>';
 		echo '<th style="width:110px">' . esc_html__( 'Request', 'xpay-for-woocommerce' ) . '</th>';
@@ -184,6 +187,7 @@ final class XPay_Log_Viewer {
 			echo '</tr>';
 		}
 		echo '</tbody></table>';
+		echo '</div>';
 	}
 
 	/* ── Actions & data ──────────────────────────────────────────────── */

@@ -321,6 +321,19 @@ class XPay_Gateway extends WC_Payment_Gateway {
 	 * mode holds both keys, so checkout can actually charge.
 	 */
 
+	/**
+	 * Where WooCommerce's "Complete setup" button lands (PaymentsProviders
+	 * probes for this method by name when building the row's onboarding
+	 * link). Setup intent is explicit there, so it goes straight to the
+	 * guided steps — skipping the welcome landing the settings screen
+	 * greets a fresh install with.
+	 *
+	 * @param string $return_url Unused — setup happens entirely on our screen.
+	 */
+	public function get_connection_url( string $return_url = '' ): string {
+		return add_query_arg( 'xpay-setup', '1', admin_url( 'admin.php?page=wc-settings&tab=checkout&section=' . $this->id ) );
+	}
+
 	/** A processor account is "connected" when the active mode can charge. */
 	public function is_account_connected(): bool {
 		return ! $this->needs_setup();

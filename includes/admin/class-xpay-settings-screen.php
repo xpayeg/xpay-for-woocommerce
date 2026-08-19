@@ -69,10 +69,21 @@ final class XPay_Settings_Screen {
 		$fresh = '' === $gateway->get_option( 'test_api_key', '' ) && '' === $gateway->get_option( 'live_api_key', '' );
 		$live  = 'live' === $gateway->get_option( 'mode', 'test' );
 
+		// A fresh install greets the merchant with the welcome landing;
+		// any explicit setup intent — the welcome's own Activate button or
+		// the Payments page's "Complete setup" — carries ?xpay-setup and
+		// goes straight to the guided steps. Presence-only read of a view
+		// switch: nothing from the request is echoed and no state changes,
+		// so there is no nonce to verify.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$welcome = $fresh && ! isset( $_GET['xpay-setup'] );
+
 		echo '<div class="xpay-adm' . ( $live ? ' xpay-adm--live' : '' ) . '">';
-		self::header_band( $gateway, $fresh, $live );
+		self::header_band( $gateway, $fresh, $live, $welcome );
 		echo '<div class="xpay-adm__card">';
-		if ( $fresh ) {
+		if ( $welcome ) {
+			self::welcome( $gateway );
+		} elseif ( $fresh ) {
 			self::activation( $gateway );
 		} else {
 			self::configured( $gateway, $live );
@@ -81,17 +92,31 @@ final class XPay_Settings_Screen {
 		echo '</div>';
 	}
 
+	/** The guided-activation URL — where every explicit setup intent lands. */
+	private static function setup_url(): string {
+		return add_query_arg( 'xpay-setup', '1', admin_url( 'admin.php?page=wc-settings&tab=checkout&section=' . XPay_Constants::GATEWAY_ID ) );
+	}
+
 	/* ── Header band ─────────────────────────────────────────────────── */
 
 	/**
 	 * @param XPay_Gateway $gateway Gateway.
 	 * @param bool         $fresh   Fresh-install state.
 	 * @param bool         $live    Live mode selected.
+	 * @param bool         $welcome Welcome landing (fresh, no setup intent yet).
 	 */
-	private static function header_band( XPay_Gateway $gateway, bool $fresh, bool $live ): void {
+	private static function header_band( XPay_Gateway $gateway, bool $fresh, bool $live, bool $welcome = false ): void {
 		echo '<div class="xpay-adm__band">';
 		echo '<span class="xpay-adm__wordmark-pill"><img src="' . esc_url( XPAY_WC_PLUGIN_URL . 'assets/images/xpay-wordmark.svg' ) . '" alt="XPay"></span>';
-		echo '<span class="xpay-adm__band-title">' . esc_html( $fresh ? __( 'Set up XPay', 'xpay-for-woocommerce' ) : __( 'XPay for WooCommerce', 'xpay-for-woocommerce' ) ) . '</span>';
+		echo '<span class="xpay-adm__band-title">' . esc_html( $fresh && ! $welcome ? __( 'Set up XPay', 'xpay-for-woocommerce' ) : __( 'XPay for WooCommerce', 'xpay-for-woocommerce' ) ) . '</span>';
+
+		if ( $welcome ) {
+			// The landing carries its own promise; the band stays a calm
+			// masthead with the one useful outbound link.
+			echo '<a class="xpay-adm__band-btn" href="' . esc_url( XPay_Constants::DASHBOARD_URL ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Open XPay dashboard ↗', 'xpay-for-woocommerce' ) . '</a>';
+			echo '</div>';
+			return;
+		}
 
 		if ( $fresh ) {
 			echo '<span class="xpay-adm__badge xpay-adm__badge--amber">' . esc_html__( 'Not connected', 'xpay-for-woocommerce' ) . '</span>';
@@ -105,6 +130,115 @@ final class XPay_Settings_Screen {
 			}
 			echo '<a class="xpay-adm__band-btn" href="' . esc_url( XPay_Constants::DASHBOARD_URL ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Open XPay dashboard ↗', 'xpay-for-woocommerce' ) . '</a>';
 		}
+		echo '</div>';
+	}
+
+	/* ── Fresh install: welcome landing ──────────────────────────────── */
+
+	/**
+	 * The first thing a merchant sees after installing — what XPay is and
+	 * why to connect it, before any field asks for anything. Modeled on the
+	 * flagship providers' welcome pages, in XPay's own design language.
+	 * The Activate button (and the Payments page's "Complete setup") go
+	 * straight to the guided steps; this page is only the front door.
+	 *
+	 * @param XPay_Gateway $gateway Gateway.
+	 */
+	private static function welcome( XPay_Gateway $gateway ): void {
+		echo '<div class="xpay-adm__welcome">';
+
+		// The official two-tone mark, inline so it needs no extra request.
+		echo '<svg class="xpay-adm__welcome-mark" viewBox="0 0 342.5 207.5" role="img" aria-label="XPay">';
+		echo '<path d="M96 0H28.4L136 103.8l35.3-33.1L96 0zM28.4 207.5h70.8l72.1-69.6-35.3-34.1L28.4 207.5zM0 85.7h56.9v37.9H0z" fill="#413df6"></path>';
+		echo '<path d="M314.1 0h-67.6l-75.2 70.7-35.3 33.1 35.3 34.1 72 69.6h70.8L206.5 103.8 314.1 0z" fill="#3eb8eb"></path>';
+		echo '<path d="M285.7 85.7h56.9v37.9h-56.9z" fill="#3eb8eb"></path>';
+		echo '</svg>';
+
+		echo '<h2 class="xpay-adm__welcome-title">' . esc_html__( 'Accept payments in Egypt, on your own store', 'xpay-for-woocommerce' ) . '</h2>';
+		echo '<p class="xpay-adm__welcome-sub">' . esc_html__( 'Cards, valU and Fawry open in a secure XPay window over your checkout — shoppers never leave your site, and orders are confirmed only by signed webhooks.', 'xpay-for-woocommerce' ) . '</p>';
+
+		// Capability strip.
+		$methods = implode(
+			' · ',
+			array(
+				XPay_Payment_Methods::label( XPay_Payment_Methods::CARD ),
+				XPay_Payment_Methods::label( XPay_Payment_Methods::VALU ),
+				XPay_Payment_Methods::label( XPay_Payment_Methods::FAWRY ),
+			)
+		);
+		echo '<div class="xpay-adm__welcome-caps">';
+		echo '<div class="xpay-adm__welcome-cap"><span class="xpay-adm__welcome-cap-label xpay-adm__mono">' . esc_html__( 'Payment methods', 'xpay-for-woocommerce' ) . '</span><span class="xpay-adm__welcome-cap-value">' . esc_html( $methods ) . '</span></div>';
+		echo '<div class="xpay-adm__welcome-cap"><span class="xpay-adm__welcome-cap-label xpay-adm__mono">' . esc_html__( 'Refunds', 'xpay-for-woocommerce' ) . '</span><span class="xpay-adm__welcome-cap-value">' . esc_html__( 'Full & partial, in WooCommerce', 'xpay-for-woocommerce' ) . '</span></div>';
+		echo '<div class="xpay-adm__welcome-cap"><span class="xpay-adm__welcome-cap-label xpay-adm__mono">' . esc_html__( 'Languages', 'xpay-for-woocommerce' ) . '</span><span class="xpay-adm__welcome-cap-value">' . esc_html__( 'Arabic & English, RTL ready', 'xpay-for-woocommerce' ) . '</span></div>';
+		echo '</div>';
+
+		// Method artwork (the same licensed assets the checkout rows use;
+		// Fawry stays a text chip until design ships the official mark).
+		echo '<div class="xpay-adm__welcome-art">';
+		echo '<img src="' . esc_url( XPAY_WC_PLUGIN_URL . 'assets/images/card-networks.svg' ) . '" alt="' . esc_attr__( 'Visa, Mastercard, Meeza', 'xpay-for-woocommerce' ) . '">';
+		echo '<img class="xpay-adm__welcome-art-valu" src="' . esc_url( XPAY_WC_PLUGIN_URL . 'assets/images/valu.svg' ) . '" alt="valU">';
+		echo '<span class="xpay-adm__welcome-chip">' . esc_html( XPay_Payment_Methods::label( XPay_Payment_Methods::FAWRY ) ) . '</span>';
+		echo '</div>';
+
+		// The one call to action — straight to the guided steps.
+		echo '<a class="xpay-adm__btn xpay-adm__btn--hero" href="' . esc_url( self::setup_url() ) . '">' . esc_html__( 'Activate XPay', 'xpay-for-woocommerce' ) . '</a>';
+		echo '<p class="xpay-adm__welcome-note">' . esc_html__( 'Three steps · about five minutes', 'xpay-for-woocommerce' ) . '</p>';
+		echo '<p class="xpay-adm__welcome-signup">' . esc_html__( 'New to XPay?', 'xpay-for-woocommerce' ) . ' <a href="https://xpay.app/" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Create your merchant account →', 'xpay-for-woocommerce' ) . '</a></p>';
+
+		echo '<div class="xpay-adm__welcome-divider"></div>';
+
+		echo '<div class="xpay-adm__welcome-info">';
+		echo '<div>';
+		echo '<h3 class="xpay-adm__welcome-h">' . esc_html__( 'How it works', 'xpay-for-woocommerce' ) . '</h3>';
+		echo '<p class="xpay-adm__welcome-how"><span>1.</span>' . esc_html__( 'The shopper clicks Place order and the XPay window opens over your own payment page.', 'xpay-for-woocommerce' ) . '</p>';
+		echo '<p class="xpay-adm__welcome-how"><span>2.</span>' . esc_html__( 'Card details are entered inside XPay\'s PCI-certified window — they never touch your server.', 'xpay-for-woocommerce' ) . '</p>';
+		echo '<p class="xpay-adm__welcome-how"><span>3.</span>' . esc_html__( 'A cryptographically signed webhook marks the order paid, and the receipt is stamped PAID.', 'xpay-for-woocommerce' ) . '</p>';
+		echo '</div>';
+		echo '<div>';
+		echo '<h3 class="xpay-adm__welcome-h">' . esc_html__( 'Docs & help', 'xpay-for-woocommerce' ) . '</h3>';
+		self::welcome_doc_row( 'docs/GETTING_STARTED.md', __( 'Getting started guide', 'xpay-for-woocommerce' ), 'xpay-adm__welcome-doc--first' );
+		self::welcome_doc_row( 'docs/CONFIGURATION.md', __( 'Configuration reference', 'xpay-for-woocommerce' ), '' );
+		self::welcome_doc_row( 'docs/TROUBLESHOOTING.md', __( 'Troubleshooting', 'xpay-for-woocommerce' ), 'xpay-adm__welcome-doc--last' );
+		echo '</div>';
+		echo '</div>';
+
+		echo '<p class="xpay-adm__trust">' . esc_html__( 'Nothing goes live until you switch the mode yourself. Card details never touch your server.', 'xpay-for-woocommerce' ) . '</p>';
+		echo '</div>';
+
+		// No visible controls, but the page still sits inside WooCommerce's
+		// settings form — carry every field so no conceivable submit of
+		// this view could erase saved values. Unlike activation, 'enabled'
+		// is carried as-is: reading a welcome page enables nothing.
+		self::hidden_field( $gateway, 'enabled' );
+		self::hidden_field( $gateway, 'mode' );
+		self::hidden_field( $gateway, 'title' );
+		self::hidden_field( $gateway, 'description' );
+		self::hidden_field( $gateway, 'display_mode' );
+		self::hidden_checkbox( $gateway, 'split_card' );
+		self::hidden_checkbox( $gateway, 'split_valu' );
+		self::hidden_checkbox( $gateway, 'split_fawry' );
+		self::hidden_field( $gateway, 'test_api_key' );
+		self::hidden_field( $gateway, 'test_publishable_key' );
+		self::hidden_field( $gateway, 'test_webhook_secret' );
+		self::hidden_field( $gateway, 'live_api_key' );
+		self::hidden_field( $gateway, 'live_publishable_key' );
+		self::hidden_field( $gateway, 'live_webhook_secret' );
+		self::hidden_checkbox( $gateway, 'wpfunnels_force_standard_redirect' );
+		self::hidden_checkbox( $gateway, 'debug' );
+	}
+
+	/**
+	 * One joined row in the welcome's docs list. The guides ship inside the
+	 * plugin, so the links open the bundled files themselves — no external
+	 * docs site to go stale.
+	 *
+	 * @param string $rel_path Doc path relative to the plugin root.
+	 * @param string $label    Translated link text.
+	 * @param string $classes  Extra row classes (first/last radii).
+	 */
+	private static function welcome_doc_row( string $rel_path, string $label, string $classes ): void {
+		echo '<div class="xpay-adm__welcome-doc ' . esc_attr( $classes ) . '">';
+		echo '<a href="' . esc_url( XPAY_WC_PLUGIN_URL . $rel_path ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $label ) . '</a>';
 		echo '</div>';
 	}
 

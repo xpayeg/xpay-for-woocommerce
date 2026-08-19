@@ -89,7 +89,7 @@ Nothing breaks, but shoppers see two separate XPay options at checkout, and the 
 * New on-site payment window (drop-in modal) with automatic hosted-page fallback, on a branded pay page that follows your XPay dashboard's merchant color.
 * Optional separate checkout options per method (Card, valU, Fawry), each with its logo — managed as one XPay row in your payments settings.
 * The valU option prefills the shopper's phone number from the order and keeps it editable in the payment window.
-* A guided three-step setup screen in XPay's dashboard style, and a Payments-page row that shows the XPay logo with a "Complete setup" button until your keys are in place.
+* A welcome page introduces XPay on first install, then a guided three-step setup in XPay's dashboard style; the Payments-page row shows the XPay logo with a "Complete setup" button that jumps straight to setup until your keys are in place.
 * Order confirmation redesigned as the pay page's receipt, stamped PAID or "Confirming payment" — the page never claims more than the money has done.
 * Full Arabic translation with right-to-left receipt layout, alongside English.
 * Cart/Checkout Blocks support and HPOS compatibility declared from this release.

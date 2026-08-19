@@ -52,24 +52,15 @@ You'll create the live key set (`rk_live_…`, `pk_live_…`) later when going l
 
 ## 4. Configure the gateway
 
-WP Admin → **WooCommerce → Settings → Payments → XPay → Manage**.
+WP Admin → **WooCommerce → Settings → Payments** — find the **XPay** row and click **Complete setup**. (Opening XPay's settings any other way on a fresh install shows a welcome page introducing the plugin first — its **Activate XPay** button lands in the same place.)
 
-Fill in the settings:
+You arrive at XPay's guided setup — three steps on one screen:
 
-| Setting | Value |
-|---|---|
-| Enable/Disable | **Checked** |
-| Title | `XPay` (or whatever you want shown to customers at checkout) |
-| Description | One sentence under the payment method name |
-| Mode | **Test** |
-| Test secret key | Your `rk_test_…` key |
-| Test publishable key | Your `pk_test_…` key |
-| Test webhook signing secret | Leave empty for now — you'll get it in step 5 |
-| Payment options | **One XPay option for all methods** (you can try separate Card/valU/Fawry options later) |
-| Confirmation page (WPFunnels) | Off (only relevant if you use WPFunnels — see [COMPATIBILITY.md](COMPATIBILITY.md)) |
-| Diagnostic logging | On, while you set things up — it records every step, redacted, viewable under WooCommerce → XPay Log |
+1. **Connect your test keys.** Paste your `rk_test_…` secret key and `pk_test_…` publishable key and click **Validate & save keys**. The plugin validates the key with a real API call — the header badge flips to **Connected — Test mode**. If you instead see an error about a missing key, a key/mode mismatch, or a key that did not validate, fix that before continuing: XPay stays hidden at checkout until a valid key set is saved. Saving this step also enables the gateway — there is no separate on/off checkbox to remember.
+2. **Connect the webhook** — the next section of this guide walks through it.
+3. **Place a test payment** — section 6.
 
-Click **Save changes**. The plugin validates the key with a real API call — you should see **"XPay connected (test mode)."** If you instead see an error about a missing key, a key/mode mismatch, or a key that did not validate, fix that before continuing: XPay stays hidden at checkout until a valid key set is saved.
+Once your keys are in, the same screen becomes the management view: status rows for connection, webhook health and latest payment (each backed by a real check, never painted green on hope), plus every other setting — title, description, payment options, diagnostic logging. Turn **Diagnostic logging** on while you set things up: it records every step, redacted, viewable under WooCommerce → XPay Log.
 
 For the full reference of every setting, see [CONFIGURATION.md](CONFIGURATION.md).
 

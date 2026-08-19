@@ -10,7 +10,7 @@ msgstr ""
 
 #. Plugin Name of the plugin
 #: xpay-for-woocommerce.php
-#: includes/admin/class-xpay-settings-screen.php:94
+#: includes/admin/class-xpay-settings-screen.php:111
 msgid "XPay for WooCommerce"
 msgstr "XPay لـ WooCommerce"
 
@@ -89,7 +89,7 @@ msgstr "إلى تاريخ (UTC)"
 msgid "Filter"
 msgstr "تصفية"
 
-#: includes/admin/class-xpay-log-viewer.php:117
+#: includes/admin/class-xpay-log-viewer.php:122
 msgid "Clear filters"
 msgstr "مسح عوامل التصفية"
 
@@ -175,286 +175,365 @@ msgstr "لا توجد إدخالات سجل لهذا الطلب. فعِّل ال
 msgid "View full log for this order"
 msgstr "عرض السجل الكامل لهذا الطلب"
 
-#: includes/admin/class-xpay-settings-screen.php:94
+#: includes/admin/class-xpay-settings-screen.php:111
 msgid "Set up XPay"
 msgstr "إعداد XPay"
 
-#: includes/admin/class-xpay-settings-screen.php:97
-msgid "Not connected"
-msgstr "غير متصل"
-
-#: includes/admin/class-xpay-settings-screen.php:98
-msgid "Three steps · about five minutes"
-msgstr "ثلاث خطوات · نحو خمس دقائق"
-
-#: includes/admin/class-xpay-settings-screen.php:102
-msgid "Connected — Live mode"
-msgstr "متصل — الوضع المباشر"
-
-#: includes/admin/class-xpay-settings-screen.php:102
-msgid "Connected — Test mode"
-msgstr "متصل — وضع الاختبار"
-
-#: includes/admin/class-xpay-settings-screen.php:104
-msgid "Live mode — keys not validated yet"
-msgstr "الوضع المباشر — لم يتم التحقق من المفاتيح بعد"
-
-#: includes/admin/class-xpay-settings-screen.php:104
-msgid "Test mode — keys not validated yet"
-msgstr "وضع الاختبار — لم يتم التحقق من المفاتيح بعد"
-
-#: includes/admin/class-xpay-settings-screen.php:106
+#: includes/admin/class-xpay-settings-screen.php:116
+#: includes/admin/class-xpay-settings-screen.php:131
 msgid "Open XPay dashboard ↗"
 msgstr "فتح لوحة تحكم XPay ↗"
 
-#: includes/admin/class-xpay-settings-screen.php:121
-msgid "Connect your test keys"
-msgstr "أدخل مفاتيح الاختبار"
-
 #: includes/admin/class-xpay-settings-screen.php:122
-msgid "From your XPay dashboard → Developers → API keys. Test keys never move real money."
-msgstr "من لوحة تحكم XPay ← Developers ← API keys. مفاتيح الاختبار لا تحرّك أموالًا حقيقية أبدًا."
+msgid "Not connected"
+msgstr "غير متصل"
 
-#: includes/admin/class-xpay-settings-screen.php:124
-#: includes/admin/class-xpay-settings-screen.php:254
-msgid "Secret key"
-msgstr "المفتاح السري"
+#: includes/admin/class-xpay-settings-screen.php:123
+#: includes/admin/class-xpay-settings-screen.php:185
+msgid "Three steps · about five minutes"
+msgstr "ثلاث خطوات · نحو خمس دقائق"
 
-#: includes/admin/class-xpay-settings-screen.php:126
-#: includes/admin/class-xpay-settings-screen.php:255
-msgid "Publishable key"
-msgstr "المفتاح القابل للنشر"
+#: includes/admin/class-xpay-settings-screen.php:127
+msgid "Connected — Live mode"
+msgstr "متصل — الوضع المباشر"
+
+#: includes/admin/class-xpay-settings-screen.php:127
+msgid "Connected — Test mode"
+msgstr "متصل — وضع الاختبار"
 
 #: includes/admin/class-xpay-settings-screen.php:129
-msgid "Validate & save keys"
-msgstr "تحقق واحفظ المفاتيح"
+msgid "Live mode — keys not validated yet"
+msgstr "الوضع المباشر — لم يتم التحقق من المفاتيح بعد"
 
-#: includes/admin/class-xpay-settings-screen.php:133
-msgid "Connect the webhook"
-msgstr "اربط الـ webhook"
+#: includes/admin/class-xpay-settings-screen.php:129
+msgid "Test mode — keys not validated yet"
+msgstr "وضع الاختبار — لم يتم التحقق من المفاتيح بعد"
 
-#: includes/admin/class-xpay-settings-screen.php:133
-msgid "Unlocks after your keys validate — one URL to paste, one secret to copy back"
-msgstr "يُفتح بعد التحقق من مفاتيحك — رابط واحد تلصقه وسر واحد تنسخه"
+#: includes/admin/class-xpay-settings-screen.php:157
+msgid "Accept payments in Egypt, on your own store"
+msgstr "استقبل المدفوعات في مصر، على متجرك أنت"
 
-#: includes/admin/class-xpay-settings-screen.php:134
-msgid "Place a test payment"
-msgstr "نفّذ عملية دفع تجريبية"
+#: includes/admin/class-xpay-settings-screen.php:158
+msgid "Cards, valU and Fawry open in a secure XPay window over your checkout — shoppers never leave your site, and orders are confirmed only by signed webhooks."
+msgstr "تُفتح مدفوعات البطاقات وڤاليو وفوري في نافذة XPay آمنة فوق صفحة الدفع لديك — لا يغادر المتسوقون موقعك أبدًا، ولا تُؤكد الطلبات إلا عبر إشعارات webhook موقَّعة."
 
-#: includes/admin/class-xpay-settings-screen.php:134
-msgid "We confirm the whole loop — window, webhook, receipt — end to end"
-msgstr "نتأكد من الدورة كاملة — النافذة والـ webhook والإيصال — من البداية إلى النهاية"
+#: includes/admin/class-xpay-settings-screen.php:170
+msgid "Payment methods"
+msgstr "طرق الدفع"
 
-#: includes/admin/class-xpay-settings-screen.php:138
+#: includes/admin/class-xpay-settings-screen.php:171
+msgid "Refunds"
+msgstr "المبالغ المستردة"
+
+#: includes/admin/class-xpay-settings-screen.php:171
+msgid "Full & partial, in WooCommerce"
+msgstr "استرداد كامل وجزئي، من داخل WooCommerce"
+
+#: includes/admin/class-xpay-settings-screen.php:172
+msgid "Languages"
+msgstr "اللغات"
+
+#: includes/admin/class-xpay-settings-screen.php:172
+msgid "Arabic & English, RTL ready"
+msgstr "العربية والإنجليزية، مع دعم الاتجاه من اليمين إلى اليسار"
+
+#: includes/admin/class-xpay-settings-screen.php:178
+msgid "Visa, Mastercard, Meeza"
+msgstr "فيزا وماستركارد وميزة"
+
+#: includes/admin/class-xpay-settings-screen.php:184
+msgid "Activate XPay"
+msgstr "تفعيل XPay"
+
+#: includes/admin/class-xpay-settings-screen.php:186
+msgid "New to XPay?"
+msgstr "جديد على XPay؟"
+
+#: includes/admin/class-xpay-settings-screen.php:186
+msgid "Create your merchant account →"
+msgstr "أنشئ حساب التاجر الخاص بك ←"
+
+#: includes/admin/class-xpay-settings-screen.php:192
+msgid "How it works"
+msgstr "كيف يعمل"
+
+#: includes/admin/class-xpay-settings-screen.php:193
+msgid "The shopper clicks Place order and the XPay window opens over your own payment page."
+msgstr "يضغط المتسوق على إتمام الطلب فتُفتح نافذة XPay فوق صفحة الدفع الخاصة بمتجرك."
+
+#: includes/admin/class-xpay-settings-screen.php:194
+msgid "Card details are entered inside XPay's PCI-certified window — they never touch your server."
+msgstr "تُدخل بيانات البطاقة داخل نافذة XPay المعتمدة وفق معايير PCI — ولا تصل إلى خادمك أبدًا."
+
+#: includes/admin/class-xpay-settings-screen.php:195
+msgid "A cryptographically signed webhook marks the order paid, and the receipt is stamped PAID."
+msgstr "إشعار webhook موقَّع تشفيريًا هو ما يُعلّم الطلب كمدفوع، ويُختم الإيصال بعلامة \"مدفوع\"."
+
+#: includes/admin/class-xpay-settings-screen.php:198
+msgid "Docs & help"
+msgstr "الأدلة والمساعدة"
+
+#: includes/admin/class-xpay-settings-screen.php:199
+msgid "Getting started guide"
+msgstr "دليل البدء"
+
+#: includes/admin/class-xpay-settings-screen.php:200
+msgid "Configuration reference"
+msgstr "مرجع الإعدادات"
+
+#: includes/admin/class-xpay-settings-screen.php:201
+msgid "Troubleshooting"
+msgstr "استكشاف الأخطاء وإصلاحها"
+
+#: includes/admin/class-xpay-settings-screen.php:205
+#: includes/admin/class-xpay-settings-screen.php:272
 msgid "Nothing goes live until you switch the mode yourself. Card details never touch your server."
 msgstr "لن يعمل أي شيء بشكل مباشر حتى تبدّل الوضع بنفسك. بيانات البطاقات لا تمر على خادمك أبدًا."
 
-#: includes/admin/class-xpay-settings-screen.php:195
+#: includes/admin/class-xpay-settings-screen.php:255
+msgid "Connect your test keys"
+msgstr "أدخل مفاتيح الاختبار"
+
+#: includes/admin/class-xpay-settings-screen.php:256
+msgid "From your XPay dashboard → Developers → API keys. Test keys never move real money."
+msgstr "من لوحة تحكم XPay ← Developers ← API keys. مفاتيح الاختبار لا تحرّك أموالًا حقيقية أبدًا."
+
+#: includes/admin/class-xpay-settings-screen.php:258
+#: includes/admin/class-xpay-settings-screen.php:388
+msgid "Secret key"
+msgstr "المفتاح السري"
+
+#: includes/admin/class-xpay-settings-screen.php:260
+#: includes/admin/class-xpay-settings-screen.php:389
+msgid "Publishable key"
+msgstr "المفتاح القابل للنشر"
+
+#: includes/admin/class-xpay-settings-screen.php:263
+msgid "Validate & save keys"
+msgstr "تحقق واحفظ المفاتيح"
+
+#: includes/admin/class-xpay-settings-screen.php:267
+msgid "Connect the webhook"
+msgstr "اربط الـ webhook"
+
+#: includes/admin/class-xpay-settings-screen.php:267
+msgid "Unlocks after your keys validate — one URL to paste, one secret to copy back"
+msgstr "يُفتح بعد التحقق من مفاتيحك — رابط واحد تلصقه وسر واحد تنسخه"
+
+#: includes/admin/class-xpay-settings-screen.php:268
+msgid "Place a test payment"
+msgstr "نفّذ عملية دفع تجريبية"
+
+#: includes/admin/class-xpay-settings-screen.php:268
+msgid "We confirm the whole loop — window, webhook, receipt — end to end"
+msgstr "نتأكد من الدورة كاملة — النافذة والـ webhook والإيصال — من البداية إلى النهاية"
+
+#: includes/admin/class-xpay-settings-screen.php:329
 msgid "Keys validated"
 msgstr "تم التحقق من المفاتيح"
 
-#: includes/admin/class-xpay-settings-screen.php:197
+#: includes/admin/class-xpay-settings-screen.php:331
 msgid "Keys saved — not validated yet"
 msgstr "المفاتيح محفوظة — لم يتم التحقق منها بعد"
 
-#: includes/admin/class-xpay-settings-screen.php:197
+#: includes/admin/class-xpay-settings-screen.php:331
 msgid "Save changes runs a live check against the XPay API"
 msgstr "حفظ التغييرات يجري فحصًا حقيقيًا عبر واجهة XPay"
 
-#: includes/admin/class-xpay-settings-screen.php:199
+#: includes/admin/class-xpay-settings-screen.php:333
 msgid "No keys for the selected mode"
 msgstr "لا توجد مفاتيح للوضع المحدد"
 
-#: includes/admin/class-xpay-settings-screen.php:199
+#: includes/admin/class-xpay-settings-screen.php:333
 msgid "Paste them below from your XPay dashboard"
 msgstr "ألصقها أدناه من لوحة تحكم XPay"
 
-#: includes/admin/class-xpay-settings-screen.php:204
+#: includes/admin/class-xpay-settings-screen.php:338
 msgid "Webhook not connected"
 msgstr "الـ webhook غير مرتبط"
 
-#: includes/admin/class-xpay-settings-screen.php:204
+#: includes/admin/class-xpay-settings-screen.php:338
 msgid "Paste the signing secret below — the webhook is what marks orders paid"
 msgstr "ألصق سر التوقيع أدناه — الـ webhook هو ما يحدد الطلبات المدفوعة"
 
 #. translators: %s is a human time difference, for example "2 minutes".
-#: includes/admin/class-xpay-settings-screen.php:207
+#: includes/admin/class-xpay-settings-screen.php:341
 msgid "Webhook healthy"
 msgstr "الـ webhook يعمل بصحة جيدة"
 
 #. translators: %s is a human time difference, for example "2 minutes".
-#: includes/admin/class-xpay-settings-screen.php:207
+#: includes/admin/class-xpay-settings-screen.php:341
 #, php-format
 msgid "signing secret saved · last event received %s ago"
 msgstr "سر التوقيع محفوظ · آخر حدث وصل منذ %s"
 
 #. translators: %s is a human time difference, for example "2 minutes".
-#: includes/admin/class-xpay-settings-screen.php:207
-#: includes/admin/class-xpay-settings-screen.php:209
+#: includes/admin/class-xpay-settings-screen.php:341
+#: includes/admin/class-xpay-settings-screen.php:343
 msgid "View log"
 msgstr "عرض السجل"
 
-#: includes/admin/class-xpay-settings-screen.php:209
+#: includes/admin/class-xpay-settings-screen.php:343
 msgid "Webhook waiting for its first event"
 msgstr "الـ webhook في انتظار أول حدث"
 
-#: includes/admin/class-xpay-settings-screen.php:209
+#: includes/admin/class-xpay-settings-screen.php:343
 msgid "signing secret saved · send a test event from your XPay dashboard"
 msgstr "سر التوقيع محفوظ · أرسل حدثًا تجريبيًا من لوحة تحكم XPay"
 
 #. translators: 1: order number, 2: formatted order total.
-#: includes/admin/class-xpay-settings-screen.php:215
+#: includes/admin/class-xpay-settings-screen.php:349
 msgid "Payment confirmed end-to-end"
 msgstr "تم تأكيد الدفع من البداية إلى النهاية"
 
 #. translators: 1: order number, 2: formatted order total.
-#: includes/admin/class-xpay-settings-screen.php:215
+#: includes/admin/class-xpay-settings-screen.php:349
 #, php-format
 msgid "order #%1$s · %2$s"
 msgstr "طلب رقم %1$s · %2$s"
 
 #. translators: 1: order number, 2: formatted order total.
-#: includes/admin/class-xpay-settings-screen.php:215
+#: includes/admin/class-xpay-settings-screen.php:349
 msgid "View order"
 msgstr "عرض الطلب"
 
-#: includes/admin/class-xpay-settings-screen.php:217
+#: includes/admin/class-xpay-settings-screen.php:351
 msgid "No payment yet"
 msgstr "لا توجد مدفوعات بعد"
 
-#: includes/admin/class-xpay-settings-screen.php:217
+#: includes/admin/class-xpay-settings-screen.php:351
 msgid "Place a test order to prove the whole loop"
 msgstr "نفّذ طلبًا تجريبيًا لإثبات الدورة كاملة"
 
-#: includes/admin/class-xpay-settings-screen.php:224
+#: includes/admin/class-xpay-settings-screen.php:358
 msgid "Ready to go live"
 msgstr "جاهز للانطلاق المباشر"
 
-#: includes/admin/class-xpay-settings-screen.php:224
+#: includes/admin/class-xpay-settings-screen.php:358
 msgid "paste your live keys, create a live webhook endpoint, switch the mode"
 msgstr "ألصق مفاتيحك المباشرة، وأنشئ نقطة webhook مباشرة، وبدّل الوضع"
 
-#: includes/admin/class-xpay-settings-screen.php:225
+#: includes/admin/class-xpay-settings-screen.php:359
 msgid "Go live"
 msgstr "انطلق مباشرة"
 
-#: includes/admin/class-xpay-settings-screen.php:239
+#: includes/admin/class-xpay-settings-screen.php:373
 msgid "Account & keys"
 msgstr "الحساب والمفاتيح"
 
-#: includes/admin/class-xpay-settings-screen.php:240
+#: includes/admin/class-xpay-settings-screen.php:374
 msgid "Each mode keeps its own keys — switching never overwrites anything."
 msgstr "كل وضع يحتفظ بمفاتيحه — التبديل لا يستبدل شيئًا أبدًا."
 
-#: includes/admin/class-xpay-settings-screen.php:244
+#: includes/admin/class-xpay-settings-screen.php:378
 #: includes/gateway/class-xpay-gateway.php:119
 msgid "Test"
 msgstr "اختبار"
 
-#: includes/admin/class-xpay-settings-screen.php:245
+#: includes/admin/class-xpay-settings-screen.php:379
 #: includes/gateway/class-xpay-gateway.php:120
 msgid "Live"
 msgstr "مباشر"
 
-#: includes/admin/class-xpay-settings-screen.php:273
+#: includes/admin/class-xpay-settings-screen.php:407
 msgid "Webhook"
 msgstr "Webhook"
 
-#: includes/admin/class-xpay-settings-screen.php:274
+#: includes/admin/class-xpay-settings-screen.php:408
 msgid "XPay confirms orders through this endpoint — it is what marks orders paid."
 msgstr "يؤكد XPay الطلبات عبر هذه النقطة — وهي ما يحدد الطلبات المدفوعة."
 
-#: includes/admin/class-xpay-settings-screen.php:280
+#: includes/admin/class-xpay-settings-screen.php:414
 msgid "Endpoint URL"
 msgstr "رابط النقطة"
 
-#: includes/admin/class-xpay-settings-screen.php:282
-#: includes/admin/class-xpay-settings-screen.php:419
+#: includes/admin/class-xpay-settings-screen.php:416
+#: includes/admin/class-xpay-settings-screen.php:553
 msgid "Copy"
 msgstr "نسخ"
 
-#: includes/admin/class-xpay-settings-screen.php:286
+#: includes/admin/class-xpay-settings-screen.php:420
 msgid "Signing secret"
 msgstr "سر التوقيع"
 
-#: includes/admin/class-xpay-settings-screen.php:290
+#: includes/admin/class-xpay-settings-screen.php:424
 msgid "Health"
 msgstr "الحالة"
 
 #. translators: %s is a human time difference, for example "2 minutes".
-#: includes/admin/class-xpay-settings-screen.php:293
+#: includes/admin/class-xpay-settings-screen.php:427
 #, php-format
 msgid "Healthy — last event received %s ago"
 msgstr "بصحة جيدة — آخر حدث وصل منذ %s"
 
-#: includes/admin/class-xpay-settings-screen.php:295
+#: includes/admin/class-xpay-settings-screen.php:429
 msgid "No events received yet — send a test event from your XPay dashboard"
 msgstr "لم تصل أحداث بعد — أرسل حدثًا تجريبيًا من لوحة تحكم XPay"
 
-#: includes/admin/class-xpay-settings-screen.php:297
+#: includes/admin/class-xpay-settings-screen.php:431
 msgid "Signing secret missing for the selected mode"
 msgstr "سر التوقيع مفقود للوضع المحدد"
 
-#: includes/admin/class-xpay-settings-screen.php:299
+#: includes/admin/class-xpay-settings-screen.php:433
 msgid "View in XPay Log"
 msgstr "عرض في سجل XPay"
 
-#: includes/admin/class-xpay-settings-screen.php:312
+#: includes/admin/class-xpay-settings-screen.php:446
 msgid "Checkout appearance"
 msgstr "مظهر إتمام الشراء"
 
-#: includes/admin/class-xpay-settings-screen.php:313
+#: includes/admin/class-xpay-settings-screen.php:447
 msgid "Separate options open the payment window directly on the shopper’s method."
 msgstr "الخيارات المنفصلة تفتح نافذة الدفع مباشرة على وسيلة المتسوق."
 
-#: includes/admin/class-xpay-settings-screen.php:317
+#: includes/admin/class-xpay-settings-screen.php:451
 msgid "One XPay option"
 msgstr "خيار XPay واحد"
 
-#: includes/admin/class-xpay-settings-screen.php:318
+#: includes/admin/class-xpay-settings-screen.php:452
 msgid "Separate options"
 msgstr "خيارات منفصلة"
 
-#: includes/admin/class-xpay-settings-screen.php:344
+#: includes/admin/class-xpay-settings-screen.php:478
 msgid "Title at checkout"
 msgstr "العنوان عند إتمام الشراء"
 
-#: includes/admin/class-xpay-settings-screen.php:346
+#: includes/admin/class-xpay-settings-screen.php:480
 #: includes/gateway/class-xpay-gateway.php:107
 msgid "Description"
 msgstr "الوصف"
 
-#: includes/admin/class-xpay-settings-screen.php:358
+#: includes/admin/class-xpay-settings-screen.php:492
 #: includes/gateway/class-xpay-gateway.php:96
 msgid "Enable XPay"
 msgstr "تفعيل XPay"
 
-#: includes/admin/class-xpay-settings-screen.php:359
+#: includes/admin/class-xpay-settings-screen.php:493
 msgid "WPFunnels safeguard"
 msgstr "حماية WPFunnels"
 
-#: includes/admin/class-xpay-settings-screen.php:360
+#: includes/admin/class-xpay-settings-screen.php:494
 #: includes/gateway/class-xpay-gateway.php:203
 msgid "Diagnostic logging"
 msgstr "التسجيل التشخيصي"
 
-#: includes/admin/class-xpay-settings-screen.php:361
+#: includes/admin/class-xpay-settings-screen.php:495
 msgid "Save changes"
 msgstr "حفظ التغييرات"
 
-#: includes/admin/class-xpay-settings-screen.php:413
+#: includes/admin/class-xpay-settings-screen.php:547
 msgid "Not set"
 msgstr "غير محدد"
 
-#: includes/admin/class-xpay-settings-screen.php:417
+#: includes/admin/class-xpay-settings-screen.php:551
 msgid "Reveal"
 msgstr "إظهار"
 
-#: includes/admin/class-xpay-settings-screen.php:422
+#: includes/admin/class-xpay-settings-screen.php:556
 msgid "Add"
 msgstr "إضافة"
 
-#: includes/admin/class-xpay-settings-screen.php:422
+#: includes/admin/class-xpay-settings-screen.php:556
 msgid "Replace"
 msgstr "استبدال"
 
@@ -512,7 +591,7 @@ msgid "Order %s"
 msgstr "طلب %s"
 
 #. translators: 1: XPay checkout session id, 2: attempt number.
-#: includes/gateway/class-xpay-checkout-service.php:242
+#: includes/gateway/class-xpay-checkout-service.php:257
 #, php-format
 msgid "XPay checkout session %1$s created (attempt %2$d)."
 msgstr "تم إنشاء جلسة دفع XPay ‏%1$s (المحاولة %2$d)."
@@ -665,65 +744,65 @@ msgstr "تعيد WPFunnels توجيه صفحة ما بعد الدفع إلى م�
 msgid "Write redacted diagnostic logs (WooCommerce → Status → Logs, source \"xpay\")"
 msgstr "كتابة سجلات تشخيصية بعد إخفاء البيانات الحساسة (WooCommerce ← الحالة ← السجلات، المصدر \"xpay\")"
 
-#: includes/gateway/class-xpay-gateway.php:361
+#: includes/gateway/class-xpay-gateway.php:374
 msgid "XPay: no API key is saved for the selected mode, so XPay stays hidden at checkout until you add one."
 msgstr "XPay: لا يوجد مفتاح API محفوظ للوضع المحدد، لذلك سيظل XPay مخفيًا عند إتمام الشراء حتى تضيف واحدًا."
 
-#: includes/gateway/class-xpay-gateway.php:368
+#: includes/gateway/class-xpay-gateway.php:381
 msgid "XPay: the key in the selected mode is a LIVE key but the gateway is in Test mode. Paste the matching key for the mode you selected."
 msgstr "XPay: المفتاح في الوضع المحدد مفتاح مباشر (LIVE) بينما البوابة في وضع الاختبار. ألصق المفتاح المطابق للوضع الذي اخترته."
 
-#: includes/gateway/class-xpay-gateway.php:372
+#: includes/gateway/class-xpay-gateway.php:385
 msgid "XPay: the key in the selected mode is a TEST key but the gateway is in Live mode. Paste the matching key for the mode you selected."
 msgstr "XPay: المفتاح في الوضع المحدد مفتاح اختبار (TEST) بينما البوابة في الوضع المباشر. ألصق المفتاح المطابق للوضع الذي اخترته."
 
-#: includes/gateway/class-xpay-gateway.php:390
+#: includes/gateway/class-xpay-gateway.php:403
 msgid "XPay connected (test mode)."
 msgstr "تم الاتصال بـ XPay (وضع الاختبار)."
 
-#: includes/gateway/class-xpay-gateway.php:391
+#: includes/gateway/class-xpay-gateway.php:404
 msgid "XPay connected (live mode)."
 msgstr "تم الاتصال بـ XPay (الوضع المباشر)."
 
 #. translators: %s is the error returned while validating the API key.
-#: includes/gateway/class-xpay-gateway.php:398
+#: includes/gateway/class-xpay-gateway.php:411
 #, php-format
 msgid "XPay: the API key did not validate — %s"
 msgstr "XPay: تعذّر التحقق من مفتاح API — %s"
 
-#: includes/gateway/class-xpay-gateway.php:440
+#: includes/gateway/class-xpay-gateway.php:453
 msgid "The payment could not be started. Please try again — your card has not been charged."
 msgstr "تعذّر بدء عملية الدفع. من فضلك حاول مرة أخرى — لم يتم الخصم من بطاقتك."
 
 #. translators: 1: XPay error code, 2: error message.
-#: includes/gateway/class-xpay-gateway.php:444
+#: includes/gateway/class-xpay-gateway.php:457
 #, php-format
 msgid "XPay session creation failed [%1$s]: %2$s"
 msgstr "فشل إنشاء جلسة XPay ‏[%1$s]: %2$s"
 
-#: includes/gateway/class-xpay-gateway.php:481
+#: includes/gateway/class-xpay-gateway.php:494
 msgid "The payment could not be started. Please refresh the page to try again."
 msgstr "تعذّر بدء عملية الدفع. من فضلك حدّث الصفحة وحاول مرة أخرى."
 
-#: includes/gateway/class-xpay-gateway.php:512
+#: includes/gateway/class-xpay-gateway.php:525
 #: includes/gateway/class-xpay-pay-page.php:63
 msgid "Opening secure payment…"
 msgstr "جارٍ فتح الدفع الآمن…"
 
-#: includes/gateway/class-xpay-gateway.php:513
+#: includes/gateway/class-xpay-gateway.php:526
 msgid "Taking you to the secure payment page…"
 msgstr "جارٍ نقلك إلى صفحة الدفع الآمنة…"
 
-#: includes/gateway/class-xpay-gateway.php:514
+#: includes/gateway/class-xpay-gateway.php:527
 #: includes/gateway/class-xpay-pay-page.php:85
 msgid "Pay now"
 msgstr "ادفع الآن"
 
-#: includes/gateway/class-xpay-gateway.php:515
+#: includes/gateway/class-xpay-gateway.php:528
 msgid "Your order is saved. Pay when you are ready."
 msgstr "تم حفظ طلبك. ادفع متى كنت مستعدًا."
 
-#: includes/gateway/class-xpay-gateway.php:553
+#: includes/gateway/class-xpay-gateway.php:566
 msgid "Refund amount is required."
 msgstr "مبلغ الاسترداد مطلوب."
 
