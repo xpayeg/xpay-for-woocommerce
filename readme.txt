@@ -32,6 +32,7 @@ XPay for WooCommerce connects your store to [XPay](https://xpay.app/), the Egypt
 * Full and partial refunds from the WooCommerce order screen.
 * Fully bilingual: the payment window, the receipts, and every plugin screen ship in Arabic and English, with proper right-to-left layout.
 * Separate test and live modes with separate keys, so you can test safely before going live.
+* A guided setup screen in XPay's own dashboard style: three steps on a fresh install, then a status view whose green lights are backed by real checks — validated keys, verified webhooks, an actual paid order.
 * Plays well with others: WPFunnels safeguard built in, script-optimizer opt-outs on the payment scripts, and a warning if the legacy XPay plugin is still active.
 * Redacted diagnostic logging: card numbers, keys and secrets are stripped before anything is written to disk.
 * Built-in log viewer (WooCommerce → XPay Log) with a one-click debug report for support, plus an XPay panel on every order showing its payment events.
@@ -86,7 +87,8 @@ Nothing breaks, but shoppers see two separate XPay options at checkout, and the 
 = 3.0.0 =
 * Complete rebuild on the XPay v3 platform: Checkout Sessions, signed webhooks, and API-based refunds.
 * New on-site payment window (drop-in modal) with automatic hosted-page fallback, on a branded pay page that follows your XPay dashboard's merchant color.
-* Optional separate checkout options per method (Card, valU, Fawry), each with its logo.
+* Optional separate checkout options per method (Card, valU, Fawry), each with its logo — managed as one XPay row in your payments settings.
+* A guided three-step setup screen in XPay's dashboard style, and a Payments-page row that shows the XPay logo with a "Complete setup" button until your keys are in place.
 * Order confirmation redesigned as the pay page's receipt, stamped PAID or "Confirming payment" — the page never claims more than the money has done.
 * Full Arabic translation with right-to-left receipt layout, alongside English.
 * Cart/Checkout Blocks support and HPOS compatibility declared from this release.

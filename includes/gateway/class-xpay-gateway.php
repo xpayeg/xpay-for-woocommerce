@@ -49,6 +49,10 @@ class XPay_Gateway extends WC_Payment_Gateway {
 		$this->method_title       = __( 'XPay', 'xpay-for-woocommerce' );
 		$this->method_description = __( 'Accept cards, valU and more via XPay (Egypt). Customers pay in a secure XPay window without leaving your store.', 'xpay-for-woocommerce' );
 		$this->supports           = array( 'products', 'refunds' );
+		// The brand tile WooCommerce's Payments page shows on the provider
+		// row (it falls back to a generic placeholder icon without one).
+		// The per-method rows overwrite this with their own artwork.
+		$this->icon = XPAY_WC_PLUGIN_URL . 'assets/images/xpay-icon.svg';
 
 		$this->init_form_fields();
 		$this->init_settings();
@@ -284,6 +288,58 @@ class XPay_Gateway extends WC_Payment_Gateway {
 
 	public function needs_setup(): bool {
 		return '' === $this->api_key() || '' === $this->publishable_key();
+	}
+
+	/**
+	 * The icon property exists for the admin Payments page row; the classic
+	 * checkout deliberately does not render it for the combined row. There,
+	 * the per-method rows carry the recognizable artwork (card networks,
+	 * valU) and a lone brand mark beside "Pay with XPay" would add noise,
+	 * not information — the shopper-facing look stays exactly as designed.
+	 * Per-method rows fall through to WooCommerce's default rendering.
+	 */
+	public function get_icon() {
+		if ( XPay_Constants::GATEWAY_ID === $this->id ) {
+			return '';
+		}
+		return parent::get_icon();
+	}
+
+	/* ── Payments-page row state ─────────────────────────────────────── */
+
+	/*
+	 * WooCommerce's Payments page probes gateways for the three methods
+	 * below by name (PaymentsProviders\PaymentGateway) to pick each row's
+	 * badge and button. Until "connected + started + completed" all hold,
+	 * the row shows an "Action needed" badge with a primary "Complete
+	 * setup" button pointing at this gateway's settings screen — where the
+	 * guided activation takes over on a fresh install. Once all three hold,
+	 * the row gets the normal Manage/Enable controls.
+	 *
+	 * The answers claim no more than the configuration proves: "connected"
+	 * and "completed" are exactly what needs_setup() measures — the active
+	 * mode holds both keys, so checkout can actually charge.
+	 */
+
+	/** A processor account is "connected" when the active mode can charge. */
+	public function is_account_connected(): bool {
+		return ! $this->needs_setup();
+	}
+
+	/** Onboarding began once any key exists in either mode. */
+	public function is_onboarding_started(): bool {
+		$key_fields = array( 'test_api_key', 'test_publishable_key', 'live_api_key', 'live_publishable_key' );
+		foreach ( $key_fields as $field ) {
+			if ( '' !== (string) $this->get_option( $field ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** Onboarding is complete when the active mode can charge. */
+	public function is_onboarding_completed(): bool {
+		return ! $this->needs_setup();
 	}
 
 	/**
