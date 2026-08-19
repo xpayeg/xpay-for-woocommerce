@@ -15,7 +15,10 @@
 	"scripts": {
 		"lint": "phpcs",
 		"lint:fix": "phpcbf",
-		"test": "phpunit"
+		"test": [
+			"phpunit",
+			"phpunit -c phpunit-contracts.xml"
+		]
 	},
 	"config": {
 		"allow-plugins": {

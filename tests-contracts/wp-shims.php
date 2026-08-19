@@ -1,0 +1,133 @@
+<?php
+/**
+ * WordPress/WooCommerce shims for the contract suite.
+ *
+ * Just enough of the WP surface for the state-machine classes to run:
+ * in-memory options and user meta, an order registry behind
+ * wc_get_order(), pass-through i18n/escaping, and an action recorder so
+ * tests can assert which XPay_Logger stages fired. Deliberately dumb —
+ * any behavior a test depends on must be a behavior WordPress actually
+ * has (add_query_arg really does not urlencode values, for instance).
+ *
+ * @package XPay_For_WooCommerce
+ */
+
+function xpay_tests_reset_world(): void {
+	$GLOBALS['xpay_test_options']   = array();
+	$GLOBALS['xpay_test_user_meta'] = array();
+	$GLOBALS['xpay_test_orders']    = array();
+	$GLOBALS['xpay_test_actions']   = array();
+	$GLOBALS['xpay_test_locale']    = 'en_US';
+	$GLOBALS['wpdb']                = new XPay_Fake_Wpdb();
+}
+
+/* ── Options ─────────────────────────────────────────────────────────── */
+
+function get_option( $name, $default_value = false ) {
+	return array_key_exists( $name, $GLOBALS['xpay_test_options'] ) ? $GLOBALS['xpay_test_options'][ $name ] : $default_value;
+}
+function update_option( $name, $value, $autoload = null ) {
+	$GLOBALS['xpay_test_options'][ $name ] = $value;
+	return true;
+}
+function delete_option( $name ) {
+	unset( $GLOBALS['xpay_test_options'][ $name ] );
+	return true;
+}
+
+/* ── User meta ───────────────────────────────────────────────────────── */
+
+function update_user_meta( $user_id, $key, $value ) {
+	$GLOBALS['xpay_test_user_meta'][ $user_id ][ $key ] = $value;
+	return true;
+}
+function get_user_meta( $user_id, $key, $single = false ) {
+	return isset( $GLOBALS['xpay_test_user_meta'][ $user_id ][ $key ] ) ? $GLOBALS['xpay_test_user_meta'][ $user_id ][ $key ] : '';
+}
+function delete_user_meta( $user_id, $key ) {
+	unset( $GLOBALS['xpay_test_user_meta'][ $user_id ][ $key ] );
+	return true;
+}
+
+/* ── Orders ──────────────────────────────────────────────────────────── */
+
+function wc_get_order( $order_id ) {
+	return isset( $GLOBALS['xpay_test_orders'][ (int) $order_id ] ) ? $GLOBALS['xpay_test_orders'][ (int) $order_id ] : false;
+}
+function clean_post_cache( $order_id ) {}
+
+function wc_price( $amount, $args = array() ) {
+	$currency = isset( $args['currency'] ) ? $args['currency'] : '';
+	return trim( $currency . ' ' . $amount );
+}
+
+/* ── Hooks: recorded, never dispatched ───────────────────────────────── */
+
+function do_action( $hook, ...$args ) {
+	$GLOBALS['xpay_test_actions'][] = array_merge( array( $hook ), $args );
+}
+function add_action( $hook, $callback, $priority = 10, $accepted_args = 1 ) {}
+function add_filter( $hook, $callback, $priority = 10, $accepted_args = 1 ) {}
+function apply_filters( $hook, $value ) {
+	return $value;
+}
+
+/* ── i18n / escaping: identity, formatting preserved ─────────────────── */
+
+function __( $text, $domain = null ) {
+	return $text;
+}
+function esc_html__( $text, $domain = null ) {
+	return $text;
+}
+function esc_attr__( $text, $domain = null ) {
+	return $text;
+}
+function esc_html( $text ) {
+	return $text;
+}
+function esc_attr( $text ) {
+	return $text;
+}
+function esc_url( $url ) {
+	return $url;
+}
+
+/* ── URLs & misc ─────────────────────────────────────────────────────── */
+
+function home_url( $path = '' ) {
+	return 'https://store.test' . $path;
+}
+
+/**
+ * Mirrors the real behavior that matters here: values are appended
+ * WITHOUT urlencoding (WordPress's documented quirk), which is what
+ * lets the {CHECKOUT_SESSION_ID} placeholder survive into the URL.
+ */
+function add_query_arg( $key, $value = null, $url = null ) {
+	$args = is_array( $key ) ? $key : array( $key => $value );
+	$url  = is_array( $key ) ? $value : $url;
+	foreach ( $args as $k => $v ) {
+		$url .= ( false === strpos( $url, '?' ) ? '?' : '&' ) . $k . '=' . $v;
+	}
+	return $url;
+}
+
+function get_locale() {
+	return $GLOBALS['xpay_test_locale'];
+}
+function absint( $value ) {
+	return abs( (int) $value );
+}
+function wp_json_encode( $value, $flags = 0 ) {
+	return json_encode( $value, $flags );
+}
+function wp_parse_url( $url, $component = -1 ) {
+	return parse_url( $url, $component );
+}
+function untrailingslashit( $value ) {
+	return rtrim( $value, '/\\' );
+}
+function wc_string_to_bool( $value ) {
+	return is_bool( $value ) ? $value : ( 'yes' === $value || 1 === $value || 'true' === $value || '1' === $value );
+}

@@ -3,8 +3,9 @@
  * PHPUnit bootstrap — pure unit suite.
  *
  * Loads ONLY the WordPress-free classes (money, signature, exception,
- * error codes, redactor). Anything touching WooCommerce/WordPress belongs
- * in a separate wp-env integration suite, per the two-suite split.
+ * error codes, redactor). Anything touching WooCommerce/WordPress state
+ * belongs in the contract suite (tests-contracts/, phpunit-contracts.xml),
+ * which runs the state machines against an in-memory WordPress shim.
  *
  * ABSPATH is defined so the plugin files' direct-access guards pass.
  *
