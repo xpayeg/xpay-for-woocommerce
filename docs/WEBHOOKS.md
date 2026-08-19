@@ -19,13 +19,25 @@
 2. `XPay_Signature::verify()` checks the header constant-time
    (`hash_equals`) with a 300-second replay window. XPay does not enforce
    the window sender-side; the receiver must (their docs say so).
-3. The order is located via `metadata.wc_order_id`, then the **ownership
-   check** runs: the event's session id must equal the session id this
-   plugin stored on that order. Existence is never enough.
-4. `checkout.session.completed` → `payment_complete()` (idempotent);
-   `checkout.session.expired` → cancel a still-pending order. Event ids
-   are remembered per order, so redeliveries are acknowledged without
-   side effects.
+3. Session-scoped events (`checkout.session.*`,
+   `payment_intent.payment_failed`) locate the order via
+   `metadata.wc_order_id`, then the **ownership check** runs: the
+   event's session id must be the id this plugin stored on that order —
+   or one of the order's own recorded superseded ids, which routes to
+   the human-review path instead of full trust. Existence is never
+   enough. The refund events (`charge.refunded`, `refund.failed`) carry
+   no metadata; they are matched by exact payment-intent id, which is
+   the same control.
+4. `checkout.session.completed` → `payment_complete()` (idempotent) —
+   or, on a superseded session, park the order on-hold for review;
+   `checkout.session.expired` → mark a still-pending order FAILED (the
+   pay link stays usable), with the payload's decline history quoted in
+   the note; `payment_intent.payment_failed` → an order note per
+   declined attempt, never a status change; `charge.refunded` → mirror
+   dashboard-issued refunds into WooCommerce records (deduplicated
+   against the plugin's own refunds); `refund.failed` → an order note.
+   Event ids are remembered per order, so redeliveries are acknowledged
+   without side effects.
 5. The thank-you page independently re-fetches the session server-side
    (`XPay_Order_Sync::verify_on_thankyou`) so a shopper who outruns the
    webhook still sees the truth.

@@ -197,6 +197,159 @@ class XPay_Refund_Service {
 		$order->save();
 	}
 
+	/* ── Webhook mirroring (dashboard-issued refunds) ────────────────── */
+
+	/**
+	 * Reflect a charge.refunded event into WooCommerce. The charge's
+	 * refunds[] carries every refund on the charge, newest first; anything
+	 * not yet in the order's ledger (META_REFUND_IDS records both
+	 * plugin-issued and previously mirrored refunds) is new — typically
+	 * issued from the XPay dashboard, or the recovery for a plugin refund
+	 * whose HTTP response was lost after it committed.
+	 *
+	 * The WooCommerce record moves no money (the platform already did);
+	 * where the refund cannot be stated in the order's own currency, an
+	 * explanatory note stands in for a number that would be a guess.
+	 * Either way the refund id enters the ledger, so redeliveries and
+	 * later charge.refunded events never double-record.
+	 *
+	 * @param WC_Order $order  Order the charge's payment intent belongs to.
+	 * @param array    $charge Charge payload from the event.
+	 */
+	public static function mirror_charge_refunds( WC_Order $order, array $charge ): void {
+		$refunds = isset( $charge['refunds'] ) && is_array( $charge['refunds'] ) ? $charge['refunds'] : array();
+		if ( array() === $refunds ) {
+			return;
+		}
+
+		$ledger = $order->get_meta( XPay_Constants::META_REFUND_IDS );
+		$ledger = is_array( $ledger ) ? $ledger : array();
+
+		$mirrored = 0;
+		foreach ( array_reverse( $refunds ) as $refund ) { // Oldest first, so records land in issue order.
+			if ( ! is_array( $refund ) || ! isset( $refund['status'] ) || XPay_Refund_Status::SUCCEEDED !== $refund['status'] ) {
+				continue; // Only settled money mirrors; pending/failed refunds have their own signals.
+			}
+			$refund_id = isset( $refund['id'] ) && is_string( $refund['id'] ) ? $refund['id'] : '';
+			if ( '' === $refund_id || in_array( $refund_id, $ledger, true ) ) {
+				continue;
+			}
+
+			$amount = self::amount_in_order_currency( $refund, $order );
+			if ( null !== $amount ) {
+				$result = wc_create_refund(
+					array(
+						'order_id'       => $order->get_id(),
+						'amount'         => $amount,
+						/* translators: %s is the XPay refund id. */
+						'reason'         => sprintf( __( 'XPay dashboard refund %s', 'xpay-for-woocommerce' ), $refund_id ),
+						'refund_payment' => false,
+						'restock_items'  => false,
+					)
+				);
+				if ( is_wp_error( $result ) ) {
+					$order->add_order_note(
+						sprintf(
+							/* translators: 1: XPay refund id, 2: the error WooCommerce reported. */
+							__( 'XPay refunded this order from the dashboard (%1$s), but the refund could not be recorded here: %2$s. Record it manually.', 'xpay-for-woocommerce' ),
+							$refund_id,
+							$result->get_error_message()
+						)
+					);
+				} else {
+					$order->add_order_note(
+						sprintf(
+							/* translators: 1: refund amount with currency, 2: XPay refund id. */
+							__( 'XPay refund of %1$s issued from your XPay dashboard was recorded here (%2$s).', 'xpay-for-woocommerce' ),
+							wc_price( $amount, array( 'currency' => $order->get_currency() ) ),
+							$refund_id
+						)
+					);
+				}
+			} else {
+				$order->add_order_note(
+					sprintf(
+						/* translators: %s is the XPay refund id. */
+						__( 'XPay refunded this order from the dashboard (%s), in a currency this order is not in. Check the amount in your XPay dashboard and record the refund here manually.', 'xpay-for-woocommerce' ),
+						$refund_id
+					)
+				);
+			}
+
+			$ledger[] = $refund_id;
+			++$mirrored;
+		}
+
+		if ( $mirrored > 0 ) {
+			$order->update_meta_data( XPay_Constants::META_REFUND_IDS, $ledger );
+			$order->save();
+			XPay_Logger::event(
+				'refund.mirrored',
+				array(
+					'order_id' => $order->get_id(),
+					'count'    => $mirrored,
+				)
+			);
+		}
+	}
+
+	/**
+	 * The refund amount as a decimal string in the ORDER's currency, or
+	 * null when it cannot be stated without guessing. Refund amounts ride
+	 * in the charge's processing currency (EGP); when the order was
+	 * presented in another currency the per-refund presentmentDetails
+	 * mirror (prorated at the charge's locked rate) is the honest source.
+	 *
+	 * @param array    $refund Refund payload from the charge's refunds[].
+	 * @param WC_Order $order  Order being mirrored into.
+	 */
+	private static function amount_in_order_currency( array $refund, WC_Order $order ): ?string {
+		$order_currency = strtoupper( $order->get_currency() );
+
+		if ( isset( $refund['currency'], $refund['amount'] ) && is_numeric( $refund['amount'] ) && strtoupper( (string) $refund['currency'] ) === $order_currency ) {
+			return XPay_Money::from_minor( (int) $refund['amount'], $order_currency );
+		}
+		if ( isset( $refund['presentmentDetails']['currency'], $refund['presentmentDetails']['amount'] )
+			&& is_numeric( $refund['presentmentDetails']['amount'] )
+			&& strtoupper( (string) $refund['presentmentDetails']['currency'] ) === $order_currency ) {
+			return XPay_Money::from_minor( (int) $refund['presentmentDetails']['amount'], $order_currency );
+		}
+		return null;
+	}
+
+	/**
+	 * Record a refund.failed event: the refund was accepted but no money
+	 * reached the customer. A note and a log row — the plugin never
+	 * recorded in-flight refunds as completed, so there is nothing to
+	 * roll back in WooCommerce.
+	 *
+	 * @param WC_Order $order  Order the refund's payment intent belongs to.
+	 * @param array    $refund Refund payload from the event.
+	 */
+	public static function note_refund_failed( WC_Order $order, array $refund ): void {
+		$refund_id = isset( $refund['id'] ) && is_string( $refund['id'] ) ? $refund['id'] : '';
+		$reason    = isset( $refund['failureReason'] ) && is_string( $refund['failureReason'] ) ? $refund['failureReason'] : '';
+
+		$order->add_order_note(
+			sprintf(
+				/* translators: 1: XPay refund id, 2: XPay failure reason (for example "expired_or_canceled_card"). */
+				__( 'XPay refund %1$s failed (%2$s). No money was returned to the customer. Check the refund in your XPay dashboard.', 'xpay-for-woocommerce' ),
+				'' !== $refund_id ? $refund_id : '—',
+				'' !== $reason ? $reason : 'unknown'
+			)
+		);
+		$order->save();
+
+		XPay_Logger::event(
+			'refund.failed_event',
+			array(
+				'order_id'  => $order->get_id(),
+				'refund_id' => $refund_id,
+				'reason'    => $reason,
+			)
+		);
+	}
+
 	/**
 	 * Plain-English message for a refund failure, keyed on the API's stable
 	 * error code. The doc_url from the response is appended verbatim when

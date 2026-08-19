@@ -100,6 +100,17 @@ class CheckoutServiceContractTest extends ContractTestCase {
 		$this->assertSame( array( $old_id ), $this->client->expired );
 	}
 
+	public function test_supersede_records_the_old_session_id() {
+		$order = $this->order();
+		$this->service->get_or_create_session( $order );
+		$old_id = $order->get_meta( XPay_Constants::META_SESSION_ID );
+
+		$order->total = '999.00';
+		$this->service->get_or_create_session( $order );
+
+		$this->assertContains( $old_id, $order->get_meta( XPay_Constants::META_SUPERSEDED_SESSIONS ), 'A paid event on the old id must stay recognizable as this order\'s money.' );
+	}
+
 	public function test_pin_change_mints_fresh_session() {
 		$order = $this->order();
 		$this->service->get_or_create_session( $order, array( XPay_Payment_Methods::CARD ) );

@@ -75,9 +75,12 @@ XPay confirms payments by sending your store a cryptographically signed webhook.
    https://your-store.example/?wc-api=xpay_webhook
    ```
 2. In your XPay dashboard, go to **Developers → Webhooks** and add an endpoint pointing at that URL.
-3. Subscribe the endpoint to exactly these two events:
-   - `checkout.session.completed`
-   - `checkout.session.expired`
+3. Subscribe the endpoint to exactly these five events:
+   - `checkout.session.completed` — marks orders paid
+   - `checkout.session.expired` — marks abandoned orders failed (still payable)
+   - `payment_intent.payment_failed` — notes declined attempts on the order
+   - `charge.refunded` — records refunds you issue from the XPay dashboard
+   - `refund.failed` — notes a refund that did not go through
 4. Copy the endpoint's signing secret (`whsec_…`) and paste it into **Test webhook signing secret** in the plugin settings. Save.
 
 The plugin verifies the signature on every delivery and rejects anything unsigned — so the secret in the plugin must be the one for this exact endpoint. When you go live later, you'll create a second, separate endpoint with its own secret for live mode. Details in [WEBHOOKS.md](WEBHOOKS.md).

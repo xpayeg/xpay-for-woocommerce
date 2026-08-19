@@ -143,7 +143,7 @@ class XPay_Gateway extends WC_Payment_Gateway {
 				'title'       => __( 'Test webhook signing secret', 'xpay-for-woocommerce' ),
 				'type'        => 'password',
 				/* translators: %s is this store's webhook URL. */
-				'description' => sprintf( __( 'whsec_… secret for a webhook endpoint pointing at %s (events: checkout.session.completed, checkout.session.expired).', 'xpay-for-woocommerce' ), '<code>' . esc_html( $webhook_url ) . '</code>' ),
+				'description' => sprintf( __( 'whsec_… secret for a webhook endpoint pointing at %s (events: checkout.session.completed, checkout.session.expired, payment_intent.payment_failed, charge.refunded, refund.failed).', 'xpay-for-woocommerce' ), '<code>' . esc_html( $webhook_url ) . '</code>' ),
 			),
 			'live_api_key'                      => array(
 				'title'       => __( 'Live secret key', 'xpay-for-woocommerce' ),
@@ -383,8 +383,9 @@ class XPay_Gateway extends WC_Payment_Gateway {
 		$saved = parent::process_admin_options();
 
 		// A settings save is the merchant acting on (or changing) their
-		// method configuration — retire any standing pin-rejected notice.
+		// configuration — retire any standing rejection notices.
 		delete_option( XPay_Constants::OPTION_PIN_REJECTED );
+		delete_option( XPay_Constants::OPTION_FX_REJECTED );
 
 		$key = $this->api_key();
 		if ( '' === $key ) {

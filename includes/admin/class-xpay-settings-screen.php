@@ -171,8 +171,8 @@ final class XPay_Settings_Screen {
 			}
 			echo '<li>' . esc_html__( 'Open Developer hub from the bottom-left corner of the page, then the Webhooks tab, and click Add endpoint.', 'xpay-for-woocommerce' ) . '</li>';
 			echo '<li>' . esc_html__( 'Paste your store\'s address above into the Endpoint URL field.', 'xpay-for-woocommerce' ) . '</li>';
-			echo '<li>' . esc_html__( 'Under "Select events to listen to", tick exactly these two, then click Add endpoint:', 'xpay-for-woocommerce' );
-			echo '<span class="xpay-adm__help-events"><code class="xpay-adm__mono">checkout.session.completed</code><code class="xpay-adm__mono">checkout.session.expired</code></span></li>';
+			echo '<li>' . esc_html__( 'Under "Select events to listen to", tick exactly these five, then click Add endpoint:', 'xpay-for-woocommerce' );
+			echo '<span class="xpay-adm__help-events"><code class="xpay-adm__mono">checkout.session.completed</code><code class="xpay-adm__mono">checkout.session.expired</code><code class="xpay-adm__mono">payment_intent.payment_failed</code><code class="xpay-adm__mono">charge.refunded</code><code class="xpay-adm__mono">refund.failed</code></span></li>';
 			echo '<li>' . esc_html__( 'The Webhook signing secret is shown only once, right after the endpoint is created. Copy the whsec_… value immediately and paste it into the signing secret field here, then save.', 'xpay-for-woocommerce' ) . '</li>';
 			echo '</ol>';
 			echo '</div>';

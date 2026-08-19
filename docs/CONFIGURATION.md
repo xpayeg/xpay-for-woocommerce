@@ -82,7 +82,7 @@ This is not an editable plugin setting — it's the URL you give XPay. The exact
 https://<your-store>/?wc-api=xpay_webhook
 ```
 
-In your XPay dashboard → **Developers → Webhooks**, add an endpoint pointing at that URL and subscribe it to the events `checkout.session.completed` and `checkout.session.expired`. **Test and live modes each need their own endpoint and their own signing secret.** XPay only delivers webhooks to HTTPS URLs, so your store must have a valid certificate.
+In your XPay dashboard → **Developers → Webhooks**, add an endpoint pointing at that URL and subscribe it to the events `checkout.session.completed`, `checkout.session.expired`, `payment_intent.payment_failed`, `charge.refunded` and `refund.failed`. **Test and live modes each need their own endpoint and their own signing secret.** XPay only delivers webhooks to HTTPS URLs, so your store must have a valid certificate.
 
 ---
 

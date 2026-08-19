@@ -13,12 +13,14 @@
  */
 
 function xpay_tests_reset_world(): void {
-	$GLOBALS['xpay_test_options']   = array();
-	$GLOBALS['xpay_test_user_meta'] = array();
-	$GLOBALS['xpay_test_orders']    = array();
-	$GLOBALS['xpay_test_actions']   = array();
-	$GLOBALS['xpay_test_locale']    = 'en_US';
-	$GLOBALS['wpdb']                = new XPay_Fake_Wpdb();
+	$GLOBALS['xpay_test_options']      = array();
+	$GLOBALS['xpay_test_user_meta']    = array();
+	$GLOBALS['xpay_test_orders']       = array();
+	$GLOBALS['xpay_test_actions']      = array();
+	$GLOBALS['xpay_test_locale']       = 'en_US';
+	$GLOBALS['xpay_test_wc_refunds']   = array();
+	$GLOBALS['xpay_test_refund_error'] = null;
+	$GLOBALS['wpdb']                   = new XPay_Fake_Wpdb();
 }
 
 /* ── Options ─────────────────────────────────────────────────────────── */
@@ -56,9 +58,60 @@ function wc_get_order( $order_id ) {
 }
 function clean_post_cache( $order_id ) {}
 
+/**
+ * Meta-query subset only — exactly the lookup the webhook controller's
+ * order_by_payment_intent() issues.
+ */
+function wc_get_orders( $args ) {
+	$matches = array();
+	$clauses = isset( $args['meta_query'] ) && is_array( $args['meta_query'] ) ? $args['meta_query'] : array();
+	$limit   = isset( $args['limit'] ) ? (int) $args['limit'] : -1;
+	foreach ( $GLOBALS['xpay_test_orders'] as $order ) {
+		$ok = true;
+		foreach ( $clauses as $clause ) {
+			if ( ! is_array( $clause ) || $order->get_meta( $clause['key'] ) !== $clause['value'] ) {
+				$ok = false;
+				break;
+			}
+		}
+		if ( $ok ) {
+			$matches[] = $order;
+			if ( $limit > 0 && count( $matches ) >= $limit ) {
+				break;
+			}
+		}
+	}
+	return $matches;
+}
+
 function wc_price( $amount, $args = array() ) {
 	$currency = isset( $args['currency'] ) ? $args['currency'] : '';
 	return trim( $currency . ' ' . $amount );
+}
+
+/**
+ * Records every mirror call; scripted to fail via
+ * $GLOBALS['xpay_test_refund_error'] (a WP_Error to return).
+ */
+function wc_create_refund( $args ) {
+	if ( isset( $GLOBALS['xpay_test_refund_error'] ) && null !== $GLOBALS['xpay_test_refund_error'] ) {
+		return $GLOBALS['xpay_test_refund_error'];
+	}
+	$GLOBALS['xpay_test_wc_refunds'][] = $args;
+	return new stdClass();
+}
+
+class WP_Error {
+	private $message;
+	public function __construct( $code = '', $message = '' ) {
+		$this->message = $message;
+	}
+	public function get_error_message() {
+		return $this->message;
+	}
+}
+function is_wp_error( $thing ) {
+	return $thing instanceof WP_Error;
 }
 
 /* ── Hooks: recorded, never dispatched ───────────────────────────────── */
@@ -76,6 +129,9 @@ function apply_filters( $hook, $value ) {
 
 function __( $text, $domain = null ) {
 	return $text;
+}
+function _n( $single, $plural, $number, $domain = null ) {
+	return 1 === (int) $number ? $single : $plural;
 }
 function esc_html__( $text, $domain = null ) {
 	return $text;

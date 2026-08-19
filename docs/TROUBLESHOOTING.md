@@ -50,7 +50,7 @@ These are the exact stage names the plugin writes:
 | `webhook.apply_failed` | Applying a verified event threw; the receiver answered 500 so XPay retries | `code` / `error` |
 | `order.paid` | The order was marked paid | `via`: `webhook` or `thankyou` |
 | `order.amount_mismatch` | XPay charged an amount/currency different from the order total — order parked **on-hold** | See the order note for both numbers |
-| `order.session_expired` | A session expired unpaid and the pending order was cancelled | — |
+| `order.session_expired` | A session expired unpaid and the pending order was marked failed (still payable via its pay link) | — |
 | `order_lock.unavailable` | MySQL `GET_LOCK` isn't available on this host; the plugin proceeded with its fallback guards | `db_error` — worth mentioning to your host |
 | `thankyou.check_failed` | The thank-you page's server-side re-check couldn't reach the API (fails open; webhook remains the safety net) | `code` |
 | `refund.submitted` / `refund.not_completed` | A refund succeeded / came back rejected or still in flight | `refund_id`, `status` |
@@ -98,7 +98,7 @@ On the pay page, the XPay window normally opens by itself over the receipt. If t
 
 ### The page says "Your order is saved. Pay when you are ready."
 
-Not an error. The shopper closed the XPay window without paying. The pay page switches to a calm paused state — the receipt shows an "Awaiting payment" stamp and a **Pay now** button that reopens the window. The order stays **pending** and remains payable (from account order history or an admin pay link). If the session later expires unpaid, the order is cancelled with the note *"XPay checkout session expired without payment."* (`order.session_expired` in the log).
+Not an error. The shopper closed the XPay window without paying. The pay page switches to a calm paused state — the receipt shows an "Awaiting payment" stamp and a **Pay now** button that reopens the window. The order stays **pending** and remains payable (from account order history or an admin pay link). If the session later expires unpaid, the order is marked **failed** with the note *"XPay checkout session expired without payment. The order can still be paid through its payment link."* (`order.session_expired` in the log) — a failed order stays payable, and a shopper returning through the emailed pay link gets a fresh payment session automatically. If any attempts were declined during the session, the note also quotes how many and the last decline reason.
 
 ### Customer paid but the order is stuck in "pending"
 
@@ -108,7 +108,7 @@ The single most common report, and almost always a webhook problem. The webhook 
 
 1. **XPay dashboard → the payment.** Is it actually paid there? If not, the shopper never completed payment — nothing is stuck.
 2. **XPay dashboard → webhook delivery log.** What status did your store answer?
-   - **No deliveries at all** → no webhook endpoint is configured for your store URL in this mode, or it points elsewhere. Create/point an endpoint at exactly `https://<your-store>/?wc-api=xpay_webhook`, subscribed to `checkout.session.completed` and `checkout.session.expired`.
+   - **No deliveries at all** → no webhook endpoint is configured for your store URL in this mode, or it points elsewhere. Create/point an endpoint at exactly `https://<your-store>/?wc-api=xpay_webhook`, subscribed to `checkout.session.completed`, `checkout.session.expired`, `payment_intent.payment_failed`, `charge.refunded` and `refund.failed`.
    - **404** → URL typo — see [next symptom](#webhook-deliveries-return-404).
    - **401** → signature failure — see [below](#webhook-deliveries-fail-with-401). The classic cause: the endpoint on the XPay dashboard is in one mode and the store is in the other, so the wrong `whsec_…` signs the events.
    - **500** → with `webhook_not_configured` in the XPay Log: the plugin has no signing secret saved for the current mode. Paste the endpoint's `whsec_…` into the matching **webhook signing secret** field.

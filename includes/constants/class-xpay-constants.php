@@ -92,6 +92,17 @@ final class XPay_Constants {
 	const META_SESSION_CHECKED_AT = '_xpay_session_checked_at';
 
 	/**
+	 * Session ids this order left behind (bounded list, newest last).
+	 * Written whenever a new session supersedes an old one. A paid event
+	 * carrying one of these ids is provably THIS order's money on an
+	 * outdated session (expire failed or raced, shopper finished it from
+	 * an old tab or link) — it parks the order on-hold for a human
+	 * instead of being dropped as anonymous. Foreign session ids still
+	 * fail ownership outright.
+	 */
+	const META_SUPERSEDED_SESSIONS = '_xpay_superseded_sessions';
+
+	/**
 	 * XPay refund ids (re_…) recorded after each refund this plugin
 	 * completed. The COUNT feeds the deterministic refund Idempotency-Key:
 	 * a retry of a refund whose HTTP response was lost composes the same
@@ -103,6 +114,16 @@ final class XPay_Constants {
 
 	/** Option flagging a method pin the API rejected (drives the admin notice). */
 	const OPTION_PIN_REJECTED = 'xpay_wc_method_pin_rejected';
+
+	/**
+	 * Option flagging a store currency the API rejected for THIS merchant
+	 * (exchange_rate_not_found): platform-supported in general, but the
+	 * account has no exchange rate configured, so every shopper fails
+	 * identically after Place Order until the merchant acts. Drives a
+	 * standing admin notice; cleared by a settings save or the next
+	 * successful session. array{currency: string, at: string}.
+	 */
+	const OPTION_FX_REJECTED = 'xpay_wc_fx_rejected';
 
 	/**
 	 * The merchant's primary brand color ('#rrggbb'), snapshotted from the

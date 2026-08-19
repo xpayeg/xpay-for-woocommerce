@@ -39,10 +39,11 @@ final class XPay_Error_Codes {
 	const API_ERROR       = 'api_error';       // API error response carried no usable code.
 
 	/* ── XPay API codes the plugin branches on ───────────────────────── */
-	const API_RESOURCE_MISSING       = 'resource_missing';
-	const API_PARAMETER_INVALID      = 'parameter_invalid';
-	const API_RESOURCE_INVALID_STATE = 'resource_invalid_state';
-	const API_RATE_LIMIT             = 'rate_limit';
-	const API_KEY_INVALID            = 'api_key_invalid';
-	const API_KEY_INACTIVE           = 'api_key_inactive';
+	const API_RESOURCE_MISSING        = 'resource_missing';
+	const API_PARAMETER_INVALID       = 'parameter_invalid';
+	const API_RESOURCE_INVALID_STATE  = 'resource_invalid_state';
+	const API_RATE_LIMIT              = 'rate_limit';
+	const API_KEY_INVALID             = 'api_key_invalid';
+	const API_KEY_INACTIVE            = 'api_key_inactive';
+	const API_EXCHANGE_RATE_NOT_FOUND = 'exchange_rate_not_found';
 }

@@ -68,7 +68,7 @@ Yes. In the XPay settings, set "Payment options" to "A separate option per payme
 
 = How do I set up the webhook? =
 
-Your XPay dashboard → Developers → Webhooks. Add an endpoint pointing at the URL shown in the plugin settings, subscribe it to `checkout.session.completed` and `checkout.session.expired`, and paste the signing secret into the plugin. Test and live modes each need their own endpoint and secret.
+Your XPay dashboard → Developers → Webhooks. Add an endpoint pointing at the URL shown in the plugin settings, subscribe it to `checkout.session.completed`, `checkout.session.expired`, `payment_intent.payment_failed`, `charge.refunded` and `refund.failed`, and paste the signing secret into the plugin. Test and live modes each need their own endpoint and secret.
 
 = Why is refund disabled for a valU order? =
 
@@ -99,6 +99,8 @@ Nothing breaks, but shoppers see two separate XPay options at checkout, and the 
 * Cart/Checkout Blocks support and HPOS compatibility declared from this release.
 * Full and partial refunds from the order screen (EGP orders; other currencies refund from the XPay dashboard), with retry-safe refund requests that can never pay out twice.
 * Orders are confirmed only by signed webhooks or a server-side session check, never by the browser redirect.
+* Refunds issued from the XPay dashboard sync back into WooCommerce automatically, and declined payment attempts appear as order notes.
+* Unpaid orders whose payment session expires are marked failed, keeping the emailed pay link usable whenever the shopper returns.
 * Compatibility built in: WPFunnels safeguard, script-optimizer opt-outs on payment scripts, and a legacy-plugin warning.
 * Breaking: the v2 (community API) integration is removed. v2 merchants: install this version, paste your v3 keys, and configure the webhook — settings do not carry over.
 

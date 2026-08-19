@@ -40,6 +40,7 @@ function xpay_wc_uninstall_site() {
 		'woocommerce_xpay_settings',
 		'xpay_wc_db_version',
 		'xpay_wc_method_pin_rejected',
+		'xpay_wc_fx_rejected',
 		'xpay_wc_brand_primary',
 		'xpay_wc_key_validated',
 		'xpay_wc_last_webhook_at_test',

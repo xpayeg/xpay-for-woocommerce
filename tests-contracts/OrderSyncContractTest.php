@@ -93,12 +93,12 @@ class OrderSyncContractTest extends ContractTestCase {
 		$this->assertGreaterThan( 0, $order->saves, 'Identifiers written above must still be persisted.' );
 	}
 
-	public function test_mark_expired_cancels_only_unpaid_pending_orders() {
+	public function test_mark_expired_fails_only_unpaid_pending_orders() {
 		$order = $this->makeOrder( 14 );
 
 		XPay_Order_Sync::mark_expired( $order );
 
-		$this->assertSame( 'cancelled', $order->status );
+		$this->assertSame( 'failed', $order->status, 'FAILED keeps the pay link alive; CANCELLED broke the "pay when you are ready" promise.' );
 		$this->assertStageFired( 'order.session_expired' );
 	}
 

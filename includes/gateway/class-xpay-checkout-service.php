@@ -93,6 +93,18 @@ class XPay_Checkout_Service {
 		// cancel this order. Best-effort: the new session is already live,
 		// and the old one dies on its own clock if this call fails.
 		if ( '' !== $existing_id && $existing_id !== (string) $session['id'] ) {
+			// Remembered UNCONDITIONALLY, before the expire attempt: even a
+			// successful expire can lose the race with a payment finishing
+			// right now, and the resulting paid event must be recognizable
+			// as this order's money (webhook parks it on-hold) rather than
+			// dropped as anonymous. Bounded: an order cycling sessions
+			// cannot grow the list without limit.
+			$superseded   = $order->get_meta( XPay_Constants::META_SUPERSEDED_SESSIONS );
+			$superseded   = is_array( $superseded ) ? $superseded : array();
+			$superseded[] = $existing_id;
+			$order->update_meta_data( XPay_Constants::META_SUPERSEDED_SESSIONS, array_slice( array_unique( $superseded ), -10 ) );
+			$order->save();
+
 			try {
 				$this->client->expire_checkout_session( $existing_id );
 				XPay_Logger::event(
@@ -308,6 +320,15 @@ class XPay_Checkout_Service {
 				$body    = $this->apply_customer_fields( $body, $order );
 				$session = $this->client->create_checkout_session( $body, sprintf( 'wc_%d_a%dr', $order->get_id(), $attempt ) );
 			} else {
+				// A currency the platform supports can still be rejected
+				// for THIS merchant (no exchange rate configured on the
+				// account). Every shopper fails identically until the
+				// merchant acts, so the failure earns a standing admin
+				// notice — the shopper-facing handling stays the generic
+				// safe failure either way.
+				if ( XPay_Error_Codes::API_EXCHANGE_RATE_NOT_FOUND === $e->get_error_code() ) {
+					$this->record_fx_rejection( $order );
+				}
 				throw $e;
 			}
 		}
@@ -355,7 +376,64 @@ class XPay_Checkout_Service {
 			)
 		);
 
+		// A session in this currency just succeeded — any standing
+		// currency-rejection notice is stale. One cached option read
+		// when nothing is flagged.
+		if ( false !== get_option( XPay_Constants::OPTION_FX_REJECTED ) ) {
+			delete_option( XPay_Constants::OPTION_FX_REJECTED );
+		}
+
 		return $session;
+	}
+
+	/**
+	 * Remember that the API refused the store currency for this merchant's
+	 * account, so admin can say so until it is fixed. Overwritten, never
+	 * stacked: one store has one currency at a time.
+	 *
+	 * @param WC_Order $order Order whose session creation hit the rejection.
+	 */
+	private function record_fx_rejection( WC_Order $order ): void {
+		$currency = strtoupper( $order->get_currency() );
+		XPay_Logger::event(
+			'session.currency_rejected',
+			array(
+				'order_id' => $order->get_id(),
+				'currency' => $currency,
+			)
+		);
+		update_option(
+			XPay_Constants::OPTION_FX_REJECTED,
+			array(
+				'currency' => $currency,
+				'at'       => gmdate( 'Y-m-d H:i:s' ),
+			),
+			false
+		);
+	}
+
+	/**
+	 * Standing admin notice for a per-merchant currency rejection.
+	 * Rendered on admin_notices; cleared by a settings save or the next
+	 * successful session.
+	 */
+	public static function render_currency_rejected_notice(): void {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			return;
+		}
+		$rejected = get_option( XPay_Constants::OPTION_FX_REJECTED );
+		if ( ! is_array( $rejected ) || empty( $rejected['currency'] ) ) {
+			return;
+		}
+		echo '<div class="notice notice-error"><p>';
+		echo esc_html(
+			sprintf(
+				/* translators: %s is the rejected currency code (for example "USD"). */
+				__( 'XPay: a payment in %s was rejected because your XPay account has no exchange rate configured for it. Every checkout will fail the same way until this is fixed. Contact XPay support to enable the currency, or change your store currency.', 'xpay-for-woocommerce' ),
+				(string) $rejected['currency']
+			)
+		);
+		echo '</p></div>';
 	}
 
 	/**

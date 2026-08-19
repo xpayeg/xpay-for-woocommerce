@@ -124,17 +124,33 @@ class XPay_Webhook_Controller {
 	 * @param array  $session_object data.object payload (a checkout session).
 	 * @throws XPay_Api_Exception On ownership mismatch, or when the per-order lock stays busy.
 	 */
-	private static function apply_event( string $type, string $event_id, array $session_object ): void {
+	/** Event types whose data.object is session-scoped (a session, or a payment intent carrying its session id). */
+	const SESSION_SCOPED = array(
+		XPay_Event_Names::CHECKOUT_SESSION_COMPLETED,
+		XPay_Event_Names::CHECKOUT_SESSION_EXPIRED,
+		XPay_Event_Names::PAYMENT_INTENT_FAILED,
+	);
+
+	private static function apply_event( string $type, string $event_id, array $payload ): void {
 		if ( ! in_array( $type, XPay_Event_Names::SUBSCRIBED, true ) ) {
 			return; // Unknown/unsubscribed types are acknowledged, never errors — forward compatibility.
 		}
 
-		$order = self::resolve_order( $session_object );
+		$order = self::locate_order( $type, $payload );
 		if ( null === $order ) {
 			// Order deleted or foreign event: acknowledged and ignored.
 			// 404-ing would burn XPay's 3-day retry schedule on a permanent state.
 			XPay_Logger::event( 'webhook.order_not_found', array( 'event_id' => $event_id ) );
 			return;
+		}
+
+		// Cheap rejection BEFORE the lock: a genuinely foreign session id
+		// (the IDOR case) never earns a lock acquisition. The refund events
+		// carry no metadata to forge — their order WAS located by exact
+		// payment-intent match, which is the same control.
+		if ( in_array( $type, self::SESSION_SCOPED, true ) && 'foreign' === self::session_relation( $order, self::event_session_id( $type, $payload ) ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- constant message; the webhook response body carries only the stable code, never this text.
+			throw XPay_Api_Exception::webhook( XPay_Error_Codes::ORDER_MISMATCH, 'Session does not belong to this order' );
 		}
 
 		// One writer per order: dedupe check → transition → processed-list
@@ -160,12 +176,52 @@ class XPay_Webhook_Controller {
 				return;
 			}
 
+			// Re-evaluated on the reloaded order: a concurrent supersede may
+			// have moved the stored id between the pre-lock check and here.
+			$relation = 'current';
+			if ( in_array( $type, self::SESSION_SCOPED, true ) ) {
+				$relation = self::session_relation( $order, self::event_session_id( $type, $payload ) );
+				if ( 'foreign' === $relation ) {
+					XPay_Logger::event( 'webhook.relation_changed_in_lock', array( 'event_id' => $event_id ) );
+					return;
+				}
+			}
+
 			switch ( $type ) {
 				case XPay_Event_Names::CHECKOUT_SESSION_COMPLETED:
-					XPay_Order_Sync::mark_paid( $order, $session_object, 'webhook' );
+					if ( 'current' === $relation ) {
+						XPay_Order_Sync::mark_paid( $order, $payload, 'webhook' );
+					} else {
+						// Money on a session this order left behind: park it
+						// for a human instead of dropping it silently.
+						XPay_Order_Sync::apply_superseded_paid( $order, $payload );
+					}
 					break;
 				case XPay_Event_Names::CHECKOUT_SESSION_EXPIRED:
-					XPay_Order_Sync::mark_expired( $order );
+					if ( 'current' === $relation ) {
+						XPay_Order_Sync::mark_expired( $order, $payload );
+					} else {
+						// The expected end of a superseded session — never a
+						// reason to touch the order's current state.
+						XPay_Logger::event(
+							'webhook.superseded_expired_ignored',
+							array(
+								'event_id' => $event_id,
+								'order_id' => $order_id,
+							)
+						);
+					}
+					break;
+				case XPay_Event_Names::PAYMENT_INTENT_FAILED:
+					// Both 'current' and 'superseded' are this order's own
+					// attempts — a decline is order history either way.
+					XPay_Order_Sync::note_payment_failed( $order, $payload );
+					break;
+				case XPay_Event_Names::CHARGE_REFUNDED:
+					XPay_Refund_Service::mirror_charge_refunds( $order, $payload );
+					break;
+				case XPay_Event_Names::REFUND_FAILED:
+					XPay_Refund_Service::note_refund_failed( $order, $payload );
 					break;
 			}
 
@@ -178,15 +234,27 @@ class XPay_Webhook_Controller {
 	}
 
 	/**
-	 * Locate the order via metadata.wc_order_id, then enforce ownership:
-	 * the event's session id must equal the session id stored on the order.
+	 * Locate the order for an event, by object family. Ownership is NOT
+	 * decided here for session-scoped events — session_relation() answers
+	 * that separately, because a superseded id and a foreign id deserve
+	 * different fates.
 	 *
-	 * @param array $session Session object from the event.
+	 * @param string $type   Event type (decides the object family).
+	 * @param array  $payload data.object payload.
 	 * @return WC_Order|null Null when no such order exists.
-	 * @throws XPay_Api_Exception When the order exists but the session doesn't match it.
 	 */
-	private static function resolve_order( array $session ): ?WC_Order {
-		$order_id = isset( $session['metadata']['wc_order_id'] ) ? absint( $session['metadata']['wc_order_id'] ) : 0;
+	private static function locate_order( string $type, array $payload ): ?WC_Order {
+		if ( XPay_Event_Names::CHARGE_REFUNDED === $type || XPay_Event_Names::REFUND_FAILED === $type ) {
+			return self::order_by_payment_intent( $payload );
+		}
+
+		// Sessions carry the plugin's own metadata; the failed-payment
+		// event's payment intent carries a copy of it (snapshotted at the
+		// shopper's first submit), with the nested session as fallback.
+		$order_id = isset( $payload['metadata']['wc_order_id'] ) ? absint( $payload['metadata']['wc_order_id'] ) : 0;
+		if ( 0 === $order_id && isset( $payload['checkoutSession']['metadata']['wc_order_id'] ) ) {
+			$order_id = absint( $payload['checkoutSession']['metadata']['wc_order_id'] );
+		}
 		if ( 0 === $order_id ) {
 			return null;
 		}
@@ -194,19 +262,89 @@ class XPay_Webhook_Controller {
 		if ( ! $order instanceof WC_Order || ! XPay_Constants::is_xpay_gateway( (string) $order->get_payment_method() ) ) {
 			return null;
 		}
-
-		$stored   = trim( (string) $order->get_meta( XPay_Constants::META_SESSION_ID ) );
-		$incoming = isset( $session['id'] ) ? trim( (string) $session['id'] ) : '';
-
-		// IDOR guard: without this, anyone who completed ANY session could
-		// craft metadata pointing at ANY order. Exact match against the id
-		// we stored is the load-bearing control (v2's check, preserved).
-		if ( '' === $stored || '' === $incoming || ! hash_equals( $stored, $incoming ) ) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- constant message; the webhook response body carries only the stable code, never this text.
-			throw XPay_Api_Exception::webhook( XPay_Error_Codes::ORDER_MISMATCH, 'Session does not belong to this order' );
-		}
-
 		return $order;
+	}
+
+	/**
+	 * Refund-family events carry no metadata at all — the charge/refund
+	 * object's paymentIntentId is the only correlation channel. The exact
+	 * match against the intent id the plugin recorded at payment time IS
+	 * the ownership check: events are signature-verified as this
+	 * merchant's, and an intent that matches no order applies nowhere.
+	 *
+	 * @param array $payload Charge or refund payload.
+	 */
+	private static function order_by_payment_intent( array $payload ): ?WC_Order {
+		$intent_id = isset( $payload['paymentIntentId'] ) && is_string( $payload['paymentIntentId'] ) ? trim( $payload['paymentIntentId'] ) : '';
+		if ( '' === $intent_id ) {
+			return null;
+		}
+		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- one bounded lookup (limit 1) on the plugin's own indexed order meta; there is no other key a refund event can be correlated by.
+		$orders = wc_get_orders(
+			array(
+				'limit'      => 1,
+				'meta_query' => array(
+					array(
+						'key'   => XPay_Constants::META_PAYMENT_INTENT,
+						'value' => $intent_id,
+					),
+				),
+			)
+		);
+		$order  = is_array( $orders ) && isset( $orders[0] ) ? $orders[0] : null;
+		if ( ! $order instanceof WC_Order || ! XPay_Constants::is_xpay_gateway( (string) $order->get_payment_method() ) ) {
+			return null;
+		}
+		return $order;
+	}
+
+	/**
+	 * The session id a session-scoped event speaks for: the session's own
+	 * id, or the payment intent's checkoutSessionId.
+	 *
+	 * @param string $type   Event type.
+	 * @param array  $payload data.object payload.
+	 */
+	private static function event_session_id( string $type, array $payload ): string {
+		if ( XPay_Event_Names::PAYMENT_INTENT_FAILED === $type ) {
+			if ( isset( $payload['checkoutSessionId'] ) && is_string( $payload['checkoutSessionId'] ) ) {
+				return trim( $payload['checkoutSessionId'] );
+			}
+			if ( isset( $payload['checkoutSession']['id'] ) && is_string( $payload['checkoutSession']['id'] ) ) {
+				return trim( $payload['checkoutSession']['id'] );
+			}
+			return '';
+		}
+		return isset( $payload['id'] ) ? trim( (string) $payload['id'] ) : '';
+	}
+
+	/**
+	 * How the event's session id relates to this order:
+	 *
+	 *   'current'    — exactly the id the plugin stored (the IDOR guard's
+	 *                  match, v2's check preserved). Full trust.
+	 *   'superseded' — an id from this order's own superseded ledger:
+	 *                  provably ours, but for an outdated session.
+	 *   'foreign'    — neither. Without the exact-match control, anyone
+	 *                  who completed ANY session could craft metadata
+	 *                  pointing at ANY order.
+	 *
+	 * @param WC_Order $order    Candidate order from locate_order().
+	 * @param string   $incoming Session id the event speaks for.
+	 */
+	private static function session_relation( WC_Order $order, string $incoming ): string {
+		$stored = trim( (string) $order->get_meta( XPay_Constants::META_SESSION_ID ) );
+		if ( '' === $stored || '' === $incoming ) {
+			return 'foreign';
+		}
+		if ( hash_equals( $stored, $incoming ) ) {
+			return 'current';
+		}
+		$superseded = $order->get_meta( XPay_Constants::META_SUPERSEDED_SESSIONS );
+		if ( is_array( $superseded ) && in_array( $incoming, $superseded, true ) ) {
+			return 'superseded';
+		}
+		return 'foreign';
 	}
 
 	private static function already_processed( WC_Order $order, string $event_id ): bool {

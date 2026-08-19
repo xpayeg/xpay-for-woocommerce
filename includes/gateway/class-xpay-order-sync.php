@@ -198,27 +198,210 @@ class XPay_Order_Sync {
 	}
 
 	/**
-	 * Cancel an order whose session expired unpaid. Idempotent; refuses to
-	 * touch paid or already-terminal orders.
+	 * A paid event arrived on a session this order has since superseded:
+	 * provably this order's money (the id came from the order's own
+	 * superseded ledger), but possibly for an outdated total, so it never
+	 * auto-completes — the order parks on-hold for a human, the same
+	 * pattern as the amount-mismatch guard. Two shapes:
 	 *
-	 * @param WC_Order $order Target order.
+	 *   - Order still unpaid: the outdated session's money is the only
+	 *     money. Park on-hold, record the payment intent so refunds and
+	 *     the expiry guard see real money behind the order.
+	 *   - Order already paid: the CURRENT session also collected — the
+	 *     shopper paid twice. Note it loudly; the recorded intent stays
+	 *     the current session's (refunding the duplicate is a dashboard
+	 *     action on the OLD intent, named in the note).
+	 *
+	 * @param WC_Order $order   Target order (superseded ownership verified).
+	 * @param array    $session COMPLETE session payload from the event.
 	 */
-	public static function mark_expired( WC_Order $order ): void {
+	public static function apply_superseded_paid( WC_Order $order, array $session ): void {
+		$paid = isset( $session['paymentStatus'] ) && XPay_Payment_Status::PAID === $session['paymentStatus'];
+		if ( ! $paid ) {
+			return; // A completed-but-unpaid superseded session moves no money.
+		}
+
+		$session_id = isset( $session['id'] ) ? (string) $session['id'] : '';
+		$intent_id  = '';
+		if ( isset( $session['paymentIntent']['id'] ) && is_string( $session['paymentIntent']['id'] ) ) {
+			$intent_id = $session['paymentIntent']['id'];
+		} elseif ( isset( $session['paymentIntentId'] ) && is_string( $session['paymentIntentId'] ) ) {
+			$intent_id = $session['paymentIntentId'];
+		}
+
+		if ( $order->is_paid() ) {
+			XPay_Logger::event(
+				'order.superseded_double_paid',
+				array(
+					'order_id'   => $order->get_id(),
+					'session_id' => $session_id,
+					'intent_id'  => $intent_id,
+				)
+			);
+			$order->add_order_note(
+				sprintf(
+					/* translators: 1: XPay checkout session id, 2: XPay payment intent id. */
+					__( 'XPay received a SECOND payment for this order, on an outdated payment session (%1$s, payment intent %2$s). Refund the duplicate payment from your XPay dashboard.', 'xpay-for-woocommerce' ),
+					'' !== $session_id ? $session_id : '—',
+					'' !== $intent_id ? $intent_id : '—'
+				)
+			);
+			$order->save();
+			return;
+		}
+
+		if ( '' !== $intent_id ) {
+			$order->update_meta_data( XPay_Constants::META_PAYMENT_INTENT, $intent_id );
+		}
+		self::remember_customer( $order, $session );
+
+		XPay_Logger::event(
+			'order.superseded_paid',
+			array(
+				'order_id'   => $order->get_id(),
+				'session_id' => $session_id,
+				'intent_id'  => $intent_id,
+			)
+		);
+
+		$note = sprintf(
+			/* translators: %s is the XPay checkout session id the payment arrived on. */
+			__( 'XPay received a payment for this order on an outdated payment session (%s), so the amount may not match the current total. Review the payment in your XPay dashboard, then complete or refund the order manually.', 'xpay-for-woocommerce' ),
+			'' !== $session_id ? $session_id : '—'
+		);
+		if ( ! $order->has_status( 'on-hold' ) ) {
+			$order->update_status( 'on-hold', $note );
+		} else {
+			$order->add_order_note( $note );
+			$order->save();
+		}
+	}
+
+	/**
+	 * Fail an order whose session expired unpaid. FAILED, not CANCELLED,
+	 * by design: a failed order stays payable, so the emailed pay link
+	 * keeps working (the pay page mints a fresh session on the revisit)
+	 * and WooCommerce's own failed-order machinery can nudge the shopper.
+	 * Cancelling killed the link a day after the pay page promised
+	 * "pay when you are ready". Idempotent; refuses to touch paid or
+	 * already-terminal orders.
+	 *
+	 * @param WC_Order $order   Target order.
+	 * @param array    $session Expired-session payload when available — its
+	 *                          embedded payment intent carries the decline
+	 *                          history that explains WHY nothing was paid.
+	 */
+	public static function mark_expired( WC_Order $order, array $session = array() ): void {
 		if ( $order->is_paid() || ! $order->has_status( array( 'pending', 'on-hold' ) ) ) {
 			return;
 		}
 		// A recorded payment intent means money moved for this order —
 		// possibly parked on-hold by the amount guard while a later retry
-		// session expired unpaid. Cancelling would bury a real payment;
+		// session expired unpaid. Failing would bury a real payment;
 		// orders with money behind them are resolved by humans only.
 		if ( '' !== (string) $order->get_meta( XPay_Constants::META_PAYMENT_INTENT ) ) {
 			return;
 		}
 		$order->update_status(
-			'cancelled',
-			__( 'XPay checkout session expired without payment.', 'xpay-for-woocommerce' )
+			'failed',
+			trim( __( 'XPay checkout session expired without payment. The order can still be paid through its payment link.', 'xpay-for-woocommerce' ) . ' ' . self::decline_summary( $session ) )
 		);
 		XPay_Logger::event( 'order.session_expired', array( 'order_id' => $order->get_id() ) );
+	}
+
+	/**
+	 * One sentence summarizing the declines embedded in an expired-session
+	 * payload, or '' when there were none (or the shopper never submitted
+	 * — the payload's paymentIntent is null then). This is the post-mortem
+	 * on an abandoned order: "walked away" and "card kept declining" need
+	 * different merchant responses.
+	 *
+	 * @param array $session Expired-session payload.
+	 */
+	private static function decline_summary( array $session ): string {
+		if ( ! isset( $session['paymentIntent'] ) || ! is_array( $session['paymentIntent'] ) ) {
+			return '';
+		}
+		$intent = $session['paymentIntent'];
+
+		$failed = 0;
+		if ( isset( $intent['charges'] ) && is_array( $intent['charges'] ) ) {
+			foreach ( $intent['charges'] as $charge ) {
+				if ( is_array( $charge ) && isset( $charge['status'] ) && 'FAILED' === $charge['status'] ) {
+					++$failed;
+				}
+			}
+		}
+		if ( 0 === $failed ) {
+			return '';
+		}
+
+		/* translators: %d is the number of declined payment attempts. */
+		$summary = sprintf( _n( 'The shopper made %d payment attempt that was declined.', 'The shopper made %d payment attempts that were declined.', $failed, 'xpay-for-woocommerce' ), $failed );
+
+		$error = isset( $intent['lastPaymentError'] ) && is_array( $intent['lastPaymentError'] ) ? $intent['lastPaymentError'] : array();
+		$code  = self::error_field( $error, 'declineCode' );
+		$code  = '' !== $code ? $code : self::error_field( $error, 'code' );
+		if ( '' !== $code ) {
+			$message  = self::error_field( $error, 'merchantMessage' );
+			$message  = '' !== $message ? $message : self::error_field( $error, 'message' );
+			$summary .= ' ' . sprintf(
+				/* translators: 1: XPay failure code, 2: failure message. */
+				__( 'Last decline: %1$s (%2$s)', 'xpay-for-woocommerce' ),
+				$code,
+				'' !== $message ? $message : '—'
+			);
+		}
+		return $summary;
+	}
+
+	/**
+	 * @param array  $error lastPaymentError payload.
+	 * @param string $key   Field name.
+	 */
+	private static function error_field( array $error, string $key ): string {
+		return isset( $error[ $key ] ) && is_string( $error[ $key ] ) ? trim( $error[ $key ] ) : '';
+	}
+
+	/**
+	 * Record a declined attempt on the order, from a
+	 * payment_intent.payment_failed event. A note and a log row, never a
+	 * status change: the shopper may still succeed on the next attempt,
+	 * and expiry/payment keep their own writers. Skipped entirely on paid
+	 * orders — a straggler decline event after success is noise.
+	 *
+	 * @param WC_Order $order  Target order (session ownership verified).
+	 * @param array    $intent Payment-intent payload from the event.
+	 */
+	public static function note_payment_failed( WC_Order $order, array $intent ): void {
+		if ( $order->is_paid() ) {
+			return;
+		}
+
+		$error   = isset( $intent['lastPaymentError'] ) && is_array( $intent['lastPaymentError'] ) ? $intent['lastPaymentError'] : array();
+		$code    = self::error_field( $error, 'declineCode' );
+		$code    = '' !== $code ? $code : self::error_field( $error, 'code' );
+		$message = self::error_field( $error, 'merchantMessage' );
+		$message = '' !== $message ? $message : self::error_field( $error, 'message' );
+
+		$order->add_order_note(
+			sprintf(
+				/* translators: 1: XPay failure code (for example "insufficient_funds"), 2: failure message. */
+				__( 'XPay payment attempt declined [%1$s]: %2$s The shopper can retry; the order is unchanged.', 'xpay-for-woocommerce' ),
+				'' !== $code ? $code : 'unknown',
+				'' !== $message ? rtrim( $message, '.' ) . '.' : '—'
+			)
+		);
+		$order->save();
+
+		XPay_Logger::event(
+			'order.payment_failed',
+			array(
+				'order_id'  => $order->get_id(),
+				'intent_id' => isset( $intent['id'] ) ? (string) $intent['id'] : '',
+				'code'      => $code,
+			)
+		);
 	}
 
 	/**

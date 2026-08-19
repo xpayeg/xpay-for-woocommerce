@@ -8,7 +8,7 @@ Adds [XPay](https://xpay.app/) as a payment method on any WooCommerce store. Sho
 
 1. **Install** — upload the plugin folder to `wp-content/plugins/` and activate, or install from a `.zip` via WP Admin → Plugins → Add New → Upload Plugin.
 2. **Configure** — WP Admin → WooCommerce → Settings → Payments → XPay. Leave **Mode** on **Test**, then paste your test keys from the XPay dashboard → Developers → API keys: a restricted secret key (`rk_test_…`) and the publishable key (`pk_test_…`).
-3. **Set up the webhook** — in the XPay dashboard, add a webhook endpoint pointing at the URL shown in the plugin settings (`https://your-store/?wc-api=xpay_webhook`), subscribe it to `checkout.session.completed` and `checkout.session.expired`, and paste its signing secret (`whsec_…`) into the plugin.
+3. **Set up the webhook** — in the XPay dashboard, add a webhook endpoint pointing at the URL shown in the plugin settings (`https://your-store/?wc-api=xpay_webhook`), subscribe it to `checkout.session.completed`, `checkout.session.expired`, `payment_intent.payment_failed`, `charge.refunded` and `refund.failed`, and paste its signing secret (`whsec_…`) into the plugin.
 4. **Test** — place an order with a test card. The XPay window opens on the pay page; after payment the confirmation page shows the receipt stamped PAID, and the order note says how it was confirmed.
 5. **Go live** — switch **Mode** to **Live** and paste the live key set (keys and webhook secrets are separate per mode). Full checklist in [docs/GOING_LIVE.md](docs/GOING_LIVE.md).
 

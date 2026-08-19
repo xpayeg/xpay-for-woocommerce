@@ -12,7 +12,7 @@ Before you flip Mode to Live, confirm all of the following. Each failure here is
 
 - [ ] **HTTPS is enabled** on your site, and the certificate is valid. XPay only delivers webhooks to `https` URLs. Take the exact webhook URL from the plugin settings (it looks like `https://your-domain.example/?wc-api=xpay_webhook`), then test with `curl -i -X POST -H 'Content-Type: application/json' -d '{}' '<THAT_URL>'` — with a signing secret already saved in the plugin, you should get back HTTP 401 (unsigned request rejected). That confirms TLS works and the receiver is alive. A TLS error means the URL is unreachable; a 500 means the plugin has no webhook secret saved yet.
 - [ ] **Live keys obtained** from your XPay dashboard → Developers → API keys: a live **restricted key** (`rk_live_…`) with Checkout Sessions and Refunds access, and the live **publishable key** (`pk_live_…`). These are different values from your test keys.
-- [ ] **Live webhook endpoint created** — in your XPay dashboard → Developers → Webhooks, add a **live-mode** endpoint pointing at your store's `/?wc-api=xpay_webhook` URL (copy it character-for-character from the plugin settings), subscribed to `checkout.session.completed` and `checkout.session.expired`. Copy its signing secret (`whsec_…`) — the live endpoint has its own secret, separate from the test endpoint's.
+- [ ] **Live webhook endpoint created** — in your XPay dashboard → Developers → Webhooks, add a **live-mode** endpoint pointing at your store's `/?wc-api=xpay_webhook` URL (copy it character-for-character from the plugin settings), subscribed to `checkout.session.completed`, `checkout.session.expired`, `payment_intent.payment_failed`, `charge.refunded` and `refund.failed`. Copy its signing secret (`whsec_…`) — the live endpoint has its own secret, separate from the test endpoint's.
 - [ ] **Test mode verified end-to-end** — at minimum, one successful test payment with the order moving from `pending` to `processing` automatically (proves the webhook reached your site and verified), and one refund issued from the WooCommerce order screen.
 - [ ] **Site backup taken** — most managed hosts (WP Engine, Kinsta, etc.) offer one-click backups. Take one before any production change.
 - [ ] **Payment methods confirmed on your live XPay account** — especially if you use the per-method checkout rows (Card / valU / Fawry): only tick methods your live account actually has enabled. A shopper who picks a missing method falls back to the full XPay window, so nothing breaks, but you'll collect admin notices you don't need.
@@ -33,7 +33,7 @@ If you didn't already do this during pre-flight: in your XPay dashboard, go to *
    https://your-domain.example/?wc-api=xpay_webhook
    ```
    (use your real production domain, not a staging copy or localhost)
-2. **Events**: subscribe it to `checkout.session.completed` and `checkout.session.expired`.
+2. **Events**: subscribe it to `checkout.session.completed`, `checkout.session.expired`, `payment_intent.payment_failed`, `charge.refunded` and `refund.failed`.
 3. Save, then copy the endpoint's signing secret (`whsec_…`). You'll paste it into the plugin next.
 
 ### 2. Update the plugin settings

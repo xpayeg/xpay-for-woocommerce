@@ -121,6 +121,17 @@ final class XPay_Plugin {
 		XPay_Script_Guard::register();
 
 		// Prune runs from WP-Cron (any request context, not just admin).
+		// The schema check rides the same cron first (priority 5): the lazy
+		// admin-load check below never fires on a headless or WP-CLI-managed
+		// store, so without this a schema bump shipped in an update would
+		// never apply there. It early-returns on a matching version — one
+		// cached option read per day. The post-update hook narrows the
+		// window further when some OTHER update runs with this plugin's new
+		// code already loaded (our own update still carries the old code
+		// for the rest of its request, which is exactly why the cron pass
+		// exists).
+		add_action( XPay_Log_Store::CRON_HOOK, array( 'XPay_Log_Store', 'install' ), 5 );
+		add_action( 'upgrader_process_complete', array( 'XPay_Log_Store', 'install' ) );
 		add_action( XPay_Log_Store::CRON_HOOK, array( 'XPay_Log_Store', 'prune' ) );
 
 		if ( is_admin() ) {
@@ -137,6 +148,7 @@ final class XPay_Plugin {
 			add_action( 'admin_enqueue_scripts', array( 'XPay_Settings_Screen', 'enqueue' ) );
 			add_action( 'add_meta_boxes', array( 'XPay_Order_Panel', 'register' ) );
 			add_action( 'admin_notices', array( 'XPay_Method_Gateway', 'render_pin_rejected_notice' ) );
+			add_action( 'admin_notices', array( 'XPay_Checkout_Service', 'render_currency_rejected_notice' ) );
 			XPay_WPFunnels_Compat::register_admin();
 			XPay_Legacy_Notice::register_admin();
 		}
