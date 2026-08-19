@@ -27,6 +27,15 @@ defined( 'ABSPATH' ) || exit;
 
 class XPay_Gateway extends WC_Payment_Gateway {
 
+	/**
+	 * How long the pay page trusts a stored session without re-confirming
+	 * it against the API. Long enough to cover the redirect straight from
+	 * process_payment (which just validated or created the session), short
+	 * enough that a bookmarked or emailed pay page opened later always
+	 * re-validates instead of mounting a possibly dead session.
+	 */
+	const SESSION_TRUST_SECONDS = 90;
+
 	/** @var XPay_Api_Client|null Lazy — settings may be incomplete on admin screens. */
 	private $client = null;
 
@@ -243,7 +252,17 @@ class XPay_Gateway extends WC_Payment_Gateway {
 		// end the shopper at "payment could not be started" — hiding every
 		// XPay row (this check flows into the per-method rows and, via
 		// is_available, into Blocks) is the honest state until keys exist.
-		return 'yes' === $this->get_option( 'enabled' ) && ! $this->needs_setup();
+		if ( 'yes' !== $this->get_option( 'enabled' ) || $this->needs_setup() ) {
+			return false;
+		}
+
+		// A store currency the platform's enum rejects would dead-end every
+		// shopper AFTER Place Order — hiding the rows is the honest state.
+		// The list ships as XPay's supported set (XPay_Money::DECIMALS);
+		// the filter exists for merchants whose XPay account gains a
+		// currency before a plugin release catches up.
+		$supported = apply_filters( 'xpay_wc_supported_currencies', array_keys( XPay_Money::DECIMALS ) );
+		return in_array( strtoupper( get_woocommerce_currency() ), array_map( 'strtoupper', (array) $supported ), true );
 	}
 
 	/**
@@ -439,7 +458,7 @@ class XPay_Gateway extends WC_Payment_Gateway {
 
 		try {
 			$service = new XPay_Checkout_Service( $this->api_client() );
-			$service->get_or_create_session( $order, $this->pinned_method_types() );
+			$session = $service->get_or_create_session( $order, $this->pinned_method_types() );
 		} catch ( XPay_Api_Exception $e ) {
 			XPay_Logger::event(
 				'process_payment.failed',
@@ -460,6 +479,17 @@ class XPay_Gateway extends WC_Payment_Gateway {
 				)
 			);
 			return array( 'result' => 'failure' );
+		}
+
+		// A COMPLETE session back from the session check means this order
+		// was already paid (stale pay link, webhook still in flight) and
+		// the check just applied it — the pay page would only offer to
+		// charge again, so the confirmation page is the honest destination.
+		if ( isset( $session['status'] ) && XPay_Session_Status::COMPLETE === $session['status'] ) {
+			return array(
+				'result'   => 'success',
+				'redirect' => $order->get_checkout_order_received_url(),
+			);
 		}
 
 		// Stock is NOT reduced and the cart is NOT emptied here — both wait
@@ -483,34 +513,73 @@ class XPay_Gateway extends WC_Payment_Gateway {
 
 		$session_id    = (string) $order->get_meta( XPay_Constants::META_SESSION_ID );
 		$client_secret = (string) $order->get_meta( XPay_Constants::META_CLIENT_SECRET );
-		if ( '' === $session_id || '' === $client_secret ) {
-			// No session (direct order-pay visit): create one now so pay
-			// links from admin emails work identically.
+		$checked_at    = (int) $order->get_meta( XPay_Constants::META_SESSION_CHECKED_AT );
+
+		// Stored session meta is trusted only within a short window of its
+		// last API confirmation — the hot path straight from
+		// process_payment. Every older visit (bookmarked pay page, emailed
+		// link opened hours later) re-validates through the checkout
+		// service: one GET while the session is still OPEN, a transparent
+		// replacement when it expired, and the already-paid answer when it
+		// completed. A page-load's worth of staleness is fine; a UI wired
+		// to a dead session is not.
+		$fresh = '' !== $session_id && '' !== $client_secret
+			&& time() - $checked_at <= self::SESSION_TRUST_SECONDS;
+
+		if ( ! $fresh ) {
 			try {
-				$service       = new XPay_Checkout_Service( $this->api_client() );
-				$session       = $service->get_or_create_session( $order, $this->pinned_method_types() );
-				$client_secret = (string) $session['clientSecret'];
+				$service = new XPay_Checkout_Service( $this->api_client() );
+				$session = $service->get_or_create_session( $order, $this->pinned_method_types() );
+
+				// COMPLETE back from the session check: this order was
+				// already paid and the check just applied it. The only
+				// honest offer is the confirmation page, never a second
+				// charge.
+				if ( isset( $session['status'] ) && XPay_Session_Status::COMPLETE === $session['status'] ) {
+					echo '<p>' . esc_html__( 'This order has already been paid.', 'xpay-for-woocommerce' ) . ' <a href="' . esc_url( $order->get_checkout_order_received_url() ) . '">' . esc_html__( 'View your order confirmation', 'xpay-for-woocommerce' ) . '</a></p>';
+					return;
+				}
+
+				if ( isset( $session['clientSecret'] ) ) {
+					$client_secret = (string) $session['clientSecret'];
+				}
 			} catch ( XPay_Api_Exception $e ) {
-				// Same observability as the checkout path: to the shopper
-				// this is the identical failure, so it must leave the same
-				// log event and order note — it used to vanish silently.
+				if ( '' === $client_secret ) {
+					// No stored session to fall back on (direct order-pay
+					// visit). Same observability as the checkout path: to
+					// the shopper this is the identical failure, so it must
+					// leave the same log event and order note — it used to
+					// vanish silently.
+					XPay_Logger::event(
+						'receipt_page.session_failed',
+						array(
+							'order_id' => $order->get_id(),
+							'code'     => $e->get_error_code(),
+						)
+					);
+					$order->add_order_note(
+						sprintf(
+							/* translators: 1: XPay error code, 2: error message. */
+							__( 'XPay session creation failed [%1$s]: %2$s', 'xpay-for-woocommerce' ),
+							$e->get_error_code(),
+							$e->getMessage()
+						)
+					);
+					echo '<p>' . esc_html__( 'The payment could not be started. Please refresh the page to try again.', 'xpay-for-woocommerce' ) . '</p>';
+					return;
+				}
+				// A stored session exists and only the re-validation failed
+				// (API blip): fail open to the stored secret rather than
+				// dead-ending a page that rendered fine yesterday. A truly
+				// dead session surfaces inside the payment window, and the
+				// hosted fallback still works.
 				XPay_Logger::event(
-					'receipt_page.session_failed',
+					'receipt_page.recheck_failed',
 					array(
 						'order_id' => $order->get_id(),
 						'code'     => $e->get_error_code(),
 					)
 				);
-				$order->add_order_note(
-					sprintf(
-						/* translators: 1: XPay error code, 2: error message. */
-						__( 'XPay session creation failed [%1$s]: %2$s', 'xpay-for-woocommerce' ),
-						$e->get_error_code(),
-						$e->getMessage()
-					)
-				);
-				echo '<p>' . esc_html__( 'The payment could not be started. Please refresh the page to try again.', 'xpay-for-woocommerce' ) . '</p>';
-				return;
 			}
 		}
 

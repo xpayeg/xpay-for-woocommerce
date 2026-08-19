@@ -16,6 +16,19 @@ class WebhookApplyContractTest extends ContractTestCase {
 		return $order;
 	}
 
+	public function test_webhook_health_stamp_is_per_plane() {
+		// Name-pinning on purpose: uninstall.php hardcodes these strings
+		// (it runs standalone by WordPress convention), so a rename here
+		// must fail a test until the uninstall list moves in step.
+		$this->assertSame( 'xpay_wc_last_webhook_at_test', XPay_Constants::last_webhook_option( false ) );
+		$this->assertSame( 'xpay_wc_last_webhook_at_live', XPay_Constants::last_webhook_option( true ) );
+		$this->assertNotSame(
+			XPay_Constants::last_webhook_option( false ),
+			XPay_Constants::last_webhook_option( true ),
+			'One shared stamp is how a test event paints the live health row green.'
+		);
+	}
+
 	public function test_completed_event_marks_paid_and_records_event_id() {
 		$order = $this->wiredOrder();
 

@@ -47,10 +47,11 @@ final class XPay_Plugin {
 		require_once $dir . 'logger/class-xpay-log-store.php';
 		require_once $dir . 'logger/class-xpay-logger.php';
 
-		// Admin surfaces (log viewer, order panel, settings screen).
+		// Admin surfaces (log viewer, order panel, settings screen, docs).
 		require_once $dir . 'admin/class-xpay-log-viewer.php';
 		require_once $dir . 'admin/class-xpay-order-panel.php';
 		require_once $dir . 'admin/class-xpay-settings-screen.php';
+		require_once $dir . 'admin/class-xpay-doc-viewer.php';
 
 		// API layer.
 		require_once $dir . 'api/class-xpay-api-exception.php';
@@ -128,6 +129,8 @@ final class XPay_Plugin {
 			// cached option read on admin loads.
 			add_action( 'admin_init', array( 'XPay_Log_Store', 'install' ) );
 			add_action( 'admin_menu', array( 'XPay_Log_Viewer', 'register_menu' ) );
+			add_action( 'admin_menu', array( 'XPay_Doc_Viewer', 'register_menu' ) );
+			add_action( 'admin_enqueue_scripts', array( 'XPay_Doc_Viewer', 'enqueue' ) );
 			// admin-post.php is an is_admin() request, so this wiring lives
 			// here; the handler re-checks capability and nonce itself.
 			add_action( 'admin_post_xpay_log_export', array( 'XPay_Log_Viewer', 'handle_export' ) );

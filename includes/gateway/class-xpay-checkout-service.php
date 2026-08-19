@@ -54,6 +54,17 @@ class XPay_Checkout_Service {
 				$session = $this->client->get_checkout_session( $existing_id );
 				if ( $this->is_reusable( $session, $order ) ) {
 					$this->remember_brand_primary( $session );
+					$this->stamp_checked( $order );
+					return $session;
+				}
+				// A COMPLETE/PAID session is not "merely not reusable" — it
+				// means THIS order was already paid (stale emailed pay link,
+				// webhook lost or still in flight). Minting a fresh payable
+				// session here is how a shopper gets charged twice; apply
+				// the payment instead and hand the caller the COMPLETE
+				// session so it can route to the order-received page.
+				if ( $this->is_paid_complete( $session ) ) {
+					$this->apply_paid_session( $order, $session );
 					return $session;
 				}
 			} catch ( XPay_Api_Exception $e ) {
@@ -104,6 +115,65 @@ class XPay_Checkout_Service {
 		}
 
 		return $session;
+	}
+
+	/**
+	 * True when a fetched session says this order's payment already
+	 * succeeded: the checkout completed AND money moved. COMPLETE alone is
+	 * deliberately not enough — a completed-but-unpaid session (reserved
+	 * for future pay-later shapes) falls through to the normal new-session
+	 * path.
+	 *
+	 * @param array $session Session object from the API.
+	 */
+	private function is_paid_complete( array $session ): bool {
+		return isset( $session['status'] ) && XPay_Session_Status::COMPLETE === $session['status']
+			&& isset( $session['paymentStatus'] ) && XPay_Payment_Status::PAID === $session['paymentStatus'];
+	}
+
+	/**
+	 * Apply a paid session found during a session check, under the same
+	 * per-order lock discipline as the webhook and thank-you paths. The
+	 * non-blocking acquire is deliberate: a busy lock means another writer
+	 * (usually the webhook) is applying this same truth right now.
+	 *
+	 * @param WC_Order $order   Order the session belongs to (ownership: the
+	 *                          session id came from this order's own meta).
+	 * @param array    $session COMPLETE/PAID session object from the API.
+	 */
+	private function apply_paid_session( WC_Order $order, array $session ): void {
+		XPay_Logger::event(
+			'session.already_complete',
+			array(
+				'order_id'   => $order->get_id(),
+				'session_id' => isset( $session['id'] ) ? (string) $session['id'] : '',
+			)
+		);
+
+		$order_id = $order->get_id();
+		if ( ! XPay_Order_Lock::acquire( $order_id, 0 ) ) {
+			return;
+		}
+		try {
+			$fresh = XPay_Order_Sync::reload( $order_id );
+			if ( null !== $fresh && ! $fresh->is_paid() ) {
+				XPay_Order_Sync::mark_paid( $fresh, $session, 'session-check' );
+			}
+		} finally {
+			XPay_Order_Lock::release( $order_id );
+		}
+	}
+
+	/**
+	 * Stamp the moment the stored session was last confirmed against the
+	 * API. The pay page's short trust window reads this — see
+	 * XPay_Constants::META_SESSION_CHECKED_AT.
+	 *
+	 * @param WC_Order $order Order whose session was just validated.
+	 */
+	private function stamp_checked( WC_Order $order ): void {
+		$order->update_meta_data( XPay_Constants::META_SESSION_CHECKED_AT, time() );
+		$order->save();
 	}
 
 	/**
@@ -263,6 +333,7 @@ class XPay_Checkout_Service {
 			$order->update_meta_data( XPay_Constants::META_SESSION_URL, (string) $session['url'] );
 		}
 		$order->update_meta_data( XPay_Constants::META_ATTEMPT, $attempt );
+		$order->update_meta_data( XPay_Constants::META_SESSION_CHECKED_AT, time() );
 		$order->save();
 
 		$order->add_order_note(

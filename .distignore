@@ -50,10 +50,13 @@ phpcs.xml.dist
 .phpunit.result.cache
 
 # --- Repo-only documentation (WP.org uses readme.txt + the bundled
-#     `== Changelog ==` section instead) ---
+#     `== Changelog ==` section instead). The merchant guides under docs/
+#     SHIP: the settings screen's doc viewer opens them in wp-admin.
+#     Only the two maintainer docs stay repo-only. ---
 README.md
 CHANGELOG.md
-docs/
+docs/PACKAGING.md
+docs/WORDPRESS_ORG_SUBMISSION.md
 
 # --- Repo-only screenshots folder. WP.org screenshots live in the
 #     SVN /assets/ directory (uploaded separately, not in the plugin ZIP). ---

@@ -25,12 +25,14 @@ final class XPay_Error_Codes {
 	const WEBHOOK_NOT_CONFIGURED      = 'webhook_not_configured';
 
 	/* ── Plugin-minted: gateway/config ───────────────────────────────── */
-	const GATEWAY_NOT_CONFIGURED = 'gateway_not_configured';
-	const SESSION_URL_UNTRUSTED  = 'session_url_untrusted';
-	const REFUND_REJECTED        = 'refund_rejected';
-	const REFUND_PENDING         = 'refund_pending';
-	const ORDER_LOCK_BUSY        = 'order_lock_busy';
-	const ORDER_MISMATCH         = 'order_session_mismatch';
+	const GATEWAY_NOT_CONFIGURED      = 'gateway_not_configured';
+	const SESSION_URL_UNTRUSTED       = 'session_url_untrusted';
+	const REFUND_REJECTED             = 'refund_rejected';
+	const REFUND_PENDING              = 'refund_pending';
+	const REFUND_CURRENCY_UNSUPPORTED = 'refund_currency_unsupported';
+	const REFUND_RESULT_MISMATCH      = 'refund_result_mismatch';
+	const ORDER_LOCK_BUSY             = 'order_lock_busy';
+	const ORDER_MISMATCH              = 'order_session_mismatch';
 
 	/* ── Plugin-minted: API client fallbacks ─────────────────────────── */
 	const TRANSPORT_ERROR = 'transport_error'; // No HTTP response at all (timeout, DNS, TLS).

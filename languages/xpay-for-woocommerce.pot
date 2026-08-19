@@ -9,14 +9,14 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-19T09:24:02+00:00\n"
+"POT-Creation-Date: 2026-08-19T10:56:59+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: xpay-for-woocommerce\n"
 
 #. Plugin Name of the plugin
 #: xpay-for-woocommerce.php
-#: includes/admin/class-xpay-settings-screen.php:197
+#: includes/admin/class-xpay-settings-screen.php:200
 msgid "XPay for WooCommerce"
 msgstr ""
 
@@ -34,9 +34,49 @@ msgstr ""
 #. Author of the plugin
 #: xpay-for-woocommerce.php
 #: includes/admin/class-xpay-order-panel.php:39
-#: includes/gateway/class-xpay-gateway.php:49
-#: includes/gateway/class-xpay-gateway.php:103
+#: includes/gateway/class-xpay-gateway.php:58
+#: includes/gateway/class-xpay-gateway.php:112
 msgid "XPay"
+msgstr ""
+
+#: includes/admin/class-xpay-doc-viewer.php:29
+#: includes/admin/class-xpay-settings-screen.php:288
+msgid "Getting started guide"
+msgstr ""
+
+#: includes/admin/class-xpay-doc-viewer.php:30
+#: includes/admin/class-xpay-settings-screen.php:289
+msgid "Configuration reference"
+msgstr ""
+
+#: includes/admin/class-xpay-doc-viewer.php:31
+#: includes/admin/class-xpay-settings-screen.php:290
+msgid "Troubleshooting"
+msgstr ""
+
+#: includes/admin/class-xpay-doc-viewer.php:32
+msgid "Webhooks reference"
+msgstr ""
+
+#: includes/admin/class-xpay-doc-viewer.php:33
+msgid "Going live checklist"
+msgstr ""
+
+#: includes/admin/class-xpay-doc-viewer.php:34
+msgid "Compatibility notes"
+msgstr ""
+
+#: includes/admin/class-xpay-doc-viewer.php:53
+#: includes/admin/class-xpay-doc-viewer.php:54
+msgid "XPay guide"
+msgstr ""
+
+#: includes/admin/class-xpay-doc-viewer.php:100
+msgid "XPay settings"
+msgstr ""
+
+#: includes/admin/class-xpay-doc-viewer.php:105
+msgid "This guide is missing from the installed plugin files. Reinstall the plugin to restore it."
 msgstr ""
 
 #: includes/admin/class-xpay-log-viewer.php:32
@@ -128,7 +168,7 @@ msgid "Orders"
 msgstr ""
 
 #: includes/admin/class-xpay-log-viewer.php:159
-#: includes/admin/class-xpay-settings-screen.php:257
+#: includes/admin/class-xpay-settings-screen.php:260
 msgid "Refunds"
 msgstr ""
 
@@ -141,7 +181,7 @@ msgid "Customers"
 msgstr ""
 
 #: includes/admin/class-xpay-log-viewer.php:162
-#: includes/gateway/class-xpay-gateway.php:196
+#: includes/gateway/class-xpay-gateway.php:205
 msgid "Confirmation page"
 msgstr ""
 
@@ -205,13 +245,13 @@ msgid "Log entry"
 msgstr ""
 
 #: includes/admin/class-xpay-log-viewer.php:269
-#: includes/admin/class-xpay-settings-screen.php:122
-#: includes/admin/class-xpay-settings-screen.php:156
+#: includes/admin/class-xpay-settings-screen.php:125
+#: includes/admin/class-xpay-settings-screen.php:159
 msgid "Close"
 msgstr ""
 
 #: includes/admin/class-xpay-log-viewer.php:280
-#: includes/admin/class-xpay-settings-screen.php:159
+#: includes/admin/class-xpay-settings-screen.php:162
 msgid "Copied"
 msgstr ""
 
@@ -257,437 +297,425 @@ msgstr ""
 msgid "View full log for this order"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:121
+#: includes/admin/class-xpay-settings-screen.php:124
 msgid "Get your API keys"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:127
+#: includes/admin/class-xpay-settings-screen.php:130
 msgid "Test keys work on test data only. No real money ever moves."
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:129
+#: includes/admin/class-xpay-settings-screen.php:132
 msgid "Live keys move real money, and live mode unlocks only after XPay activates your account. If your dashboard still shows \"Request payment activation\", finish that first."
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:135
-#: includes/admin/class-xpay-settings-screen.php:165
+#: includes/admin/class-xpay-settings-screen.php:138
+#: includes/admin/class-xpay-settings-screen.php:168
 msgid "Open your XPay dashboard. In the left menu, at the very bottom, make sure the Test Mode toggle is on."
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:137
-#: includes/admin/class-xpay-settings-screen.php:167
+#: includes/admin/class-xpay-settings-screen.php:140
+#: includes/admin/class-xpay-settings-screen.php:170
 msgid "Open your XPay dashboard. In the left menu, at the very bottom, turn the Test Mode toggle off to switch to your live account."
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:139
+#: includes/admin/class-xpay-settings-screen.php:142
 msgid "Open Developer hub from the bottom-left corner of the page, then the API keys tab."
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:140
+#: includes/admin/class-xpay-settings-screen.php:143
 msgid "Under Restricted keys, click Create restricted key: name it (for example, WooCommerce), allow Checkout Sessions and Refunds, then click Create key."
 msgstr ""
 
 #. translators: %s is the key prefix, rk_test_ or rk_live_.
-#: includes/admin/class-xpay-settings-screen.php:142
+#: includes/admin/class-xpay-settings-screen.php:145
 #, php-format
 msgid "Copy the new key (it starts with %s) and paste it into the Secret key field here. Revealing a key later first emails you a 6-digit code."
 msgstr ""
 
 #. translators: %s is the key prefix, pk_test_ or pk_live_.
-#: includes/admin/class-xpay-settings-screen.php:144
+#: includes/admin/class-xpay-settings-screen.php:147
 #, php-format
 msgid "Copy the matching Publishable key (starts with %s) from the Standard keys table on the same page."
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:148
-#: includes/admin/class-xpay-settings-screen.php:177
-#: includes/admin/class-xpay-settings-screen.php:202
-#: includes/admin/class-xpay-settings-screen.php:217
+#: includes/admin/class-xpay-settings-screen.php:151
+#: includes/admin/class-xpay-settings-screen.php:180
+#: includes/admin/class-xpay-settings-screen.php:205
+#: includes/admin/class-xpay-settings-screen.php:220
 msgid "Open XPay dashboard ↗"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:155
-#: includes/admin/class-xpay-settings-screen.php:355
+#: includes/admin/class-xpay-settings-screen.php:158
+#: includes/admin/class-xpay-settings-screen.php:359
 msgid "Connect the webhook"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:158
+#: includes/admin/class-xpay-settings-screen.php:161
 msgid "XPay confirms payments by sending signed events to this address. It is what marks orders paid. Each mode needs its own endpoint with its own secret."
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:159
-#: includes/admin/class-xpay-settings-screen.php:510
-#: includes/admin/class-xpay-settings-screen.php:647
+#: includes/admin/class-xpay-settings-screen.php:162
+#: includes/admin/class-xpay-settings-screen.php:514
+#: includes/admin/class-xpay-settings-screen.php:651
 msgid "Copy"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:169
+#: includes/admin/class-xpay-settings-screen.php:172
 msgid "Open Developer hub from the bottom-left corner of the page, then the Webhooks tab, and click Add endpoint."
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:170
+#: includes/admin/class-xpay-settings-screen.php:173
 msgid "Paste your store's address above into the Endpoint URL field."
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:171
+#: includes/admin/class-xpay-settings-screen.php:174
 msgid "Under \"Select events to listen to\", tick exactly these two, then click Add endpoint:"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:173
+#: includes/admin/class-xpay-settings-screen.php:176
 msgid "The Webhook signing secret is shown only once, right after the endpoint is created. Copy the whsec_… value immediately and paste it into the signing secret field here, then save."
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:197
+#: includes/admin/class-xpay-settings-screen.php:200
 msgid "Set up XPay"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:208
+#: includes/admin/class-xpay-settings-screen.php:211
 msgid "Not connected"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:209
-#: includes/admin/class-xpay-settings-screen.php:271
+#: includes/admin/class-xpay-settings-screen.php:212
+#: includes/admin/class-xpay-settings-screen.php:274
 msgid "Three steps · about five minutes"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:213
+#: includes/admin/class-xpay-settings-screen.php:216
 msgid "Connected: Live mode"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:213
+#: includes/admin/class-xpay-settings-screen.php:216
 msgid "Connected: Test mode"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:215
+#: includes/admin/class-xpay-settings-screen.php:218
 msgid "Live mode: keys not validated yet"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:215
+#: includes/admin/class-xpay-settings-screen.php:218
 msgid "Test mode: keys not validated yet"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:243
+#: includes/admin/class-xpay-settings-screen.php:246
 msgid "Accept payments in Egypt, on your own store"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:244
+#: includes/admin/class-xpay-settings-screen.php:247
 msgid "Cards, valU and Fawry open in a secure XPay window over your checkout. Shoppers never leave your site, and orders are confirmed only by signed webhooks."
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:256
+#: includes/admin/class-xpay-settings-screen.php:259
 msgid "Payment methods"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:257
+#: includes/admin/class-xpay-settings-screen.php:260
 msgid "Full & partial, in WooCommerce"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:258
+#: includes/admin/class-xpay-settings-screen.php:261
 msgid "Languages"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:258
+#: includes/admin/class-xpay-settings-screen.php:261
 msgid "Arabic & English, RTL ready"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:264
+#: includes/admin/class-xpay-settings-screen.php:267
 msgid "Visa, Mastercard, Meeza"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:270
+#: includes/admin/class-xpay-settings-screen.php:273
 msgid "Activate XPay"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:272
+#: includes/admin/class-xpay-settings-screen.php:275
 msgid "New to XPay?"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:272
+#: includes/admin/class-xpay-settings-screen.php:275
 msgid "Create your merchant account →"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:278
+#: includes/admin/class-xpay-settings-screen.php:281
 msgid "How it works"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:279
+#: includes/admin/class-xpay-settings-screen.php:282
 msgid "The shopper clicks Place order and the XPay window opens over your own payment page."
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:280
+#: includes/admin/class-xpay-settings-screen.php:283
 msgid "Card details are entered inside XPay's PCI-certified window. They never touch your server."
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:281
+#: includes/admin/class-xpay-settings-screen.php:284
 msgid "A cryptographically signed webhook marks the order paid, and the receipt is stamped PAID."
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:284
+#: includes/admin/class-xpay-settings-screen.php:287
 msgid "Docs & help"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:285
-msgid "Getting started guide"
-msgstr ""
-
-#: includes/admin/class-xpay-settings-screen.php:286
-msgid "Configuration reference"
-msgstr ""
-
-#: includes/admin/class-xpay-settings-screen.php:287
-msgid "Troubleshooting"
-msgstr ""
-
-#: includes/admin/class-xpay-settings-screen.php:291
-#: includes/admin/class-xpay-settings-screen.php:362
+#: includes/admin/class-xpay-settings-screen.php:294
+#: includes/admin/class-xpay-settings-screen.php:366
 msgid "Nothing goes live until you switch the mode yourself. Card details never touch your server."
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:341
+#: includes/admin/class-xpay-settings-screen.php:345
 msgid "Connect your test keys"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:342
-#: includes/admin/class-xpay-settings-screen.php:464
+#: includes/admin/class-xpay-settings-screen.php:346
+#: includes/admin/class-xpay-settings-screen.php:468
 msgid "How to get your API keys"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:344
+#: includes/admin/class-xpay-settings-screen.php:348
 msgid "From your XPay dashboard → Developers → API keys. Test keys never move real money."
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:346
-#: includes/admin/class-xpay-settings-screen.php:480
+#: includes/admin/class-xpay-settings-screen.php:350
+#: includes/admin/class-xpay-settings-screen.php:484
 msgid "Secret key"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:348
-#: includes/admin/class-xpay-settings-screen.php:481
+#: includes/admin/class-xpay-settings-screen.php:352
+#: includes/admin/class-xpay-settings-screen.php:485
 msgid "Publishable key"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:351
+#: includes/admin/class-xpay-settings-screen.php:355
 msgid "Validate & save keys"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:356
-#: includes/admin/class-xpay-settings-screen.php:500
+#: includes/admin/class-xpay-settings-screen.php:360
+#: includes/admin/class-xpay-settings-screen.php:504
 msgid "How to set up the webhook"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:357
+#: includes/admin/class-xpay-settings-screen.php:361
 msgid "Unlocks after your keys validate: one URL to paste, one secret to copy back"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:358
+#: includes/admin/class-xpay-settings-screen.php:362
 msgid "Place a test payment"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:358
+#: includes/admin/class-xpay-settings-screen.php:362
 msgid "We confirm the whole loop (window, webhook, receipt) end to end"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:419
+#: includes/admin/class-xpay-settings-screen.php:423
 msgid "Keys validated"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:421
+#: includes/admin/class-xpay-settings-screen.php:425
 msgid "Keys saved, not validated yet"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:421
+#: includes/admin/class-xpay-settings-screen.php:425
 msgid "Save changes runs a live check against the XPay API"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:423
+#: includes/admin/class-xpay-settings-screen.php:427
 msgid "No keys for the selected mode"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:423
+#: includes/admin/class-xpay-settings-screen.php:427
 msgid "Paste them below from your XPay dashboard"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:428
+#: includes/admin/class-xpay-settings-screen.php:432
 msgid "Webhook not connected"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:428
+#: includes/admin/class-xpay-settings-screen.php:432
 msgid "Paste the signing secret below. The webhook is what marks orders paid"
 msgstr ""
 
 #. translators: %s is a human time difference, for example "2 minutes".
-#: includes/admin/class-xpay-settings-screen.php:431
+#: includes/admin/class-xpay-settings-screen.php:435
 msgid "Webhook healthy"
 msgstr ""
 
 #. translators: %s is a human time difference, for example "2 minutes".
-#: includes/admin/class-xpay-settings-screen.php:431
+#: includes/admin/class-xpay-settings-screen.php:435
 #, php-format
 msgid "signing secret saved · last event received %s ago"
 msgstr ""
 
 #. translators: %s is a human time difference, for example "2 minutes".
-#: includes/admin/class-xpay-settings-screen.php:431
-#: includes/admin/class-xpay-settings-screen.php:433
+#: includes/admin/class-xpay-settings-screen.php:435
+#: includes/admin/class-xpay-settings-screen.php:437
 msgid "View log"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:433
+#: includes/admin/class-xpay-settings-screen.php:437
 msgid "Webhook waiting for its first event"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:433
+#: includes/admin/class-xpay-settings-screen.php:437
 msgid "signing secret saved · send a test event from your XPay dashboard"
 msgstr ""
 
 #. translators: 1: order number, 2: formatted order total.
-#: includes/admin/class-xpay-settings-screen.php:439
+#: includes/admin/class-xpay-settings-screen.php:443
 msgid "Payment confirmed end-to-end"
 msgstr ""
 
 #. translators: 1: order number, 2: formatted order total.
-#: includes/admin/class-xpay-settings-screen.php:439
+#: includes/admin/class-xpay-settings-screen.php:443
 #, php-format
 msgid "order #%1$s · %2$s"
 msgstr ""
 
 #. translators: 1: order number, 2: formatted order total.
-#: includes/admin/class-xpay-settings-screen.php:439
+#: includes/admin/class-xpay-settings-screen.php:443
 msgid "View order"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:441
+#: includes/admin/class-xpay-settings-screen.php:445
 msgid "No payment yet"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:441
+#: includes/admin/class-xpay-settings-screen.php:445
 msgid "Place a test order to prove the whole loop"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:448
+#: includes/admin/class-xpay-settings-screen.php:452
 msgid "Ready to go live"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:448
+#: includes/admin/class-xpay-settings-screen.php:452
 msgid "paste your live keys, create a live webhook endpoint, switch the mode"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:449
+#: includes/admin/class-xpay-settings-screen.php:453
 msgid "Go live"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:463
+#: includes/admin/class-xpay-settings-screen.php:467
 msgid "Account & keys"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:466
+#: includes/admin/class-xpay-settings-screen.php:470
 msgid "Each mode keeps its own keys. Switching never overwrites anything."
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:470
-#: includes/gateway/class-xpay-gateway.php:119
+#: includes/admin/class-xpay-settings-screen.php:474
+#: includes/gateway/class-xpay-gateway.php:128
 msgid "Test"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:471
-#: includes/gateway/class-xpay-gateway.php:120
+#: includes/admin/class-xpay-settings-screen.php:475
+#: includes/gateway/class-xpay-gateway.php:129
 msgid "Live"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:499
+#: includes/admin/class-xpay-settings-screen.php:503
 msgid "Webhook"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:502
+#: includes/admin/class-xpay-settings-screen.php:506
 msgid "XPay confirms orders through this endpoint. It is what marks orders paid."
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:508
+#: includes/admin/class-xpay-settings-screen.php:512
 msgid "Endpoint URL"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:514
+#: includes/admin/class-xpay-settings-screen.php:518
 msgid "Signing secret"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:518
+#: includes/admin/class-xpay-settings-screen.php:522
 msgid "Health"
 msgstr ""
 
 #. translators: %s is a human time difference, for example "2 minutes".
-#: includes/admin/class-xpay-settings-screen.php:521
+#: includes/admin/class-xpay-settings-screen.php:525
 #, php-format
 msgid "Healthy: last event received %s ago"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:523
+#: includes/admin/class-xpay-settings-screen.php:527
 msgid "No events received yet. Send a test event from your XPay dashboard"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:525
+#: includes/admin/class-xpay-settings-screen.php:529
 msgid "Signing secret missing for the selected mode"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:527
+#: includes/admin/class-xpay-settings-screen.php:531
 msgid "View in XPay Log"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:540
+#: includes/admin/class-xpay-settings-screen.php:544
 msgid "Checkout appearance"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:541
+#: includes/admin/class-xpay-settings-screen.php:545
 msgid "Separate options open the payment window directly on the shopper’s method."
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:545
+#: includes/admin/class-xpay-settings-screen.php:549
 msgid "One XPay option"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:546
+#: includes/admin/class-xpay-settings-screen.php:550
 msgid "Separate options"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:572
+#: includes/admin/class-xpay-settings-screen.php:576
 msgid "Title at checkout"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:574
-#: includes/gateway/class-xpay-gateway.php:107
+#: includes/admin/class-xpay-settings-screen.php:578
+#: includes/gateway/class-xpay-gateway.php:116
 msgid "Description"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:586
-#: includes/gateway/class-xpay-gateway.php:96
+#: includes/admin/class-xpay-settings-screen.php:590
+#: includes/gateway/class-xpay-gateway.php:105
 msgid "Enable XPay"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:587
+#: includes/admin/class-xpay-settings-screen.php:591
 msgid "WPFunnels safeguard"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:588
-#: includes/gateway/class-xpay-gateway.php:203
+#: includes/admin/class-xpay-settings-screen.php:592
+#: includes/gateway/class-xpay-gateway.php:212
 msgid "Diagnostic logging"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:589
+#: includes/admin/class-xpay-settings-screen.php:593
 msgid "Save changes"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:641
+#: includes/admin/class-xpay-settings-screen.php:645
 msgid "Not set"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:645
+#: includes/admin/class-xpay-settings-screen.php:649
 msgid "Reveal"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:650
+#: includes/admin/class-xpay-settings-screen.php:654
 msgid "Add"
 msgstr ""
 
-#: includes/admin/class-xpay-settings-screen.php:650
+#: includes/admin/class-xpay-settings-screen.php:654
 msgid "Replace"
 msgstr ""
 
@@ -712,17 +740,17 @@ msgid "Dismiss: I run a WPFunnels Pro upsell flow"
 msgstr ""
 
 #: includes/constants/class-xpay-payment-methods.php:51
-#: includes/gateway/class-xpay-gateway.php:171
+#: includes/gateway/class-xpay-gateway.php:180
 msgid "Card"
 msgstr ""
 
 #: includes/constants/class-xpay-payment-methods.php:53
-#: includes/gateway/class-xpay-gateway.php:177
+#: includes/gateway/class-xpay-gateway.php:186
 msgid "valU"
 msgstr ""
 
 #: includes/constants/class-xpay-payment-methods.php:55
-#: includes/gateway/class-xpay-gateway.php:183
+#: includes/gateway/class-xpay-gateway.php:192
 msgid "Fawry"
 msgstr ""
 
@@ -739,221 +767,229 @@ msgid "Get a reference code and pay at any Fawry point or in the app."
 msgstr ""
 
 #. translators: %s is the order number shown on the XPay checkout page.
-#: includes/gateway/class-xpay-checkout-service.php:164
+#: includes/gateway/class-xpay-checkout-service.php:234
 #, php-format
 msgid "Order %s"
 msgstr ""
 
 #. translators: 1: XPay checkout session id, 2: attempt number.
-#: includes/gateway/class-xpay-checkout-service.php:271
+#: includes/gateway/class-xpay-checkout-service.php:342
 #, php-format
 msgid "XPay checkout session %1$s created (attempt %2$d)."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:50
+#: includes/gateway/class-xpay-gateway.php:59
 msgid "Accept cards, valU and more via XPay (Egypt). Customers pay in a secure XPay window without leaving your store."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:94
+#: includes/gateway/class-xpay-gateway.php:103
 msgid "Enable/Disable"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:100
+#: includes/gateway/class-xpay-gateway.php:109
 msgid "Title"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:102
+#: includes/gateway/class-xpay-gateway.php:111
 msgid "Payment method name shown to customers at checkout."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:109
+#: includes/gateway/class-xpay-gateway.php:118
 msgid "One sentence under the payment method name."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:110
+#: includes/gateway/class-xpay-gateway.php:119
 msgid "Pay securely by card or valU."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:114
+#: includes/gateway/class-xpay-gateway.php:123
 msgid "Mode"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:116
+#: includes/gateway/class-xpay-gateway.php:125
 msgid "Test mode never charges real money. Keys and webhook secrets are separate per mode."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:124
+#: includes/gateway/class-xpay-gateway.php:133
 msgid "Test secret key"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:126
+#: includes/gateway/class-xpay-gateway.php:135
 msgid "A restricted key (rk_test_…) with Checkout Sessions and Refunds access, from your XPay dashboard → Developers → API keys."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:129
+#: includes/gateway/class-xpay-gateway.php:138
 msgid "Test publishable key"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:131
+#: includes/gateway/class-xpay-gateway.php:140
 msgid "pk_test_… key, used by the secure payment window in the browser."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:134
+#: includes/gateway/class-xpay-gateway.php:143
 msgid "Test webhook signing secret"
 msgstr ""
 
 #. translators: %s is this store's webhook URL.
-#: includes/gateway/class-xpay-gateway.php:137
+#: includes/gateway/class-xpay-gateway.php:146
 #, php-format
 msgid "whsec_… secret for a webhook endpoint pointing at %s (events: checkout.session.completed, checkout.session.expired)."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:140
+#: includes/gateway/class-xpay-gateway.php:149
 msgid "Live secret key"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:142
+#: includes/gateway/class-xpay-gateway.php:151
 msgid "A restricted key (rk_live_…) with Checkout Sessions and Refunds access."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:145
+#: includes/gateway/class-xpay-gateway.php:154
 msgid "Live publishable key"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:147
+#: includes/gateway/class-xpay-gateway.php:156
 msgid "pk_live_… key."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:150
+#: includes/gateway/class-xpay-gateway.php:159
 msgid "Live webhook signing secret"
 msgstr ""
 
 #. translators: %s is this store's webhook URL.
-#: includes/gateway/class-xpay-gateway.php:153
+#: includes/gateway/class-xpay-gateway.php:162
 #, php-format
 msgid "whsec_… secret for a live-mode webhook endpoint pointing at %s."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:156
+#: includes/gateway/class-xpay-gateway.php:165
 msgid "Checkout display"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:158
+#: includes/gateway/class-xpay-gateway.php:167
 msgid "Choose how XPay appears on your checkout page."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:161
+#: includes/gateway/class-xpay-gateway.php:170
 msgid "Payment options"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:163
+#: includes/gateway/class-xpay-gateway.php:172
 msgid "Separate options let shoppers pick their method before the payment window opens, so it opens directly on that method."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:166
+#: includes/gateway/class-xpay-gateway.php:175
 msgid "One XPay option for all methods"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:167
+#: includes/gateway/class-xpay-gateway.php:176
 msgid "A separate option per payment method"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:173
+#: includes/gateway/class-xpay-gateway.php:182
 msgid "Offer Card (Visa, Mastercard, Meeza) as its own option"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:179
+#: includes/gateway/class-xpay-gateway.php:188
 msgid "Offer valU as its own option"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:185
+#: includes/gateway/class-xpay-gateway.php:194
 msgid "Offer Fawry as its own option"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:186
+#: includes/gateway/class-xpay-gateway.php:195
 msgid "Only tick methods that are enabled for your XPay account. Shoppers who pick a method your account does not have are shown the full XPay window instead, and you get a notice here in admin."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:190
+#: includes/gateway/class-xpay-gateway.php:199
 msgid "WPFunnels compatibility"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:192
+#: includes/gateway/class-xpay-gateway.php:201
 msgid "Only relevant when the WPFunnels plugin is active."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:198
+#: includes/gateway/class-xpay-gateway.php:207
 msgid "Force the standard order-received page after payment"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:199
+#: includes/gateway/class-xpay-gateway.php:208
 msgid "WPFunnels reroutes the after-payment page into its funnel flow. Without a WPFunnels Pro upsell step, that bounces shoppers to the cart with no confirmation. Turn this on unless you run a working upsell flow. Applies to XPay orders only."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:205
+#: includes/gateway/class-xpay-gateway.php:214
 msgid "Write redacted diagnostic logs (WooCommerce → Status → Logs, source \"xpay\")"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:374
+#: includes/gateway/class-xpay-gateway.php:393
 msgid "XPay: no API key is saved for the selected mode, so XPay stays hidden at checkout until you add one."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:381
+#: includes/gateway/class-xpay-gateway.php:400
 msgid "XPay: the key in the selected mode is a LIVE key but the gateway is in Test mode. Paste the matching key for the mode you selected."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:385
+#: includes/gateway/class-xpay-gateway.php:404
 msgid "XPay: the key in the selected mode is a TEST key but the gateway is in Live mode. Paste the matching key for the mode you selected."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:403
+#: includes/gateway/class-xpay-gateway.php:422
 msgid "XPay connected (test mode)."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:404
+#: includes/gateway/class-xpay-gateway.php:423
 msgid "XPay connected (live mode)."
 msgstr ""
 
 #. translators: %s is the error returned while validating the API key.
-#: includes/gateway/class-xpay-gateway.php:411
+#: includes/gateway/class-xpay-gateway.php:430
 #, php-format
 msgid "XPay: the API key did not validate. %s"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:453
+#: includes/gateway/class-xpay-gateway.php:472
 msgid "The payment could not be started. Please try again. Your card has not been charged."
 msgstr ""
 
 #. translators: 1: XPay error code, 2: error message.
-#: includes/gateway/class-xpay-gateway.php:457
-#: includes/gateway/class-xpay-gateway.php:507
+#: includes/gateway/class-xpay-gateway.php:476
+#: includes/gateway/class-xpay-gateway.php:563
 #, php-format
 msgid "XPay session creation failed [%1$s]: %2$s"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:512
+#: includes/gateway/class-xpay-gateway.php:539
+msgid "This order has already been paid."
+msgstr ""
+
+#: includes/gateway/class-xpay-gateway.php:539
+msgid "View your order confirmation"
+msgstr ""
+
+#: includes/gateway/class-xpay-gateway.php:568
 msgid "The payment could not be started. Please refresh the page to try again."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:543
+#: includes/gateway/class-xpay-gateway.php:612
 #: includes/gateway/class-xpay-pay-page.php:63
 msgid "Opening secure payment…"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:544
+#: includes/gateway/class-xpay-gateway.php:613
 msgid "Taking you to the secure payment page…"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:545
+#: includes/gateway/class-xpay-gateway.php:614
 #: includes/gateway/class-xpay-pay-page.php:85
 msgid "Pay now"
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:546
+#: includes/gateway/class-xpay-gateway.php:615
 msgid "Your order is saved. Pay when you are ready."
 msgstr ""
 
-#: includes/gateway/class-xpay-gateway.php:584
+#: includes/gateway/class-xpay-gateway.php:653
 msgid "Refund amount is required."
 msgstr ""
 
@@ -963,27 +999,31 @@ msgstr ""
 msgid "XPay: your XPay account does not have %s enabled. Shoppers who picked it were shown the full XPay payment window instead. Enable the method in your XPay dashboard, or untick it under WooCommerce → Settings → Payments → XPay."
 msgstr ""
 
-#. translators: 1: payment source ("webhook" or "thank-you page check"), 2: XPay payment intent id.
-#: includes/gateway/class-xpay-order-sync.php:83
-#, php-format
-msgid "XPay payment confirmed via %1$s. Payment intent: %2$s"
+#: includes/gateway/class-xpay-order-sync.php:80
+msgid "thank-you page check"
 msgstr ""
 
-#: includes/gateway/class-xpay-order-sync.php:84
+#: includes/gateway/class-xpay-order-sync.php:82
 msgid "webhook"
 msgstr ""
 
 #: includes/gateway/class-xpay-order-sync.php:84
-msgid "thank-you page check"
+msgid "payment session check"
+msgstr ""
+
+#. translators: 1: payment source ("webhook", "thank-you page check" or "payment session check"), 2: XPay payment intent id.
+#: includes/gateway/class-xpay-order-sync.php:89
+#, php-format
+msgid "XPay payment confirmed via %1$s. Payment intent: %2$s"
 msgstr ""
 
 #. translators: 1: the amount XPay charged, 2: this order's total.
-#: includes/gateway/class-xpay-order-sync.php:141
+#: includes/gateway/class-xpay-order-sync.php:147
 #, php-format
 msgid "XPay charged %1$s but this order totals %2$s. Review the payment in your XPay dashboard, adjust the order if needed, then complete or refund it manually."
 msgstr ""
 
-#: includes/gateway/class-xpay-order-sync.php:213
+#: includes/gateway/class-xpay-order-sync.php:219
 msgid "XPay checkout session expired without payment."
 msgstr ""
 
@@ -1014,12 +1054,12 @@ msgstr ""
 msgid "%1$s × %2$d"
 msgstr ""
 
-#: includes/gateway/class-xpay-pay-page.php:154
+#: includes/gateway/class-xpay-pay-page.php:160
 #: includes/gateway/class-xpay-thankyou-notice.php:191
 msgid "Total"
 msgstr ""
 
-#: includes/gateway/class-xpay-pay-page.php:169
+#: includes/gateway/class-xpay-pay-page.php:175
 #: includes/gateway/class-xpay-thankyou-notice.php:219
 msgid "Secured by"
 msgstr ""
@@ -1036,20 +1076,38 @@ msgstr ""
 msgid "Confirming payment"
 msgstr ""
 
+#. translators: %s is the XPay refund id.
+#: includes/refunds/class-xpay-refund-service.php:134
+#, php-format
+msgid "XPay completed refund %s with a different amount or currency than requested. Nothing was recorded in WooCommerce. Verify the payment in your XPay dashboard."
+msgstr ""
+
 #. translators: 1: refund amount with currency, 2: XPay refund id, 3: admin-entered reason.
-#: includes/refunds/class-xpay-refund-service.php:88
+#: includes/refunds/class-xpay-refund-service.php:146
 #, php-format
 msgid "XPay refund of %1$s submitted (%2$s). Reason: %3$s"
 msgstr ""
 
-#: includes/refunds/class-xpay-refund-service.php:118
+#: includes/refunds/class-xpay-refund-service.php:210
 msgid "XPay accepted the request but did not complete the refund. Check the payment in your XPay dashboard before retrying."
 msgstr ""
 
-#: includes/refunds/class-xpay-refund-service.php:120
+#: includes/refunds/class-xpay-refund-service.php:212
 msgid "XPay accepted this refund and is still processing it. Do not submit it again. Check the payment in your XPay dashboard and record the refund here once it completes."
 msgstr ""
 
-#: includes/refunds/class-xpay-refund-service.php:122
+#: includes/refunds/class-xpay-refund-service.php:214
+msgid "This order is not in EGP. XPay processes refund amounts in EGP, so refunding from here would move the wrong amount. Issue the refund from your XPay dashboard instead, then record it in WooCommerce manually."
+msgstr ""
+
+#: includes/refunds/class-xpay-refund-service.php:216
+msgid "XPay completed this refund with a different amount or currency than requested, so it was not recorded in WooCommerce. Check the payment in your XPay dashboard before doing anything else."
+msgstr ""
+
+#: includes/refunds/class-xpay-refund-service.php:218
+msgid "Could not reach XPay to confirm this refund. It may still have gone through: check the payment in your XPay dashboard before retrying."
+msgstr ""
+
+#: includes/refunds/class-xpay-refund-service.php:220
 msgid "XPay cannot refund this payment in its current state. Check the payment in your XPay dashboard."
 msgstr ""

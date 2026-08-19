@@ -21,8 +21,11 @@
  * Truth sources for the status rows are real, not decorative:
  *   - Keys:    OPTION_KEY_VALIDATED, written only after validate_key()
  *              succeeded against the live API.
- *   - Webhook: OPTION_LAST_WEBHOOK_AT, stamped only by signature-verified
- *              events (never by rejected probes).
+ *   - Webhook: the selected mode's last-verified-event stamp
+ *              (XPay_Constants::last_webhook_option), written only by
+ *              signature-verified events of that plane — a test event can
+ *              never paint the live row green, and rejected probes never
+ *              paint anything.
  *   - Payment: an actual paid order carrying an XPay gateway id.
  *
  * @package XPay_For_WooCommerce
@@ -282,9 +285,9 @@ final class XPay_Settings_Screen {
 		echo '</div>';
 		echo '<div>';
 		echo '<h3 class="xpay-adm__welcome-h">' . esc_html__( 'Docs & help', 'xpay-for-woocommerce' ) . '</h3>';
-		self::welcome_doc_row( 'docs/GETTING_STARTED.md', __( 'Getting started guide', 'xpay-for-woocommerce' ), 'xpay-adm__welcome-doc--first' );
-		self::welcome_doc_row( 'docs/CONFIGURATION.md', __( 'Configuration reference', 'xpay-for-woocommerce' ), '' );
-		self::welcome_doc_row( 'docs/TROUBLESHOOTING.md', __( 'Troubleshooting', 'xpay-for-woocommerce' ), 'xpay-adm__welcome-doc--last' );
+		self::welcome_doc_row( 'getting-started', __( 'Getting started guide', 'xpay-for-woocommerce' ), 'xpay-adm__welcome-doc--first' );
+		self::welcome_doc_row( 'configuration', __( 'Configuration reference', 'xpay-for-woocommerce' ), '' );
+		self::welcome_doc_row( 'troubleshooting', __( 'Troubleshooting', 'xpay-for-woocommerce' ), 'xpay-adm__welcome-doc--last' );
 		echo '</div>';
 		echo '</div>';
 
@@ -315,16 +318,17 @@ final class XPay_Settings_Screen {
 
 	/**
 	 * One joined row in the welcome's docs list. The guides ship inside the
-	 * plugin, so the links open the bundled files themselves — no external
-	 * docs site to go stale.
+	 * plugin and open through XPay_Doc_Viewer's admin page — a direct URL
+	 * to the bundled .md would 404 on hosts that refuse to serve dotfiles
+	 * and unknown extensions, and hardened setups block it outright.
 	 *
-	 * @param string $rel_path Doc path relative to the plugin root.
-	 * @param string $label    Translated link text.
-	 * @param string $classes  Extra row classes (first/last radii).
+	 * @param string $slug    Doc slug from XPay_Doc_Viewer::DOCS.
+	 * @param string $label   Translated link text.
+	 * @param string $classes Extra row classes (first/last radii).
 	 */
-	private static function welcome_doc_row( string $rel_path, string $label, string $classes ): void {
+	private static function welcome_doc_row( string $slug, string $label, string $classes ): void {
 		echo '<div class="xpay-adm__welcome-doc ' . esc_attr( $classes ) . '">';
-		echo '<a href="' . esc_url( XPAY_WC_PLUGIN_URL . $rel_path ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $label ) . '</a>';
+		echo '<a href="' . esc_url( XPay_Doc_Viewer::url( $slug ) ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $label ) . '</a>';
 		echo '</div>';
 	}
 
@@ -405,7 +409,7 @@ final class XPay_Settings_Screen {
 		$keys_ok        = self::keys_validated( $gateway, $live );
 		$keys_present   = '' !== $gateway->get_option( $mode . '_api_key', '' );
 		$secret_present = '' !== $gateway->get_option( $mode . '_webhook_secret', '' );
-		$last_event     = (int) get_option( XPay_Constants::OPTION_LAST_WEBHOOK_AT, 0 );
+		$last_event     = (int) get_option( XPay_Constants::last_webhook_option( $live ), 0 );
 		$paid_order     = self::latest_paid_order();
 
 		echo '<div class="xpay-adm__list">';
@@ -492,7 +496,7 @@ final class XPay_Settings_Screen {
 		$url            = home_url( '/?wc-api=' . XPay_Constants::WEBHOOK_ENDPOINT );
 		$mode           = $live ? 'live' : 'test';
 		$secret_present = '' !== $gateway->get_option( $mode . '_webhook_secret', '' );
-		$last_event     = (int) get_option( XPay_Constants::OPTION_LAST_WEBHOOK_AT, 0 );
+		$last_event     = (int) get_option( XPay_Constants::last_webhook_option( $live ), 0 );
 
 		echo '<div class="xpay-adm__section">';
 		echo '<div class="xpay-adm__section-head"><div>';

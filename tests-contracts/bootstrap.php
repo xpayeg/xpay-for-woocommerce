@@ -30,6 +30,7 @@ $xpay_contract_files = array(
 	'includes/constants/class-xpay-event-names.php',
 	'includes/constants/class-xpay-payment-methods.php',
 	'includes/constants/class-xpay-session-status.php',
+	'includes/constants/class-xpay-refund-status.php',
 	'includes/constants/class-xpay-branding.php',
 	'includes/api/class-xpay-api-exception.php',
 	'includes/api/class-xpay-money.php',
@@ -38,6 +39,7 @@ $xpay_contract_files = array(
 	'includes/gateway/class-xpay-order-lock.php',
 	'includes/gateway/class-xpay-order-sync.php',
 	'includes/gateway/class-xpay-checkout-service.php',
+	'includes/refunds/class-xpay-refund-service.php',
 	'includes/webhooks/class-xpay-webhook-controller.php',
 );
 foreach ( $xpay_contract_files as $xpay_contract_file ) {

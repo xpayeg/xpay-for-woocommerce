@@ -63,4 +63,41 @@ class XPay_Capture_Client extends XPay_Api_Client {
 	public function expire_checkout_session( string $session_id ): void {
 		$this->expired[] = $session_id;
 	}
+
+	/* ── Refunds ─────────────────────────────────────────────────────── */
+
+	/** @var array[] Every create_refund body, in order. */
+	public $refunds = array();
+
+	/** @var string[] Idempotency-Key of every create_refund attempt, in order. */
+	public $refund_keys = array();
+
+	/** @var array Overrides merged into every refund object this client returns. */
+	public $refund = array();
+
+	/** @var XPay_Api_Exception|null Thrown on the next create_refund (once). */
+	public $refund_failure = null;
+
+	public function create_refund( array $body, string $idempotency_key ): array {
+		// Body and key are recorded BEFORE a scripted failure: a transport
+		// failure means the response was lost, not that the request (and
+		// its idempotency key) never went out — which is exactly the
+		// scenario the deterministic-key contract exists for.
+		$this->refunds[]     = $body;
+		$this->refund_keys[] = $idempotency_key;
+		if ( null !== $this->refund_failure ) {
+			$failure              = $this->refund_failure;
+			$this->refund_failure = null;
+			throw $failure;
+		}
+		return array_merge(
+			array(
+				'id'       => 're_test_contract_' . count( $this->refunds ),
+				'status'   => XPay_Refund_Status::SUCCEEDED,
+				'amount'   => $body['amount'],
+				'currency' => 'EGP',
+			),
+			$this->refund
+		);
+	}
 }

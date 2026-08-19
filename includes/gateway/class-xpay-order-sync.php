@@ -25,7 +25,7 @@ class XPay_Order_Sync {
 	 *
 	 * @param WC_Order $order      Target order (ownership already verified).
 	 * @param array    $session    Session object (webhook data.object or API fetch).
-	 * @param string   $via        'webhook'|'thankyou' — recorded for audit.
+	 * @param string   $via        'webhook'|'thankyou'|'session-check' — recorded for audit.
 	 */
 	public static function mark_paid( WC_Order $order, array $session, string $via ): void {
 		if ( $order->is_paid() ) {
@@ -77,11 +77,17 @@ class XPay_Order_Sync {
 		// "money arrived" transition.
 		$order->payment_complete( '' !== $intent_id ? $intent_id : (string) $order->get_meta( XPay_Constants::META_SESSION_ID ) );
 
+		$source_label = __( 'thank-you page check', 'xpay-for-woocommerce' );
+		if ( 'webhook' === $via ) {
+			$source_label = __( 'webhook', 'xpay-for-woocommerce' );
+		} elseif ( 'session-check' === $via ) {
+			$source_label = __( 'payment session check', 'xpay-for-woocommerce' );
+		}
 		$order->add_order_note(
 			sprintf(
-				/* translators: 1: payment source ("webhook" or "thank-you page check"), 2: XPay payment intent id. */
+				/* translators: 1: payment source ("webhook", "thank-you page check" or "payment session check"), 2: XPay payment intent id. */
 				__( 'XPay payment confirmed via %1$s. Payment intent: %2$s', 'xpay-for-woocommerce' ),
-				'webhook' === $via ? __( 'webhook', 'xpay-for-woocommerce' ) : __( 'thank-you page check', 'xpay-for-woocommerce' ),
+				$source_label,
 				'' !== $intent_id ? $intent_id : '—'
 			)
 		);

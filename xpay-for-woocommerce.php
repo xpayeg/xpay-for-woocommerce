@@ -58,21 +58,72 @@ add_action(
 /*
  * Activation/deactivation must not depend on WooCommerce being loaded, so
  * the log store is required directly rather than via the plugin loader.
+ *
+ * Network-wide activation runs per site: each subsite owns its log table
+ * and prune cron, so touching only the main site would leave every other
+ * subsite to lazy-install while a network DEACTIVATION would strand their
+ * crons forever. Subsites created after a network activation converge via
+ * the same lazy install (admin_init) that covers plugin updates.
  */
 register_activation_hook(
 	__FILE__,
-	function () {
+	function ( $network_wide ) {
 		require_once XPAY_WC_PLUGIN_DIR . 'includes/logger/class-xpay-log-store.php';
+		if ( is_multisite() && $network_wide ) {
+			foreach ( get_sites(
+				array(
+					'fields' => 'ids',
+					'number' => 0,
+				)
+			) as $xpay_wc_site_id ) {
+				switch_to_blog( (int) $xpay_wc_site_id );
+				XPay_Log_Store::install();
+				restore_current_blog();
+			}
+			return;
+		}
 		XPay_Log_Store::install();
 	}
 );
 register_deactivation_hook(
 	__FILE__,
-	function () {
+	function ( $network_wide ) {
 		require_once XPAY_WC_PLUGIN_DIR . 'includes/logger/class-xpay-log-store.php';
+		if ( is_multisite() && $network_wide ) {
+			foreach ( get_sites(
+				array(
+					'fields' => 'ids',
+					'number' => 0,
+				)
+			) as $xpay_wc_site_id ) {
+				switch_to_blog( (int) $xpay_wc_site_id );
+				XPay_Log_Store::unschedule();
+				restore_current_blog();
+			}
+			return;
+		}
 		XPay_Log_Store::unschedule();
 	}
 );
+
+/*
+ * When a subsite is deleted, WordPress drops the tables the
+ * wpmu_drop_tables filter lists (DROP IF EXISTS — harmless where the
+ * plugin never ran). Without this, a deleted subsite leaves its xpay_log
+ * table orphaned in the database forever.
+ */
+if ( is_multisite() ) {
+	add_filter(
+		'wpmu_drop_tables',
+		function ( $tables, $site_id ) {
+			global $wpdb;
+			$tables[] = $wpdb->get_blog_prefix( $site_id ) . 'xpay_log';
+			return $tables;
+		},
+		10,
+		2
+	);
+}
 
 add_action(
 	'plugins_loaded',

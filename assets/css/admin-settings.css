@@ -1327,3 +1327,32 @@ body.rtl .xpay-adm .xpay-adm__welcome-cap-label {
 		min-width: 720px;
 	}
 }
+
+/* ── Bundled-guide viewer (admin.php?page=xpay-doc) ─────────────────── */
+
+/* The guides are Markdown shown as the plain text it is — readable by
+   design, and an escaped <pre> can never smuggle markup into wp-admin. */
+.xpay-adm__card--doc {
+	padding: 8px;
+}
+
+.xpay-adm__doc-text {
+	background: #fafafa;
+	border: 1px solid var(--bd);
+	border-radius: 10px;
+	color: var(--fg);
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 12.5px;
+	line-height: 1.7;
+	margin: 0;
+	max-height: calc(100vh - 220px);
+	overflow: auto;
+	padding: 20px 24px;
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.xpay-adm__doc-missing {
+	color: var(--mut);
+	margin: 16px;
+}

@@ -138,7 +138,8 @@ Some things merchants look for on this screen are deliberately not here:
 |---|---|
 | Pay-page brand color | Your XPay dashboard. The pay page follows your merchant primary color automatically — the dashboard is the source of truth, and changes sync on their own. |
 | Which payment methods your account accepts | Your XPay dashboard / XPay support. The plugin never shows a method your account cannot accept. |
-| Refunds | The WooCommerce order screen — full and partial refunds go through the XPay API from there. valU payments cannot be refunded by the XPay platform yet; the plugin tells you so explicitly instead of failing silently. |
+| Refunds | The WooCommerce order screen — full and partial refunds go through the XPay API from there. valU payments cannot be refunded by the XPay platform yet; the plugin tells you so explicitly instead of failing silently. **Refunds from WooCommerce work for EGP orders only**: the XPay platform processes refund amounts in EGP (the settlement currency), so for orders placed in any other currency the plugin refuses the in-WooCommerce refund — with a message saying so — rather than move the wrong amount. Refund those payments from your XPay dashboard, then record them in WooCommerce manually. |
+| Store currency | WooCommerce → Settings → General. XPay checkout shows only when the store currency is one XPay supports (EGP, USD, EUR, GBP, SAR, AED, QAR, KWD, JOD, OMR, BHD, LYD, AUD, CAD, CNY); on any other currency every XPay option hides instead of failing after Place Order. Developers can adjust the list with the `xpay_wc_supported_currencies` filter — only widen it if XPay has confirmed the currency for your account. |
 | Language | The payment window and receipts follow your store language (full Arabic and English, including right-to-left receipts). |
 
 ---

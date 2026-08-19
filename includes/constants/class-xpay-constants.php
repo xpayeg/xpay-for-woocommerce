@@ -81,6 +81,26 @@ final class XPay_Constants {
 	const META_PROCESSED_EVENTS = '_xpay_processed_events';
 	const META_CUSTOMER_ID      = '_xpay_customer_id';
 
+	/**
+	 * Unix time the stored session was last confirmed against the API
+	 * (stamped at creation and on every successful reuse validation). The
+	 * pay page trusts the stored client secret only within a short window
+	 * of this stamp — the hot path right after process_payment — and
+	 * re-validates through the checkout service for anything older, so a
+	 * bookmarked or emailed pay page can never mount a dead session.
+	 */
+	const META_SESSION_CHECKED_AT = '_xpay_session_checked_at';
+
+	/**
+	 * XPay refund ids (re_…) recorded after each refund this plugin
+	 * completed. The COUNT feeds the deterministic refund Idempotency-Key:
+	 * a retry of a refund whose HTTP response was lost composes the same
+	 * key (nothing was recorded), so the platform replays the original
+	 * refund instead of paying out twice; a genuinely new refund follows a
+	 * recorded success and composes a fresh key.
+	 */
+	const META_REFUND_IDS = '_xpay_refund_ids';
+
 	/** Option flagging a method pin the API rejected (drives the admin notice). */
 	const OPTION_PIN_REJECTED = 'xpay_wc_method_pin_rejected';
 
@@ -101,14 +121,28 @@ final class XPay_Constants {
 	 */
 	const OPTION_KEY_VALIDATED = 'xpay_wc_key_validated';
 
-	/**
-	 * Unix time of the last webhook that PASSED signature verification.
+	/*
+	 * Unix time of the last webhook that PASSED signature verification, one
+	 * option per plane: a test event must never paint the LIVE health row
+	 * green (test and live endpoints are separate XPay resources, and the
+	 * settings screen reads the selected mode's stamp only). Keyed by the
+	 * event's own livemode — which always matches the verifying secret.
 	 * Stamped by the webhook controller regardless of the logging setting —
-	 * the settings screen's webhook-health row must stay truthful with
-	 * diagnostics off. Never stamped for rejected requests: an attacker
-	 * probing the endpoint must not be able to paint the health dot green.
+	 * the health row must stay truthful with diagnostics off. Never stamped
+	 * for rejected requests: an attacker probing the endpoint must not be
+	 * able to paint the health dot green.
 	 */
-	const OPTION_LAST_WEBHOOK_AT = 'xpay_wc_last_webhook_at';
+	const OPTION_LAST_WEBHOOK_AT_TEST = 'xpay_wc_last_webhook_at_test';
+	const OPTION_LAST_WEBHOOK_AT_LIVE = 'xpay_wc_last_webhook_at_live';
+
+	/**
+	 * The last-verified-webhook option name for one plane.
+	 *
+	 * @param bool $live_mode Which plane the event belongs to.
+	 */
+	public static function last_webhook_option( bool $live_mode ): string {
+		return $live_mode ? self::OPTION_LAST_WEBHOOK_AT_LIVE : self::OPTION_LAST_WEBHOOK_AT_TEST;
+	}
 
 	/** The merchant-facing XPay dashboard (production host). */
 	const DASHBOARD_URL = 'https://app.xpay.app';

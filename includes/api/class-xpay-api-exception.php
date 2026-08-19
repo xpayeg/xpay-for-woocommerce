@@ -120,4 +120,23 @@ class XPay_Api_Exception extends Exception {
 	public static function refund_pending(): self {
 		return new self( 'XPay accepted the refund but it is still processing', XPay_Error_Codes::REFUND_PENDING );
 	}
+
+	/**
+	 * The order's currency cannot be refunded through the API: refund
+	 * amounts are interpreted in the charge's processing currency (always
+	 * EGP), so a WooCommerce amount in any other currency would move the
+	 * wrong money. Refused before any API call is made.
+	 */
+	public static function refund_currency_unsupported(): self {
+		return new self( 'Refund amounts are processed in EGP; this order is in another currency', XPay_Error_Codes::REFUND_CURRENCY_UNSUPPORTED );
+	}
+
+	/**
+	 * The API returned SUCCEEDED but the refund object's amount or currency
+	 * differs from what was requested. WooCommerce must not record the
+	 * requested numbers as fact — a human reconciles from the dashboard.
+	 */
+	public static function refund_result_mismatch(): self {
+		return new self( 'XPay completed the refund with a different amount or currency than requested', XPay_Error_Codes::REFUND_RESULT_MISMATCH );
+	}
 }

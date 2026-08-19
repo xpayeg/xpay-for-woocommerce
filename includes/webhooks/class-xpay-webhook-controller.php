@@ -63,7 +63,10 @@ class XPay_Webhook_Controller {
 		// well-formed events reach this line, so the timestamp can't be
 		// painted by unauthenticated probes. Independent of the logging
 		// setting on purpose — health must stay truthful with logging off.
-		update_option( XPay_Constants::OPTION_LAST_WEBHOOK_AT, time(), false );
+		// Stamped PER PLANE, keyed by the event's own livemode (which always
+		// matches the secret that just verified it): a test event must never
+		// paint the live health row green.
+		update_option( XPay_Constants::last_webhook_option( ! empty( $event['livemode'] ) ), time(), false );
 
 		$event_id = isset( $event['id'] ) && is_string( $event['id'] ) ? $event['id'] : '';
 		XPay_Logger::event(

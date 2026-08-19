@@ -142,16 +142,22 @@ final class XPay_Pay_Page {
 
 		// cart_subtotal is redundant once the items are itemized above;
 		// payment_method is this page; order_total gets the TOTAL row below.
+		// Refund rows are skipped and the total renders GROSS
+		// (display_refunded=false) because that is what the XPay session
+		// charges: get_total() ignores refunds, and the amount guard
+		// compares the same number. A partially-refunded order made
+		// payable again must show the amount the window will actually
+		// take, or the receipt promises a discount the charge won't give.
 		$skip = array( 'cart_subtotal', 'payment_method', 'order_total' );
 		foreach ( $order->get_order_item_totals() as $key => $row ) {
-			if ( in_array( $key, $skip, true ) ) {
+			if ( in_array( $key, $skip, true ) || 0 === strpos( (string) $key, 'refund_' ) ) {
 				continue;
 			}
 			$label = rtrim( wp_strip_all_tags( (string) $row['label'] ), ':' );
 			echo '<div class="xpay-pay__line"><span class="xpay-pay__line-label">' . esc_html( $label ) . '</span><span class="xpay-pay__line-amount">' . wp_kses_post( (string) $row['value'] ) . '</span></div>';
 		}
 
-		echo '<div class="xpay-pay__total"><span>' . esc_html__( 'Total', 'xpay-for-woocommerce' ) . '</span><span class="xpay-pay__total-amount">' . wp_kses_post( $order->get_formatted_order_total() ) . '</span></div>';
+		echo '<div class="xpay-pay__total"><span>' . esc_html__( 'Total', 'xpay-for-woocommerce' ) . '</span><span class="xpay-pay__total-amount">' . wp_kses_post( $order->get_formatted_order_total( '', false ) ) . '</span></div>';
 		echo '</div>';
 	}
 

@@ -109,6 +109,67 @@ class CheckoutServiceContractTest extends ContractTestCase {
 		$this->assertCount( 2, $this->client->created, 'A session pinned to card must never serve the valU row.' );
 	}
 
+	public function test_complete_paid_session_marks_order_paid_instead_of_reminting() {
+		$order = $this->order();
+		$this->service->get_or_create_session( $order );
+
+		// The stored session now reads back COMPLETE and PAID: a stale
+		// emailed pay link whose webhook was lost or is still in flight.
+		$this->client->session = array(
+			'status'        => XPay_Session_Status::COMPLETE,
+			'paymentStatus' => XPay_Payment_Status::PAID,
+		);
+		$session = $this->service->get_or_create_session( $order );
+
+		$this->assertCount( 1, $this->client->created, 'Minting a fresh payable session over a paid one is how a shopper gets charged twice.' );
+		$this->assertSame( XPay_Session_Status::COMPLETE, $session['status'] );
+		$this->assertTrue( $order->is_paid(), 'The already-paid truth is applied, not just observed.' );
+		$this->assertStageFired( 'session.already_complete' );
+		$this->assertStageFired( 'order.paid' );
+	}
+
+	public function test_complete_paid_session_defers_to_a_busy_lock() {
+		$order = $this->order();
+		$this->service->get_or_create_session( $order );
+
+		$this->client->session          = array(
+			'status'        => XPay_Session_Status::COMPLETE,
+			'paymentStatus' => XPay_Payment_Status::PAID,
+		);
+		$GLOBALS['wpdb']->lock_results = array( '0' ); // The webhook holds the order lock right now.
+
+		$session = $this->service->get_or_create_session( $order );
+
+		$this->assertCount( 1, $this->client->created, 'Still no re-mint: the busy holder is applying this same truth.' );
+		$this->assertSame( XPay_Session_Status::COMPLETE, $session['status'] );
+		$this->assertFalse( $order->is_paid(), 'Deferring to the lock holder means writing nothing ourselves.' );
+	}
+
+	public function test_complete_unpaid_session_still_mints_fresh() {
+		$order = $this->order();
+		$this->service->get_or_create_session( $order );
+
+		$this->client->session = array(
+			'status'        => XPay_Session_Status::COMPLETE,
+			'paymentStatus' => XPay_Payment_Status::UNPAID,
+		);
+		$this->service->get_or_create_session( $order );
+
+		$this->assertCount( 2, $this->client->created, 'Only COMPLETE and PAID means already-paid; completed-but-unpaid follows the normal new-session path.' );
+		$this->assertFalse( $order->is_paid() );
+	}
+
+	public function test_session_validation_stamps_freshness() {
+		$order = $this->order();
+		$this->service->get_or_create_session( $order );
+		$this->assertGreaterThan( 0, (int) $order->get_meta( XPay_Constants::META_SESSION_CHECKED_AT ), 'Creation counts as a confirmation.' );
+
+		$order->update_meta_data( XPay_Constants::META_SESSION_CHECKED_AT, 0 );
+		$this->service->get_or_create_session( $order );
+
+		$this->assertGreaterThan( 0, (int) $order->get_meta( XPay_Constants::META_SESSION_CHECKED_AT ), 'A successful reuse validation refreshes the stamp the pay page trusts.' );
+	}
+
 	public function test_transport_failure_on_reuse_check_surfaces_instead_of_reminting() {
 		$order = $this->order();
 		$this->service->get_or_create_session( $order );

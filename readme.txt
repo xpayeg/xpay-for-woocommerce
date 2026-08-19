@@ -74,6 +74,10 @@ Your XPay dashboard → Developers → Webhooks. Add an endpoint pointing at the
 
 XPay cannot refund valU payments yet. The plugin tells you this instead of failing silently; refund those orders through your own arrangement with the customer.
 
+= Can I refund an order that was not placed in EGP? =
+
+Not from WooCommerce. XPay processes refund amounts in EGP (the settlement currency), so for orders in any other currency the plugin refuses the refund instead of moving the wrong amount. Issue those refunds from your XPay dashboard, then record them in WooCommerce manually.
+
 = My checkout runs on WPFunnels — does it work? =
 
 Yes. If you use WPFunnels without a Pro upsell flow, turn on the WPFunnels safeguard in the XPay settings so shoppers land on the standard order confirmation instead of being bounced to the cart. With a working Pro upsell flow, leave it off — the funnel routing is preserved. See COMPATIBILITY.md in the plugin's docs folder.
@@ -93,7 +97,7 @@ Nothing breaks, but shoppers see two separate XPay options at checkout, and the 
 * Order confirmation redesigned as the pay page's receipt, stamped PAID or "Confirming payment" — the page never claims more than the money has done.
 * Full Arabic translation with right-to-left receipt layout, alongside English.
 * Cart/Checkout Blocks support and HPOS compatibility declared from this release.
-* Full and partial refunds from the order screen.
+* Full and partial refunds from the order screen (EGP orders; other currencies refund from the XPay dashboard), with retry-safe refund requests that can never pay out twice.
 * Orders are confirmed only by signed webhooks or a server-side session check, never by the browser redirect.
 * Compatibility built in: WPFunnels safeguard, script-optimizer opt-outs on payment scripts, and a legacy-plugin warning.
 * Breaking: the v2 (community API) integration is removed. v2 merchants: install this version, paste your v3 keys, and configure the webhook — settings do not carry over.
