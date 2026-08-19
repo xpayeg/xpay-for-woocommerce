@@ -41,7 +41,9 @@ bin/
 
 # --- Tests ---
 tests/
+tests-contracts/
 phpunit.xml
+phpunit-contracts.xml
 phpunit.xml.dist
 phpcs.xml
 phpcs.xml.dist
