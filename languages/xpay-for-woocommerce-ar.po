@@ -65,10 +65,6 @@ msgstr "رقم الطلب"
 msgid "Request id"
 msgstr "معرّف الطلب (request)"
 
-#: includes/admin/class-xpay-log-viewer.php:110
-msgid "Stage starts with"
-msgstr "المرحلة تبدأ بـ"
-
 #: includes/admin/class-xpay-log-viewer.php:111
 msgid "Search"
 msgstr "بحث"
@@ -113,59 +109,112 @@ msgstr "هل تريد حذف جميع إدخالات سجل XPay؟ لا يمكن
 msgid "Clear log"
 msgstr "مسح السجل"
 
-#: includes/admin/class-xpay-log-viewer.php:155
-#: includes/admin/class-xpay-log-viewer.php:222
-msgid "Time (UTC)"
-msgstr "الوقت (UTC)"
-
 #: includes/admin/class-xpay-log-viewer.php:156
-#: includes/admin/class-xpay-log-viewer.php:223
-msgid "Request"
-msgstr "المعرّف"
+msgid "Sessions"
+msgstr "الجلسات"
 
 #: includes/admin/class-xpay-log-viewer.php:157
-#: includes/admin/class-xpay-log-viewer.php:224
+msgid "Webhooks"
+msgstr "إشعارات webhook"
+
+#: includes/admin/class-xpay-log-viewer.php:158
+msgid "Orders"
+msgstr "الطلبات"
+
+#: includes/admin/class-xpay-log-viewer.php:159
+#: includes/admin/class-xpay-settings-screen.php:171
+msgid "Refunds"
+msgstr "المبالغ المستردة"
+
+#: includes/admin/class-xpay-log-viewer.php:160
+msgid "API calls"
+msgstr "استدعاءات API"
+
+#: includes/admin/class-xpay-log-viewer.php:161
+msgid "Customers"
+msgstr "العملاء"
+
+#: includes/admin/class-xpay-log-viewer.php:162
+#: includes/gateway/class-xpay-gateway.php:196
+msgid "Confirmation page"
+msgstr "صفحة التأكيد"
+
+#: includes/admin/class-xpay-log-viewer.php:163
+msgid "Checkout errors"
+msgstr "أخطاء إتمام الدفع"
+
+#: includes/admin/class-xpay-log-viewer.php:164
+msgid "Order locks"
+msgstr "أقفال الطلبات"
+
+#: includes/admin/class-xpay-log-viewer.php:165
+msgid "Compatibility"
+msgstr "التوافق"
+
+#: includes/admin/class-xpay-log-viewer.php:180
+#: includes/admin/class-xpay-log-viewer.php:202
+#: includes/admin/class-xpay-log-viewer.php:274
 msgid "Stage"
 msgstr "المرحلة"
 
-#: includes/admin/class-xpay-log-viewer.php:158
-#: includes/admin/class-xpay-log-viewer.php:225
+#: includes/admin/class-xpay-log-viewer.php:181
+msgid "All stages"
+msgstr "كل المراحل"
+
+#: includes/admin/class-xpay-log-viewer.php:200
+#: includes/admin/class-xpay-log-viewer.php:272
+msgid "Time (UTC)"
+msgstr "الوقت (UTC)"
+
+#: includes/admin/class-xpay-log-viewer.php:201
+#: includes/admin/class-xpay-log-viewer.php:273
+msgid "Request"
+msgstr "المعرّف"
+
+#: includes/admin/class-xpay-log-viewer.php:203
+#: includes/admin/class-xpay-log-viewer.php:275
 msgid "Order"
 msgstr "الطلب"
 
-#: includes/admin/class-xpay-log-viewer.php:159
+#: includes/admin/class-xpay-log-viewer.php:204
 msgid "Details"
 msgstr "التفاصيل"
 
-#: includes/admin/class-xpay-log-viewer.php:163
+#: includes/admin/class-xpay-log-viewer.php:208
 msgid "No log entries match. New entries appear here as payments run."
 msgstr "لا توجد إدخالات مطابقة في السجل. ستظهر الإدخالات الجديدة هنا مع تشغيل المدفوعات."
 
-#: includes/admin/class-xpay-log-viewer.php:198
+#: includes/admin/class-xpay-log-viewer.php:243
 msgid "View the full entry"
 msgstr "عرض الإدخال كاملًا"
 
-#: includes/admin/class-xpay-log-viewer.php:218
+#. translators: %d is the number of log entries shown.
+#: includes/admin/class-xpay-log-viewer.php:252
+#, php-format
+msgid "Showing the latest %d entries — narrow with the filters, or Export CSV for everything retained."
+msgstr "يتم عرض أحدث %d إدخال — ضيّق النتائج بعوامل التصفية، أو استخدم تصدير CSV لكل ما هو محفوظ."
+
+#: includes/admin/class-xpay-log-viewer.php:268
 msgid "Log entry"
 msgstr "إدخال السجل"
 
-#: includes/admin/class-xpay-log-viewer.php:219
+#: includes/admin/class-xpay-log-viewer.php:269
 msgid "Close"
 msgstr "إغلاق"
 
-#: includes/admin/class-xpay-log-viewer.php:230
+#: includes/admin/class-xpay-log-viewer.php:280
 msgid "Copied"
 msgstr "تم النسخ"
 
-#: includes/admin/class-xpay-log-viewer.php:230
+#: includes/admin/class-xpay-log-viewer.php:280
 msgid "Copy entry"
 msgstr "نسخ الإدخال"
 
-#: includes/admin/class-xpay-log-viewer.php:247
+#: includes/admin/class-xpay-log-viewer.php:297
 msgid "XPay log cleared."
 msgstr "تم مسح سجل XPay."
 
-#: includes/admin/class-xpay-log-viewer.php:386
+#: includes/admin/class-xpay-log-viewer.php:436
 msgid "You are not allowed to export the XPay log."
 msgstr "غير مسموح لك بتصدير سجل XPay."
 
@@ -244,10 +293,6 @@ msgstr "تُفتح مدفوعات البطاقات وڤاليو وفوري في 
 #: includes/admin/class-xpay-settings-screen.php:170
 msgid "Payment methods"
 msgstr "طرق الدفع"
-
-#: includes/admin/class-xpay-settings-screen.php:171
-msgid "Refunds"
-msgstr "المبالغ المستردة"
 
 #: includes/admin/class-xpay-settings-screen.php:171
 msgid "Full & partial, in WooCommerce"
@@ -751,10 +796,6 @@ msgstr "توافق WPFunnels"
 #: includes/gateway/class-xpay-gateway.php:192
 msgid "Only relevant when the WPFunnels plugin is active."
 msgstr "لا يهم هذا الخيار إلا عندما تكون إضافة WPFunnels مفعّلة."
-
-#: includes/gateway/class-xpay-gateway.php:196
-msgid "Confirmation page"
-msgstr "صفحة التأكيد"
 
 #: includes/gateway/class-xpay-gateway.php:198
 msgid "Force the standard order-received page after payment"

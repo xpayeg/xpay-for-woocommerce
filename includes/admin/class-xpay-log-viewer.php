@@ -107,7 +107,7 @@ final class XPay_Log_Viewer {
 		wp_nonce_field( 'xpay-log-filter', '_xpaynonce', false );
 		echo '<input class="xpay-adm__input xpay-adm__input--w110" type="number" name="order_id" value="' . esc_attr( $filters['order_id'] ? (string) $filters['order_id'] : '' ) . '" placeholder="' . esc_attr__( 'Order #', 'xpay-for-woocommerce' ) . '" aria-label="' . esc_attr__( 'Order #', 'xpay-for-woocommerce' ) . '">';
 		echo '<input class="xpay-adm__input xpay-adm__input--w150 xpay-adm__mono" type="text" name="request_id" value="' . esc_attr( $filters['request_id'] ) . '" placeholder="' . esc_attr__( 'Request id', 'xpay-for-woocommerce' ) . '" aria-label="' . esc_attr__( 'Request id', 'xpay-for-woocommerce' ) . '">';
-		echo '<input class="xpay-adm__input xpay-adm__input--w150 xpay-adm__mono" type="text" name="stage" value="' . esc_attr( $filters['stage'] ) . '" placeholder="webhook." aria-label="' . esc_attr__( 'Stage starts with', 'xpay-for-woocommerce' ) . '">';
+		self::render_stage_select( $filters['stage'] );
 		echo '<input class="xpay-adm__input xpay-adm__input--grow" type="search" name="s" value="' . esc_attr( $filters['search'] ) . '" placeholder="' . esc_attr__( 'Search', 'xpay-for-woocommerce' ) . '" aria-label="' . esc_attr__( 'Search messages and details', 'xpay-for-woocommerce' ) . '">';
 		// The table's time column is UTC; the date bounds mean the same days.
 		echo '<input class="xpay-adm__input xpay-adm__input--w150" type="date" name="date_from" value="' . esc_attr( $filters['date_from'] ) . '" title="' . esc_attr__( 'From date (UTC)', 'xpay-for-woocommerce' ) . '" aria-label="' . esc_attr__( 'From date (UTC)', 'xpay-for-woocommerce' ) . '">';
@@ -141,6 +141,51 @@ final class XPay_Log_Viewer {
 		echo '</div>';
 
 		echo '</div>';
+	}
+
+	/**
+	 * The stage families the plugin writes, for the toolbar dropdown.
+	 * Values are the LIKE prefixes the store filters by; labels are what
+	 * a merchant reads. Update alongside any new XPay_Logger stage family
+	 * — the same keep-in-step discipline as the translation dictionary.
+	 *
+	 * @return array<string, string> Prefix => translated label.
+	 */
+	private static function stage_families(): array {
+		return array(
+			'session.'         => __( 'Sessions', 'xpay-for-woocommerce' ),
+			'webhook.'         => __( 'Webhooks', 'xpay-for-woocommerce' ),
+			'order.'           => __( 'Orders', 'xpay-for-woocommerce' ),
+			'refund.'          => __( 'Refunds', 'xpay-for-woocommerce' ),
+			'api.'             => __( 'API calls', 'xpay-for-woocommerce' ),
+			'customer.'        => __( 'Customers', 'xpay-for-woocommerce' ),
+			'thankyou.'        => __( 'Confirmation page', 'xpay-for-woocommerce' ),
+			'process_payment.' => __( 'Checkout errors', 'xpay-for-woocommerce' ),
+			'order_lock.'      => __( 'Order locks', 'xpay-for-woocommerce' ),
+			'compat.'          => __( 'Compatibility', 'xpay-for-woocommerce' ),
+		);
+	}
+
+	/**
+	 * Stage filter as a dropdown of the families above — a merchant picks
+	 * "Webhooks", not a prefix syntax. The backend still filters by
+	 * prefix, so a deep link carrying an exact stage
+	 * (?stage=webhook.rejected) keeps working: it renders as an extra
+	 * selected option instead of being silently dropped.
+	 *
+	 * @param string $current The active stage filter value.
+	 */
+	private static function render_stage_select( string $current ): void {
+		$families = self::stage_families();
+		echo '<select class="xpay-adm__input xpay-adm__select" name="stage" aria-label="' . esc_attr__( 'Stage', 'xpay-for-woocommerce' ) . '">';
+		echo '<option value="">' . esc_html__( 'All stages', 'xpay-for-woocommerce' ) . '</option>';
+		foreach ( $families as $prefix => $label ) {
+			echo '<option value="' . esc_attr( $prefix ) . '"' . selected( $current, $prefix, false ) . '>' . esc_html( $label ) . '</option>';
+		}
+		if ( '' !== $current && ! isset( $families[ $current ] ) ) {
+			echo '<option value="' . esc_attr( $current ) . '" selected>' . esc_html( $current ) . '</option>';
+		}
+		echo '</select>';
 	}
 
 	private static function render_debug_report( array $filters ): void {
@@ -201,6 +246,11 @@ final class XPay_Log_Viewer {
 		}
 		echo '</tbody></table>';
 		echo '</div>';
+
+		if ( count( $rows ) === self::TAIL_ROWS ) {
+			/* translators: %d is the number of log entries shown. */
+			echo '<p class="xpay-adm__table-note">' . esc_html( sprintf( __( 'Showing the latest %d entries — narrow with the filters, or Export CSV for everything retained.', 'xpay-for-woocommerce' ), self::TAIL_ROWS ) ) . '</p>';
+		}
 
 		self::render_entry_dialog();
 	}

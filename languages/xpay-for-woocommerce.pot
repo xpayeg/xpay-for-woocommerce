@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-19T07:39:04+00:00\n"
+"POT-Creation-Date: 2026-08-19T07:58:26+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: xpay-for-woocommerce\n"
@@ -71,10 +71,6 @@ msgstr ""
 msgid "Request id"
 msgstr ""
 
-#: includes/admin/class-xpay-log-viewer.php:110
-msgid "Stage starts with"
-msgstr ""
-
 #: includes/admin/class-xpay-log-viewer.php:111
 msgid "Search"
 msgstr ""
@@ -119,59 +115,112 @@ msgstr ""
 msgid "Clear log"
 msgstr ""
 
-#: includes/admin/class-xpay-log-viewer.php:155
-#: includes/admin/class-xpay-log-viewer.php:222
-msgid "Time (UTC)"
-msgstr ""
-
 #: includes/admin/class-xpay-log-viewer.php:156
-#: includes/admin/class-xpay-log-viewer.php:223
-msgid "Request"
+msgid "Sessions"
 msgstr ""
 
 #: includes/admin/class-xpay-log-viewer.php:157
-#: includes/admin/class-xpay-log-viewer.php:224
-msgid "Stage"
+msgid "Webhooks"
 msgstr ""
 
 #: includes/admin/class-xpay-log-viewer.php:158
-#: includes/admin/class-xpay-log-viewer.php:225
-msgid "Order"
+msgid "Orders"
 msgstr ""
 
 #: includes/admin/class-xpay-log-viewer.php:159
-msgid "Details"
+#: includes/admin/class-xpay-settings-screen.php:171
+msgid "Refunds"
+msgstr ""
+
+#: includes/admin/class-xpay-log-viewer.php:160
+msgid "API calls"
+msgstr ""
+
+#: includes/admin/class-xpay-log-viewer.php:161
+msgid "Customers"
+msgstr ""
+
+#: includes/admin/class-xpay-log-viewer.php:162
+#: includes/gateway/class-xpay-gateway.php:196
+msgid "Confirmation page"
 msgstr ""
 
 #: includes/admin/class-xpay-log-viewer.php:163
+msgid "Checkout errors"
+msgstr ""
+
+#: includes/admin/class-xpay-log-viewer.php:164
+msgid "Order locks"
+msgstr ""
+
+#: includes/admin/class-xpay-log-viewer.php:165
+msgid "Compatibility"
+msgstr ""
+
+#: includes/admin/class-xpay-log-viewer.php:180
+#: includes/admin/class-xpay-log-viewer.php:202
+#: includes/admin/class-xpay-log-viewer.php:274
+msgid "Stage"
+msgstr ""
+
+#: includes/admin/class-xpay-log-viewer.php:181
+msgid "All stages"
+msgstr ""
+
+#: includes/admin/class-xpay-log-viewer.php:200
+#: includes/admin/class-xpay-log-viewer.php:272
+msgid "Time (UTC)"
+msgstr ""
+
+#: includes/admin/class-xpay-log-viewer.php:201
+#: includes/admin/class-xpay-log-viewer.php:273
+msgid "Request"
+msgstr ""
+
+#: includes/admin/class-xpay-log-viewer.php:203
+#: includes/admin/class-xpay-log-viewer.php:275
+msgid "Order"
+msgstr ""
+
+#: includes/admin/class-xpay-log-viewer.php:204
+msgid "Details"
+msgstr ""
+
+#: includes/admin/class-xpay-log-viewer.php:208
 msgid "No log entries match. New entries appear here as payments run."
 msgstr ""
 
-#: includes/admin/class-xpay-log-viewer.php:198
+#: includes/admin/class-xpay-log-viewer.php:243
 msgid "View the full entry"
 msgstr ""
 
-#: includes/admin/class-xpay-log-viewer.php:218
+#. translators: %d is the number of log entries shown.
+#: includes/admin/class-xpay-log-viewer.php:252
+#, php-format
+msgid "Showing the latest %d entries — narrow with the filters, or Export CSV for everything retained."
+msgstr ""
+
+#: includes/admin/class-xpay-log-viewer.php:268
 msgid "Log entry"
 msgstr ""
 
-#: includes/admin/class-xpay-log-viewer.php:219
+#: includes/admin/class-xpay-log-viewer.php:269
 msgid "Close"
 msgstr ""
 
-#: includes/admin/class-xpay-log-viewer.php:230
+#: includes/admin/class-xpay-log-viewer.php:280
 msgid "Copied"
 msgstr ""
 
-#: includes/admin/class-xpay-log-viewer.php:230
+#: includes/admin/class-xpay-log-viewer.php:280
 msgid "Copy entry"
 msgstr ""
 
-#: includes/admin/class-xpay-log-viewer.php:247
+#: includes/admin/class-xpay-log-viewer.php:297
 msgid "XPay log cleared."
 msgstr ""
 
-#: includes/admin/class-xpay-log-viewer.php:386
+#: includes/admin/class-xpay-log-viewer.php:436
 msgid "You are not allowed to export the XPay log."
 msgstr ""
 
@@ -249,10 +298,6 @@ msgstr ""
 
 #: includes/admin/class-xpay-settings-screen.php:170
 msgid "Payment methods"
-msgstr ""
-
-#: includes/admin/class-xpay-settings-screen.php:171
-msgid "Refunds"
 msgstr ""
 
 #: includes/admin/class-xpay-settings-screen.php:171
@@ -756,10 +801,6 @@ msgstr ""
 
 #: includes/gateway/class-xpay-gateway.php:192
 msgid "Only relevant when the WPFunnels plugin is active."
-msgstr ""
-
-#: includes/gateway/class-xpay-gateway.php:196
-msgid "Confirmation page"
 msgstr ""
 
 #: includes/gateway/class-xpay-gateway.php:198
