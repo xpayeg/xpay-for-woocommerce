@@ -74,6 +74,7 @@ wporg-assets/
 # --- Development tooling (v3): never ships in the WP.org ZIP ---
 AGENTS.md
 HANDOFF.md
+HANDOFF-ELEMENTS.md
 tools/
 composer.json
 composer.lock
