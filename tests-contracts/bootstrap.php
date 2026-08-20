@@ -39,6 +39,7 @@ $xpay_contract_files = array(
 	'includes/gateway/class-xpay-order-lock.php',
 	'includes/gateway/class-xpay-order-sync.php',
 	'includes/gateway/class-xpay-checkout-service.php',
+	'includes/gateway/class-xpay-cart-session.php',
 	'includes/refunds/class-xpay-refund-service.php',
 	'includes/webhooks/class-xpay-webhook-controller.php',
 );

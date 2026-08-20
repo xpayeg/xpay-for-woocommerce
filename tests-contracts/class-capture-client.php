@@ -60,6 +60,24 @@ class XPay_Capture_Client extends XPay_Api_Client {
 		return $this->serve( array( 'id' => $session_id ) );
 	}
 
+	/** @var array<int, array{session_id:string, body:array, key:string}> Every PATCH sent. */
+	public $updated = array();
+
+	/** @var XPay_Api_Exception|null Thrown by the next update, if set. */
+	public $update_failure = null;
+
+	public function update_checkout_session( string $session_id, array $body, string $idempotency_key ): array {
+		if ( null !== $this->update_failure ) {
+			throw $this->update_failure;
+		}
+		$this->updated[] = array(
+			'session_id' => $session_id,
+			'body'       => $body,
+			'key'        => $idempotency_key,
+		);
+		return $this->serve( array( 'id' => $session_id ) );
+	}
+
 	public function expire_checkout_session( string $session_id ): void {
 		$this->expired[] = $session_id;
 	}

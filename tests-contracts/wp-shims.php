@@ -20,7 +20,47 @@ function xpay_tests_reset_world(): void {
 	$GLOBALS['xpay_test_locale']       = 'en_US';
 	$GLOBALS['xpay_test_wc_refunds']   = array();
 	$GLOBALS['xpay_test_refund_error'] = null;
+	$GLOBALS['xpay_test_wc_session']   = array();
 	$GLOBALS['wpdb']                   = new XPay_Fake_Wpdb();
+}
+
+/* ── WooCommerce session ─────────────────────────────────────────────── */
+
+/**
+ * Minimal stand-in for WooCommerce's session handler.
+ *
+ * Only get() and set() are modelled, and set( key, null ) removes the key,
+ * which is how WooCommerce itself behaves and what XPay_Cart_Session relies
+ * on to clear a lock.
+ */
+class XPay_Test_WC_Session {
+	public function get( $key, $default_value = null ) {
+		return array_key_exists( $key, $GLOBALS['xpay_test_wc_session'] )
+			? $GLOBALS['xpay_test_wc_session'][ $key ]
+			: $default_value;
+	}
+	public function set( $key, $value ) {
+		if ( null === $value ) {
+			unset( $GLOBALS['xpay_test_wc_session'][ $key ] );
+			return;
+		}
+		$GLOBALS['xpay_test_wc_session'][ $key ] = $value;
+	}
+}
+
+class XPay_Test_WC {
+	/** @var XPay_Test_WC_Session|null Null models a request with no session. */
+	public $session;
+	public function __construct() {
+		$this->session = new XPay_Test_WC_Session();
+	}
+}
+
+function WC() {
+	if ( ! isset( $GLOBALS['xpay_test_wc'] ) ) {
+		$GLOBALS['xpay_test_wc'] = new XPay_Test_WC();
+	}
+	return $GLOBALS['xpay_test_wc'];
 }
 
 /* ── Options ─────────────────────────────────────────────────────────── */

@@ -82,6 +82,34 @@ class XPay_Api_Client {
 	}
 
 	/**
+	 * Update an open session in place.
+	 *
+	 * The checkout page needs this and the pay page never does. On the pay
+	 * page the total is already final; on the checkout page the shopper is
+	 * still choosing shipping and typing coupons while the payment fields
+	 * are mounted, and those fields are bound to a client secret. Creating a
+	 * replacement session would mint a new secret and destroy the form the
+	 * shopper is halfway through, so the amount moves and the session stays.
+	 *
+	 * The platform accepts this only while the session is open, and rejects
+	 * mode, uiMode, submitType, currency and expiresAfterMinutes outright.
+	 * It does NOT refuse an update while a payment is running on the
+	 * session: an in-flight session is still "open". That guard is ours, and
+	 * it lives in XPay_Cart_Session, because moving the total under a
+	 * shopper who has already submitted is the failure this whole path has
+	 * to avoid.
+	 *
+	 * @param string $session_id      cs_… id to update.
+	 * @param array  $body            Partial payload (camelCase).
+	 * @param string $idempotency_key Caller-derived key.
+	 * @return array Decoded session object.
+	 * @throws XPay_Api_Exception
+	 */
+	public function update_checkout_session( string $session_id, array $body, string $idempotency_key ): array {
+		return $this->request( 'PATCH', '/checkout/sessions/' . rawurlencode( $session_id ), $body, $idempotency_key );
+	}
+
+	/**
 	 * Expire a session this plugin has superseded. Idempotent server-side;
 	 * the key is derived from the session id, so retries collapse.
 	 *
@@ -148,7 +176,11 @@ class XPay_Api_Client {
 			'headers' => $headers,
 			'timeout' => $timeout ?? self::TIMEOUT_SECONDS,
 		);
-		if ( 'POST' === $method ) {
+		// Every method that carries one, not POST alone: PATCH updates a
+		// session in place and its whole meaning is in the body, so testing
+		// for POST here would have sent an empty update that the platform
+		// accepts and silently applies to nothing.
+		if ( 'GET' !== $method && 'DELETE' !== $method ) {
 			$args['body'] = wp_json_encode( $payload );
 		}
 
