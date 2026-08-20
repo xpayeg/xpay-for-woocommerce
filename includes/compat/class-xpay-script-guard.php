@@ -23,8 +23,22 @@ defined( 'ABSPATH' ) || exit;
 
 final class XPay_Script_Guard {
 
-	/** Script handles that must execute untouched, on time, in order. */
-	const PROTECTED_HANDLES = array( 'xpay-checkout-modal', 'xpay-blocks' );
+	/**
+	 * Handle prefix whose scripts must execute untouched, on time, in order.
+	 *
+	 * Deliberately a prefix rather than a list. The list version named two
+	 * handles and silently stopped covering the third the day one was added,
+	 * which is the failure mode that matters here: an unprotected payment
+	 * script does not error, it just runs late, and the shopper sees a
+	 * checkout that does nothing until they move the mouse. Under Elements
+	 * that includes the SDK loader itself, so late means no payment form at
+	 * all.
+	 *
+	 * Every script this plugin registers is payment-critical or admin-only,
+	 * and the admin screens are not optimized by these plugins, so covering
+	 * the whole namespace costs nothing and cannot go stale.
+	 */
+	const PROTECTED_PREFIX = 'xpay-';
 
 	public static function register(): void {
 		add_filter( 'script_loader_tag', array( __CLASS__, 'harden_tag' ), 10, 2 );
@@ -43,7 +57,7 @@ final class XPay_Script_Guard {
 	 * @return mixed
 	 */
 	public static function harden_tag( $tag, $handle ) {
-		if ( ! is_string( $tag ) || ! in_array( $handle, self::PROTECTED_HANDLES, true ) ) {
+		if ( ! is_string( $tag ) || 0 !== strpos( $handle, self::PROTECTED_PREFIX ) ) {
 			return $tag;
 		}
 		if ( false !== strpos( $tag, 'data-cfasync' ) ) {
