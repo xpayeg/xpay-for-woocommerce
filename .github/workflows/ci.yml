@@ -31,6 +31,12 @@ jobs:
       - run: composer install --no-progress --no-interaction
       - run: composer lint
       - run: bash bin/check-voice.sh
+      # The shipped JS carries logic CI must not skip: the appearance
+      # detector converts every colour the browser reports into the hex
+      # the API accepts, and a bad conversion is a checkout that will not
+      # open. Node ships on the runner, so this needs no setup step.
+      - run: node --check assets/js/checkout-appearance.js
+      - run: node --test tools/js-tests/*.mjs
 
   phpunit:
     name: PHPUnit (PHP ${{ matrix.php }})
