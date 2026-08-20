@@ -14,7 +14,7 @@ try {
 }
 
 const BASE = 'http://localhost:8080';
-const OUT = process.env.XPAY_SHOT_DIR || '.';
+const OUT = process.env.XPAY_SHOT_DIR || 'tools/browser-tests/screenshots';
 
 const results = [];
 function check( name, actual, expected ) {

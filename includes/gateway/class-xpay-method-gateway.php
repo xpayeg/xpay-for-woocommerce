@@ -187,8 +187,8 @@ class XPay_Method_Gateway extends XPay_Gateway {
 			$has_phone
 				// The number is present and unusable, so say which one we
 				// looked at rather than implying they left it blank.
-				? __( 'valU pays from the wallet registered to your mobile number, and the number on this order does not look like an Egyptian mobile. Enter the one your valU account uses.', 'xpay-for-woocommerce' )
-				: __( 'valU pays from the wallet registered to your mobile number. Enter the one your valU account uses.', 'xpay-for-woocommerce' )
+				? __( 'valU pays from the wallet registered to your mobile number, and the number on this order is not an Egyptian or Jordanian mobile. Enter the one your valU account uses.', 'xpay-for-woocommerce' )
+				: __( 'valU pays from the wallet registered to your mobile number. Enter the Egyptian or Jordanian mobile your valU account uses.', 'xpay-for-woocommerce' )
 		);
 		echo '</span>';
 
@@ -211,6 +211,17 @@ class XPay_Method_Gateway extends XPay_Gateway {
 	 * field for one carries no format rule.
 	 */
 	public function validate_fields() {
+		// The Blocks checkout reaches this method too, and must not be
+		// judged here. Its data arrives as Store API payment_data rather
+		// than in $_POST, so this method would read an empty correction
+		// field and a phone it cannot see, and refuse an order the shopper
+		// had already answered correctly. XPay_Blocks_Wallet_Phone owns
+		// that path and holds the right request. Found by placing a real
+		// Blocks order that the prompt had been answered for.
+		if ( is_callable( 'WC' ) && method_exists( WC(), 'is_store_api_request' ) && WC()->is_store_api_request() ) {
+			return true;
+		}
+
 		list( $phone, $country ) = $this->posted_billing();
 		$submitted               = $this->posted_wallet_phone();
 
@@ -221,7 +232,7 @@ class XPay_Method_Gateway extends XPay_Gateway {
 		wc_add_notice(
 			'' === trim( $submitted )
 				? __( 'Enter the mobile number registered to your valU wallet.', 'xpay-for-woocommerce' )
-				: __( 'That does not look like an Egyptian mobile number. Check the number registered to your valU wallet and try again.', 'xpay-for-woocommerce' ),
+				: __( 'That is not an Egyptian or Jordanian mobile number. Check the number registered to your valU wallet and try again.', 'xpay-for-woocommerce' ),
 			'error'
 		);
 		return false;
@@ -240,7 +251,8 @@ class XPay_Method_Gateway extends XPay_Gateway {
 	 * @return array result/redirect pair per the gateway contract.
 	 */
 	public function process_payment( $order_id ) {
-		if ( XPay_Wallet_Phone::spends_a_wallet( $this->method_type ) ) {
+		$store_api = is_callable( 'WC' ) && method_exists( WC(), 'is_store_api_request' ) && WC()->is_store_api_request();
+		if ( ! $store_api && XPay_Wallet_Phone::spends_a_wallet( $this->method_type ) ) {
 			$order = wc_get_order( $order_id );
 			if ( $order instanceof WC_Order ) {
 				$wallet = XPay_Wallet_Phone::resolve(

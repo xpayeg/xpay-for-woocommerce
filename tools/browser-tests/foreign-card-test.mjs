@@ -27,9 +27,11 @@ try {
 }
 
 const BASE = 'http://localhost:8080';
-const OUT = process.env.XPAY_SHOT_DIR || '.';
+const OUT = process.env.XPAY_SHOT_DIR || 'tools/browser-tests/screenshots';
 
-// Wording owned by the plugin, used to tell the two outcomes apart.
+// Read from the error notice, not from the page: the prompt's own label
+// contains the words "valU wallet" too, so a whole-page text match would
+// call the prompt an error and pass whatever happened.
 const WALLET_ERROR = 'valU wallet';
 const REACHED_PROCESS_PAYMENT = 'payment could not be started';
 
@@ -91,7 +93,12 @@ async function placeOrder() {
 	await page
 		.waitForFunction( () => ! document.querySelector( '.blockUI.blockOverlay' ), { timeout: 30000 } )
 		.catch( () => {} );
-	return ( await page.textContent( 'body' ) ) || '';
+	// Only what WooCommerce put in the notice area counts as the outcome.
+	return (
+		( await page
+			.textContent( '.woocommerce-NoticeGroup, .woocommerce-error, .woocommerce-message' )
+			.catch( () => '' ) ) || ''
+	);
 }
 
 await fillBritishShopper();
@@ -107,6 +114,28 @@ check( 'UK card shopper: not blocked by the wallet rule', body.includes( WALLET_
 check( 'UK card shopper: reached process_payment', body.includes( REACHED_PROCESS_PAYMENT ), true );
 await page.screenshot( { path: `${ OUT }/foreign-card-placed.png` } );
 
+// The tightening, end to end. valU can only be charged on an Egyptian or
+// Jordanian mobile, so this British shopper is now asked for one on the
+// valU row. Before the plans moved into XPay_Wallet_Phone their number was
+// accepted, because only +20 was ever checked against a plan.
+await selectMethod( 'xpay_valu' );
+check( 'UK shopper on valU: prompt rendered', await page.isVisible( '#xpay_wallet_phone' ).catch( () => false ), true );
+body = await placeOrder();
+check( 'UK shopper on valU: blocked by the wallet rule', body.includes( WALLET_ERROR ), true );
+
+// A Jordanian mobile in the prompt is accepted, so the rule is two
+// countries wide rather than Egypt with extra steps.
+//
+// Written in international form on purpose. A number with no calling code
+// is completed from the BILLING country, so this shopper typing the
+// national "0791234567" would produce a British number, not a Jordanian
+// one. That is the canonicaliser behaving correctly, and it is why the
+// prompt is the right place to accept a full +962.
+await page.fill( '#xpay_wallet_phone', '+962791234567' );
+body = await placeOrder();
+check( 'UK shopper, Jordanian wallet number: accepted', body.includes( WALLET_ERROR ), false );
+check( 'UK shopper, Jordanian wallet number: reached process_payment', body.includes( REACHED_PROCESS_PAYMENT ), true );
+
 // Mirror case: the gate is live and scoped to the method rather than
 // switched off everywhere.
 //
@@ -116,6 +145,9 @@ await page.screenshot( { path: `${ OUT }/foreign-card-placed.png` } );
 // case the rule actually exists for: an Egyptian billing country with an
 // Emirati national number, which completes to a well-formed +20 number
 // that reaches nobody.
+// Clear the answer first: it is still holding the Jordanian number from
+// the previous case, which is valid and would carry this case through.
+await page.fill( '#xpay_wallet_phone', '' ).catch( () => {} );
 await page.selectOption( '#billing_country', 'EG' );
 await settle();
 await page.fill( '#billing_phone', '563333431' );

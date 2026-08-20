@@ -720,6 +720,46 @@ msgstr "استبدال"
 msgid "Pay now"
 msgstr "ادفع الآن"
 
+#: includes/blocks/class-xpay-blocks-support.php:134
+#: includes/gateway/class-xpay-method-gateway.php:182
+msgid "Mobile number for your valU wallet"
+msgstr "رقم الموبايل الخاص بمحفظة ڤاليو"
+
+#: includes/blocks/class-xpay-blocks-support.php:135
+#: includes/gateway/class-xpay-method-gateway.php:190
+msgid "valU pays from the wallet registered to your mobile number, and the number on this order is not an Egyptian or Jordanian mobile. Enter the one your valU account uses."
+msgstr "تدفع ڤاليو من المحفظة المسجّلة برقم موبايلك، والرقم الموجود على هذا الطلب ليس رقم موبايل مصري أو أردني. أدخل الرقم المسجّل بحساب ڤاليو."
+
+#: includes/blocks/class-xpay-blocks-support.php:136
+#: includes/gateway/class-xpay-method-gateway.php:191
+msgid "valU pays from the wallet registered to your mobile number. Enter the Egyptian or Jordanian mobile your valU account uses."
+msgstr "تدفع ڤاليو من المحفظة المسجّلة برقم موبايلك. أدخل رقم الموبايل المصري أو الأردني المسجّل بحساب ڤاليو."
+
+#: includes/blocks/class-xpay-blocks-wallet-phone.php:111
+msgid "Whether the shopper must be asked for a valU wallet number."
+msgstr "ما إذا كان يجب سؤال المتسوق عن رقم محفظة ڤاليو."
+
+#: includes/blocks/class-xpay-blocks-wallet-phone.php:116
+msgid "Whether the order already carries a phone number of any kind."
+msgstr "ما إذا كان الطلب يحمل بالفعل رقم هاتف من أي نوع."
+
+#: includes/blocks/class-xpay-blocks-wallet-phone.php:157
+#: includes/gateway/class-xpay-method-gateway.php:234
+msgid "Enter the mobile number registered to your valU wallet."
+msgstr "أدخل رقم الموبايل المسجّل بمحفظة ڤاليو."
+
+#: includes/blocks/class-xpay-blocks-wallet-phone.php:158
+#: includes/gateway/class-xpay-method-gateway.php:235
+msgid "That is not an Egyptian or Jordanian mobile number. Check the number registered to your valU wallet and try again."
+msgstr "هذا ليس رقم موبايل مصري أو أردني. راجع الرقم المسجّل بمحفظة ڤاليو وحاول مرة أخرى."
+
+#. translators: %s is a mobile number in international format.
+#: includes/blocks/class-xpay-blocks-wallet-phone.php:175
+#: includes/gateway/class-xpay-method-gateway.php:270
+#, php-format
+msgid "Shopper gave %s as their valU wallet number. The billing phone on this order was left as they entered it."
+msgstr "أعطى المتسوق %s كرقم محفظة ڤاليو. تُرك رقم هاتف الفوترة في هذا الطلب كما أدخله."
+
 #: includes/compat/class-xpay-legacy-notice.php:56
 msgid "XPay: the legacy XPay plugin is still active alongside this one. Shoppers currently see two separate XPay options at checkout. Deactivate the legacy plugin. Its settings are separate, and this plugin keeps its own keys and orders."
 msgstr "XPay: إضافة XPay القديمة ما زالت مفعّلة إلى جانب هذه الإضافة. يرى المتسوقون حاليًا خيارَي XPay منفصلين عند إتمام الشراء. عطّل الإضافة القديمة — إعداداتها منفصلة، وهذه الإضافة تحتفظ بمفاتيحها وطلباتها الخاصة."
@@ -740,30 +780,30 @@ msgstr "XPay: إضافة WPFunnels مفعّلة. ما لم تكن تستخدم �
 msgid "Dismiss: I run a WPFunnels Pro upsell flow"
 msgstr "تجاهل — أستخدم مسار بيع إضافي من WPFunnels Pro"
 
-#: includes/constants/class-xpay-payment-methods.php:51
+#: includes/constants/class-xpay-payment-methods.php:71
 #: includes/gateway/class-xpay-gateway.php:185
 msgid "Card"
 msgstr "بطاقة بنكية"
 
-#: includes/constants/class-xpay-payment-methods.php:53
+#: includes/constants/class-xpay-payment-methods.php:73
 #: includes/gateway/class-xpay-gateway.php:191
 msgid "valU"
 msgstr "ڤاليو"
 
-#: includes/constants/class-xpay-payment-methods.php:55
+#: includes/constants/class-xpay-payment-methods.php:75
 #: includes/gateway/class-xpay-gateway.php:197
 msgid "Fawry"
 msgstr "فوري"
 
-#: includes/constants/class-xpay-payment-methods.php:64
+#: includes/constants/class-xpay-payment-methods.php:84
 msgid "Pay with your Visa, Mastercard or Meeza card."
 msgstr "ادفع ببطاقة فيزا أو ماستركارد أو ميزة."
 
-#: includes/constants/class-xpay-payment-methods.php:66
+#: includes/constants/class-xpay-payment-methods.php:86
 msgid "Split your payment into installments with valU."
 msgstr "قسّم مبلغك إلى أقساط مع ڤاليو."
 
-#: includes/constants/class-xpay-payment-methods.php:68
+#: includes/constants/class-xpay-payment-methods.php:88
 msgid "Get a reference code and pay at any Fawry point or in the app."
 msgstr "احصل على كود مرجعي وادفع في أي منفذ فوري أو من التطبيق."
 
@@ -999,34 +1039,8 @@ msgstr "لم تكتمل عملية الدفع. طلبك محفوظ، ويمكن�
 msgid "Refund amount is required."
 msgstr "مبلغ الاسترداد مطلوب."
 
-#: includes/gateway/class-xpay-method-gateway.php:178
-msgid "Mobile number for your valU wallet"
-msgstr "رقم الموبايل الخاص بمحفظة ڤاليو"
-
-#: includes/gateway/class-xpay-method-gateway.php:185
-msgid "valU pays from the wallet registered to your mobile number, and the number on this order does not look like an Egyptian mobile. Enter the one your valU account uses."
-msgstr "تدفع ڤاليو من المحفظة المسجّلة برقم موبايلك، والرقم الموجود على هذا الطلب لا يبدو رقم موبايل مصري. أدخل الرقم المسجّل بحساب ڤاليو."
-
-#: includes/gateway/class-xpay-method-gateway.php:186
-msgid "valU pays from the wallet registered to your mobile number. Enter the one your valU account uses."
-msgstr "تدفع ڤاليو من المحفظة المسجّلة برقم موبايلك. أدخل الرقم المسجّل بحساب ڤاليو."
-
-#: includes/gateway/class-xpay-method-gateway.php:214
-msgid "Enter the mobile number registered to your valU wallet."
-msgstr "أدخل رقم الموبايل المسجّل بمحفظة ڤاليو."
-
-#: includes/gateway/class-xpay-method-gateway.php:215
-msgid "That does not look like an Egyptian mobile number. Check the number registered to your valU wallet and try again."
-msgstr "هذا لا يبدو رقم موبايل مصري. راجع الرقم المسجّل بمحفظة ڤاليو وحاول مرة أخرى."
-
-#. translators: %s is a mobile number in international format.
-#: includes/gateway/class-xpay-method-gateway.php:249
-#, php-format
-msgid "Shopper gave %s as their valU wallet number. The billing phone on this order was left as they entered it."
-msgstr "أعطى المتسوق %s كرقم محفظة ڤاليو. تُرك رقم هاتف الفوترة في هذا الطلب كما أدخله."
-
 #. translators: %s is a comma-separated list of payment method names (for example "valU, Fawry").
-#: includes/gateway/class-xpay-method-gateway.php:370
+#: includes/gateway/class-xpay-method-gateway.php:391
 #, php-format
 msgid "XPay: your XPay account does not have %s enabled. Shoppers who picked it were shown the full XPay payment window instead. Enable the method in your XPay dashboard, or untick it under WooCommerce → Settings → Payments → XPay."
 msgstr "XPay: حساب XPay الخاص بك لا يتضمن تفعيل %s. المتسوقون الذين اختاروها ظهرت لهم نافذة دفع XPay الكاملة بدلًا منها. فعِّل الوسيلة من لوحة تحكم XPay، أو ألغِ تحديدها من WooCommerce ← الإعدادات ← المدفوعات ← XPay."

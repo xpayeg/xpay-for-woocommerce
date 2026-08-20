@@ -93,7 +93,7 @@ final class XPay_Blocks_Support extends AbstractPaymentMethodType {
 		wp_register_script(
 			'xpay-blocks',
 			XPAY_WC_PLUGIN_URL . 'assets/js/blocks-integration.js',
-			array( 'wc-blocks-registry', 'wc-settings', 'wp-element', 'wp-html-entities' ),
+			array( 'wc-blocks-registry', 'wc-settings', 'wp-element', 'wp-html-entities', 'wp-data' ),
 			XPay_Constants::asset_version( 'assets/js/blocks-integration.js' ),
 			true
 		);
@@ -114,15 +114,27 @@ final class XPay_Blocks_Support extends AbstractPaymentMethodType {
 
 	public function get_payment_method_data(): array {
 		return array(
-			'title'       => $this->row['title'],
-			'description' => $this->row['description'],
-			'icon'        => $this->row['icon'],
-			'name'        => $this->name,
-			'supports'    => array( 'products', 'refunds' ),
+			'title'        => $this->row['title'],
+			'description'  => $this->row['description'],
+			'icon'         => $this->row['icon'],
+			'name'         => $this->name,
+			'supports'     => array( 'products', 'refunds' ),
 			// Blocks' Place Order button label while an XPay row is
 			// selected — the same string classic checkout gets from the
 			// gateway's order_button_text.
-			'buttonLabel' => __( 'Pay now', 'xpay-for-woocommerce' ),
+			'buttonLabel'  => __( 'Pay now', 'xpay-for-woocommerce' ),
+			// Whether this row pays from a phone-identified wallet. A server
+			// fact, published rather than inferred: the JS must not decide
+			// which methods are wallets by reading row ids.
+			'spendsWallet' => XPay_Wallet_Phone::spends_a_wallet(
+				(string) XPay_Payment_Methods::type_for_gateway_id( $this->name )
+			),
+			'walletPhone'  => array(
+				'field'      => XPay_Blocks_Wallet_Phone::FIELD,
+				'label'      => __( 'Mobile number for your valU wallet', 'xpay-for-woocommerce' ),
+				'whyKnown'   => __( 'valU pays from the wallet registered to your mobile number, and the number on this order is not an Egyptian or Jordanian mobile. Enter the one your valU account uses.', 'xpay-for-woocommerce' ),
+				'whyMissing' => __( 'valU pays from the wallet registered to your mobile number. Enter the Egyptian or Jordanian mobile your valU account uses.', 'xpay-for-woocommerce' ),
+			),
 		);
 	}
 }

@@ -156,6 +156,85 @@ final class WalletPhoneTest extends TestCase {
 		$this->assertFalse( XPay_Wallet_Phone::must_ask( XPay_Payment_Methods::FAWRY, '', $phone, $country ) );
 	}
 
+	/* ── which numbers valU can actually charge ──────────────────────── */
+
+	/**
+	 * valU operates in Egypt and Jordan, so only those two mobile plans
+	 * name a wallet. Everything else is refused however real it is: this is
+	 * the difference between "is this a number" and "can this be charged",
+	 * and the reason the plans live here rather than in XPay_Phone.
+	 *
+	 * @dataProvider wallet_numbers
+	 *
+	 * @param string      $phone    Billing phone as typed.
+	 * @param string      $country  Billing country.
+	 * @param string|null $expected Hand-written expectation.
+	 */
+	public function test_only_egyptian_and_jordanian_mobiles_are_chargeable( string $phone, string $country, ?string $expected ): void {
+		$this->assertSame( $expected, XPay_Wallet_Phone::resolve( '', $phone, $country ) );
+	}
+
+	/** @return array<string, array{string, string, string|null}> */
+	public function wallet_numbers(): array {
+		return array(
+			// Egypt: the four operator digits.
+			'EG Vodafone'                 => array( '01012345678', 'EG', '+201012345678' ),
+			'EG Etisalat'                 => array( '01112345678', 'EG', '+201112345678' ),
+			'EG Orange'                   => array( '01212345678', 'EG', '+201212345678' ),
+			'EG WE'                       => array( '01512345678', 'EG', '+201512345678' ),
+			'EG in plus form'             => array( '+201012345678', 'EG', '+201012345678' ),
+
+			// Jordan: 077, 078 and 079 are the mobile prefixes.
+			'JO Umniah 077'               => array( '0771234567', 'JO', '+962771234567' ),
+			'JO Orange 078'               => array( '0781234567', 'JO', '+962781234567' ),
+			'JO Zain 079'                 => array( '0791234567', 'JO', '+962791234567' ),
+			'JO in plus form'             => array( '+962791234567', 'JO', '+962791234567' ),
+			'JO number, EG billing'       => array( '+962791234567', 'EG', '+962791234567' ),
+
+			// Jordan, but not a mobile.
+			'JO 076 is not a mobile'      => array( '0761234567', 'JO', null ),
+			'JO Amman landline'           => array( '062345678', 'JO', null ),
+			'JO mobile one digit short'   => array( '079123456', 'JO', null ),
+
+			// Egypt, but not a mobile.
+			'EG Cairo landline'           => array( '0223456789', 'EG', null ),
+			'EG unassigned operator 3'    => array( '01312345678', 'EG', null ),
+			'EG unassigned operator 9'    => array( '01912345678', 'EG', null ),
+			'EG mobile one digit short'   => array( '0101234567', 'EG', null ),
+			'EG mobile one digit long'    => array( '010123456789', 'EG', null ),
+
+			// The trap: an Emirati mobile typed with the picker on Egypt.
+			'EG billing, Emirati mobile'  => array( '563333431', 'EG', null ),
+
+			// Real numbers, real people, no valU wallet behind them. This is
+			// the tightening: before it, each of these was accepted because
+			// only +20 was checked against a plan.
+			'British mobile'              => array( '07700900123', 'GB', null ),
+			'British mobile, plus form'   => array( '+447700900123', 'GB', null ),
+			'Emirati mobile, own country' => array( '0563333431', 'AE', null ),
+			'Saudi mobile'                => array( '+966512345678', 'SA', null ),
+			'US number'                   => array( '+12125550123', 'US', null ),
+
+			// Nothing to charge.
+			'empty'                       => array( '', 'EG', null ),
+			'unknown country'             => array( '0712345678', 'ZZ', null ),
+		);
+	}
+
+	/**
+	 * Egypt's code is two digits and Jordan's is three, so the plan lookup
+	 * walks prefixes of different lengths. Pinned so a future third country
+	 * cannot be matched by the wrong plan: no three-digit calling code
+	 * begins with 20, and 962 shares no prefix with it.
+	 */
+	public function test_neighbouring_calling_codes_do_not_borrow_a_plan(): void {
+		// +211 South Sudan and +212 Morocco both begin "21", not "20".
+		$this->assertNull( XPay_Wallet_Phone::resolve( '+211912345678', '', '' ) );
+		$this->assertNull( XPay_Wallet_Phone::resolve( '+212612345678', '', '' ) );
+		// +96 is not a country code; +965 Kuwait must not read as +962.
+		$this->assertNull( XPay_Wallet_Phone::resolve( '+96512345678', '', '' ) );
+	}
+
 	/* ── spends_a_wallet ─────────────────────────────────────────────── */
 
 	public function test_only_valu_spends_a_wallet(): void {

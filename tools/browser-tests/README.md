@@ -61,8 +61,26 @@ node tools/browser-tests/foreign-card-test.mjs
 wp post delete <id> --force --allow-root
 ```
 
-Set `XPAY_SHOT_DIR` to choose where screenshots land; it defaults to the
-working directory.
+Screenshots land in `tools/browser-tests/screenshots/`, which is ignored by
+both git and the distributable. Set `XPAY_SHOT_DIR` to send them elsewhere.
 
-The classic checkout is the only surface these cover. The Blocks checkout
-does not use `payment_fields()` and has no prompt yet.
+`blocks-wallet-phone-test.mjs` covers the same prompt on the Cart & Checkout
+Blocks checkout, which is the test store's default page, so it needs no probe
+page. It is really a test of a round trip: the rule stays in PHP and only its
+verdict crosses, on the Store API cart response, so the test edits the billing
+phone and asks whether the prompt follows.
+
+It also pins the two traps that surfaced while building it. Selecting the valU
+row makes Blocks sync its draft order against the same endpoint the gate
+listens on, and nothing may be refused at that point; and an order whose
+prompt has been answered must reach the payment attempt, which it did not
+while the classic `validate_fields()` was still running on Store API requests
+it could not read.
+
+```bash
+node tools/browser-tests/blocks-wallet-phone-test.mjs
+```
+
+Assertions there read the Store API responses rather than page text: the
+prompt's own label contains the words "valU wallet", so a whole-page match
+would read the prompt as an error and pass whatever happened.

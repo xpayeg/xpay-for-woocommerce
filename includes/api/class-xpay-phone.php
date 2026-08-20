@@ -2,26 +2,24 @@
 /**
  * XPay_Phone
  *
- * The only place a shopper's phone number is judged before it is sent to
- * XPay as `customerDetails.phone`.
+ * Turns a phone number as WooCommerce stores it into canonical E.164, or
+ * says it cannot.
  *
- * This exists because of Elements. While the plugin opened XPay's own
- * payment window, that window collected and checked the number itself. Under
- * `uiMode: "custom"` the platform refuses to collect it at all
- * (`phoneNumberCollection` is rejected outright), and the API's own field is
- * declared as a plain optional string with no format rule. So nothing behind
- * this class checks the number: it is the only gate, by decision rather than
- * by oversight. See HANDOFF-CUSTOMER-DETAILS.md.
+ * This is the general question, asked of every shopper's number before it is
+ * sent to XPay as `customerDetails.phone`. It has no opinion about payment
+ * methods: a Cairo landline and a British mobile are both real numbers and
+ * both come back canonicalised. Whether a number can be CHARGED is a
+ * different question, asked by XPay_Wallet_Phone, which is where the mobile
+ * plans live.
  *
- * The number matters because valU charges the wallet registered to it. A
- * well-formed number for the wrong country is the failure worth catching:
- * it passes any digit count and then names nobody.
+ * The split matters. Holding every number to valU's rules here would refuse
+ * a card shopper's perfectly good landline as their contact number, and
+ * would make "is this a real number" and "can valU spend it" the same
+ * question when they are not.
  *
- * Deliberately not libphonenumber. The plugin ships no third-party runtime
- * code, and the world's numbering plans are not the problem in front of us —
- * valU is Egyptian, so Egypt is checked against its real mobile plan and
- * everything else is held to E.164's own limits. A number this class cannot
- * vouch for comes back null, which the caller turns into "ask the shopper",
+ * Deliberately not libphonenumber: the plugin ships no third-party runtime
+ * code, and this layer needs only E.164's own limits. A number it cannot
+ * vouch for comes back null, which callers turn into "ask the shopper",
  * never into a silent send.
  *
  * Pure class: no WordPress dependencies, covered by tests/PhoneTest.php.
@@ -57,15 +55,6 @@ final class XPay_Phone {
 		'AU' => '61',
 		'CN' => '86',
 	);
-
-	/**
-	 * Egyptian mobile numbers in national form: a leading 1, then one of the
-	 * four operator digits, then eight subscriber digits.
-	 *
-	 * Landlines are excluded on purpose. valU pays from a mobile wallet, so
-	 * a valid Cairo landline is still the wrong number for this field.
-	 */
-	const EG_MOBILE = '/^1[0125]\d{8}$/';
 
 	/** E.164 caps the whole number, calling code included, at 15 digits. */
 	const E164_MAX_DIGITS = 15;
@@ -128,15 +117,6 @@ final class XPay_Phone {
 		$length = strlen( $international );
 		if ( $length < self::E164_MIN_DIGITS || $length > self::E164_MAX_DIGITS ) {
 			return null;
-		}
-
-		// Egypt is checked against its real mobile plan rather than a length,
-		// because this is the number valU will charge.
-		if ( 0 === strpos( $international, self::CALLING_CODES['EG'] ) ) {
-			$national = substr( $international, strlen( self::CALLING_CODES['EG'] ) );
-			if ( 1 !== preg_match( self::EG_MOBILE, $national ) ) {
-				return null;
-			}
 		}
 
 		return '+' . $international;

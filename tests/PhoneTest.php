@@ -2,10 +2,11 @@
 /**
  * Guards for XPay_Phone.
  *
- * The case this class exists for has its own test below: a Gulf mobile
- * typed by a shopper whose billing country is Egypt. It passes every digit
- * count, completes to a well-formed +20 number, and names nobody. Under
- * Elements nothing behind the plugin catches that, so it is caught here.
+ * This class canonicalises and nothing more. Several cases below are real
+ * numbers that valU cannot charge, and they are expected to canonicalise
+ * cleanly here: refusing them is XPay_Wallet_Phone's job, and the tests are
+ * split the same way the classes are so that neither drifts into answering
+ * the other's question.
  *
  * Expected values are hand-written literals, never recomputed with the
  * implementation's own formula.
@@ -35,28 +36,26 @@ final class PhoneTest extends TestCase {
 			'EG double-zero trunk'          => array( '00201012345678', 'EG', '+201012345678' ),
 			'EG no trunk zero'              => array( '1012345678', 'EG', '+201012345678' ),
 
-			// THE case. A UAE mobile typed with billing country Egypt.
-			// Eleven digits, completes cleanly to +20563333431, reaches
-			// nobody. Egypt's plan is the only thing that rejects it.
-			'EG billing, Emirati mobile'    => array( '563333431', 'EG', null ),
-
-			// Same subscriber, stated properly. The number names its own
-			// country, so the billing country does not get a vote.
+			// A number that names its own country beats the billing country.
 			'Emirati mobile, plus form'     => array( '+971563333431', 'EG', '+971563333431' ),
 			'Emirati mobile, own country'   => array( '0563333431', 'AE', '+971563333431' ),
+			'Jordanian mobile, own country' => array( '0791234567', 'JO', '+962791234567' ),
+			'British mobile, own country'   => array( '07700900123', 'GB', '+447700900123' ),
 
-			// Egyptian landlines are valid numbers and the wrong ones:
-			// valU pays from a mobile wallet.
-			'EG Cairo landline'             => array( '0223456789', 'EG', null ),
-			'EG Alexandria landline'        => array( '033456789', 'EG', null ),
-
-			// Operator digits that do not exist.
-			'EG unassigned operator 3'      => array( '01312345678', 'EG', null ),
-			'EG unassigned operator 9'      => array( '01912345678', 'EG', null ),
-
-			// Length, on Egypt's own plan rather than a generic count.
-			'EG one digit short'            => array( '0101234567', 'EG', null ),
-			'EG one digit long'             => array( '010123456789', 'EG', null ),
+			// Numbers this class canonicalises and does NOT judge. Each one
+			// is a real, well-formed number that valU cannot charge, and
+			// each is refused by XPay_Wallet_Phone rather than here. Pinned
+			// so the two questions stay separate: a Cairo landline is a
+			// perfectly good contact number for a card shopper.
+			'EG Cairo landline'             => array( '0223456789', 'EG', '+20223456789' ),
+			'EG Alexandria landline'        => array( '033456789', 'EG', '+2033456789' ),
+			'EG unassigned operator 3'      => array( '01312345678', 'EG', '+201312345678' ),
+			'EG unassigned operator 9'      => array( '01912345678', 'EG', '+201912345678' ),
+			'EG mobile one digit short'     => array( '0101234567', 'EG', '+20101234567' ),
+			'EG mobile one digit long'      => array( '010123456789', 'EG', '+2010123456789' ),
+			// The Emirati number typed with the picker on Egypt. Still a
+			// number; still not a wallet.
+			'EG billing, Emirati digits'    => array( '563333431', 'EG', '+20563333431' ),
 
 			// A national number for a country whose calling code we do not
 			// carry cannot be completed, so it is asked about, not guessed.
@@ -106,7 +105,8 @@ final class PhoneTest extends TestCase {
 	/**
 	 * No three-digit calling code begins with Egypt's two-digit 20, so
 	 * matching on that prefix cannot capture another country's number.
-	 * Pinned because the Egyptian mobile plan is only applied behind it.
+	 * Pinned because XPay_Wallet_Phone applies Egypt's mobile plan behind
+	 * exactly that prefix test.
 	 */
 	public function test_neighbouring_calling_codes_are_not_treated_as_egypt(): void {
 		// +211 South Sudan, +212 Morocco, +213 Algeria: all begin "21".

@@ -364,14 +364,21 @@ AR = {
     # order holds can be sent as the wallet the payment will spend.
     "Mobile number for your valU wallet":
         "رقم الموبايل الخاص بمحفظة ڤاليو",
-    "valU pays from the wallet registered to your mobile number, and the number on this order does not look like an Egyptian mobile. Enter the one your valU account uses.":
-        "تدفع ڤاليو من المحفظة المسجّلة برقم موبايلك، والرقم الموجود على هذا الطلب لا يبدو رقم موبايل مصري. أدخل الرقم المسجّل بحساب ڤاليو.",
-    "valU pays from the wallet registered to your mobile number. Enter the one your valU account uses.":
-        "تدفع ڤاليو من المحفظة المسجّلة برقم موبايلك. أدخل الرقم المسجّل بحساب ڤاليو.",
+    "valU pays from the wallet registered to your mobile number, and the number on this order is not an Egyptian or Jordanian mobile. Enter the one your valU account uses.":
+        "تدفع ڤاليو من المحفظة المسجّلة برقم موبايلك، والرقم الموجود على هذا الطلب ليس رقم موبايل مصري أو أردني. أدخل الرقم المسجّل بحساب ڤاليو.",
+    "valU pays from the wallet registered to your mobile number. Enter the Egyptian or Jordanian mobile your valU account uses.":
+        "تدفع ڤاليو من المحفظة المسجّلة برقم موبايلك. أدخل رقم الموبايل المصري أو الأردني المسجّل بحساب ڤاليو.",
     "Enter the mobile number registered to your valU wallet.":
         "أدخل رقم الموبايل المسجّل بمحفظة ڤاليو.",
-    "That does not look like an Egyptian mobile number. Check the number registered to your valU wallet and try again.":
-        "هذا لا يبدو رقم موبايل مصري. راجع الرقم المسجّل بمحفظة ڤاليو وحاول مرة أخرى.",
+    "That is not an Egyptian or Jordanian mobile number. Check the number registered to your valU wallet and try again.":
+        "هذا ليس رقم موبايل مصري أو أردني. راجع الرقم المسجّل بمحفظة ڤاليو وحاول مرة أخرى.",
+    # Store API schema descriptions for the wallet-number verdict. Not
+    # shopper-facing, but the generator translates every msgid or fails.
+    "Whether the shopper must be asked for a valU wallet number.":
+        "ما إذا كان يجب سؤال المتسوق عن رقم محفظة ڤاليو.",
+    "Whether the order already carries a phone number of any kind.":
+        "ما إذا كان الطلب يحمل بالفعل رقم هاتف من أي نوع.",
+
     "Shopper gave %s as their valU wallet number. The billing phone on this order was left as they entered it.":
         "أعطى المتسوق %s كرقم محفظة ڤاليو. تُرك رقم هاتف الفوترة في هذا الطلب كما أدخله.",
 }

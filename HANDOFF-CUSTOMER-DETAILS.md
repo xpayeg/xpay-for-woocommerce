@@ -13,8 +13,11 @@ not recalled.
 - Elements is going ahead (`uiMode: "custom"`).
 - The plugin validates the phone on its own side. No platform change is
   waited on.
-- The correction field is built on the **checkout page only**. The pay page
-  keeps its current behaviour for now.
+- The correction field is built on the checkout page, on **both** the
+  classic and the Blocks checkout. The pay page keeps its current behaviour
+  for now.
+- valU can be charged only on an **Egyptian or Jordanian mobile**. Any other
+  number, however real, names no wallet and the shopper is asked.
 - What valU does with a well formed but wrong number is out of scope.
 
 ## One payload becomes two
@@ -87,6 +90,33 @@ a second one. Our own input appears only when valU is selected **and** that
 phone is missing or fails our check, as a correction prompt attached to the
 valU row.
 
+The two checkouts reach that behaviour by different routes, because Blocks
+renders its rows in the browser.
+
+- **Classic**: `payment_fields()` renders the prompt and `validate_fields()`
+  gates the submission. WooCommerce refreshes the payment box on country,
+  state and postcode but never on the phone, so `checkout-wallet-phone.js`
+  makes the phone field trigger that refresh and carries a typed value
+  across it.
+- **Blocks**: the rule stays in PHP and only its verdict crosses, published
+  on the Store API cart response under the `xpay` extension namespace and
+  recomputed whenever Blocks refetches the cart. `validate_fields()` is
+  never called by the Store API, so the gate lives on
+  `woocommerce_store_api_checkout_update_order_from_request` instead.
+
+Two traps that cost a browser run each, recorded so they are not rediscovered:
+
+1. That Store API hook fires for Blocks' **draft order sync** as well as for
+   the real submission. Selecting the valU row makes Blocks POST the chosen
+   method to the same endpoint, so an ungated gate refuses the order the
+   instant the shopper picks valU, before the prompt has been answered. The
+   two are told apart by the presence of a billing address, not by the
+   `__experimental_calc_totals` flag those requests also carry.
+2. The classic `validate_fields()` also runs during a Blocks payment, where
+   the correction arrives as Store API payment data rather than in `$_POST`.
+   Left alone it refused orders that had been answered correctly, so it
+   returns early for Store API requests and lets the Blocks gate own them.
+
 Rejected: one always visible field on both pages. It duplicates a field
 WooCommerce already renders, and asks every card shopper for a number the
 payment never uses. The plugin already refused the same trade once, which is
@@ -101,8 +131,28 @@ that flag is banned in Elements mode, so the check never runs
 `@IsOptional() @IsString()` with no format rule. Our validation is the only
 gate, by decision rather than by oversight.
 
+## Where the rules live
+
+Two questions that look like one, kept in separate classes so neither drifts
+into answering the other:
+
+- `XPay_Phone` canonicalises to E.164 and judges nothing else. A Cairo
+  landline and a British mobile both come back canonical, because both are
+  real numbers and a card shopper's contact detail is none of valU's
+  business.
+- `XPay_Wallet_Phone` holds the mobile plans and answers whether a number
+  can be charged. Egypt is `1[0125]` plus eight digits, Jordan is `7[789]`
+  plus seven. Anything else returns null and the shopper is asked.
+
+The plans started out inside `XPay_Phone`, which was wrong in a way that
+only showed when Jordan was added: it made "is this a real number" and "can
+valU spend it" the same question, and would have refused a card shopper's
+landline as their contact number.
+
 ## Still open
 
 - Whether the correction prompt blocks the pay button or only warns.
 - The pay page keeps the drop in window until the checkout page route is
   proven.
+- Whether a Jordanian shopper should see Jordanian example numbers in the
+  prompt's placeholder, which is currently an Egyptian one.

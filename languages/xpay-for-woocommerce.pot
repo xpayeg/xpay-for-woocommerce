@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-20T16:49:36+00:00\n"
+"POT-Creation-Date: 2026-08-20T17:36:38+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: xpay-for-woocommerce\n"
@@ -726,6 +726,46 @@ msgstr ""
 msgid "Pay now"
 msgstr ""
 
+#: includes/blocks/class-xpay-blocks-support.php:134
+#: includes/gateway/class-xpay-method-gateway.php:182
+msgid "Mobile number for your valU wallet"
+msgstr ""
+
+#: includes/blocks/class-xpay-blocks-support.php:135
+#: includes/gateway/class-xpay-method-gateway.php:190
+msgid "valU pays from the wallet registered to your mobile number, and the number on this order is not an Egyptian or Jordanian mobile. Enter the one your valU account uses."
+msgstr ""
+
+#: includes/blocks/class-xpay-blocks-support.php:136
+#: includes/gateway/class-xpay-method-gateway.php:191
+msgid "valU pays from the wallet registered to your mobile number. Enter the Egyptian or Jordanian mobile your valU account uses."
+msgstr ""
+
+#: includes/blocks/class-xpay-blocks-wallet-phone.php:111
+msgid "Whether the shopper must be asked for a valU wallet number."
+msgstr ""
+
+#: includes/blocks/class-xpay-blocks-wallet-phone.php:116
+msgid "Whether the order already carries a phone number of any kind."
+msgstr ""
+
+#: includes/blocks/class-xpay-blocks-wallet-phone.php:157
+#: includes/gateway/class-xpay-method-gateway.php:234
+msgid "Enter the mobile number registered to your valU wallet."
+msgstr ""
+
+#: includes/blocks/class-xpay-blocks-wallet-phone.php:158
+#: includes/gateway/class-xpay-method-gateway.php:235
+msgid "That is not an Egyptian or Jordanian mobile number. Check the number registered to your valU wallet and try again."
+msgstr ""
+
+#. translators: %s is a mobile number in international format.
+#: includes/blocks/class-xpay-blocks-wallet-phone.php:175
+#: includes/gateway/class-xpay-method-gateway.php:270
+#, php-format
+msgid "Shopper gave %s as their valU wallet number. The billing phone on this order was left as they entered it."
+msgstr ""
+
 #: includes/compat/class-xpay-legacy-notice.php:56
 msgid "XPay: the legacy XPay plugin is still active alongside this one. Shoppers currently see two separate XPay options at checkout. Deactivate the legacy plugin. Its settings are separate, and this plugin keeps its own keys and orders."
 msgstr ""
@@ -746,30 +786,30 @@ msgstr ""
 msgid "Dismiss: I run a WPFunnels Pro upsell flow"
 msgstr ""
 
-#: includes/constants/class-xpay-payment-methods.php:51
+#: includes/constants/class-xpay-payment-methods.php:71
 #: includes/gateway/class-xpay-gateway.php:185
 msgid "Card"
 msgstr ""
 
-#: includes/constants/class-xpay-payment-methods.php:53
+#: includes/constants/class-xpay-payment-methods.php:73
 #: includes/gateway/class-xpay-gateway.php:191
 msgid "valU"
 msgstr ""
 
-#: includes/constants/class-xpay-payment-methods.php:55
+#: includes/constants/class-xpay-payment-methods.php:75
 #: includes/gateway/class-xpay-gateway.php:197
 msgid "Fawry"
 msgstr ""
 
-#: includes/constants/class-xpay-payment-methods.php:64
+#: includes/constants/class-xpay-payment-methods.php:84
 msgid "Pay with your Visa, Mastercard or Meeza card."
 msgstr ""
 
-#: includes/constants/class-xpay-payment-methods.php:66
+#: includes/constants/class-xpay-payment-methods.php:86
 msgid "Split your payment into installments with valU."
 msgstr ""
 
-#: includes/constants/class-xpay-payment-methods.php:68
+#: includes/constants/class-xpay-payment-methods.php:88
 msgid "Get a reference code and pay at any Fawry point or in the app."
 msgstr ""
 
@@ -1005,34 +1045,8 @@ msgstr ""
 msgid "Refund amount is required."
 msgstr ""
 
-#: includes/gateway/class-xpay-method-gateway.php:178
-msgid "Mobile number for your valU wallet"
-msgstr ""
-
-#: includes/gateway/class-xpay-method-gateway.php:185
-msgid "valU pays from the wallet registered to your mobile number, and the number on this order does not look like an Egyptian mobile. Enter the one your valU account uses."
-msgstr ""
-
-#: includes/gateway/class-xpay-method-gateway.php:186
-msgid "valU pays from the wallet registered to your mobile number. Enter the one your valU account uses."
-msgstr ""
-
-#: includes/gateway/class-xpay-method-gateway.php:214
-msgid "Enter the mobile number registered to your valU wallet."
-msgstr ""
-
-#: includes/gateway/class-xpay-method-gateway.php:215
-msgid "That does not look like an Egyptian mobile number. Check the number registered to your valU wallet and try again."
-msgstr ""
-
-#. translators: %s is a mobile number in international format.
-#: includes/gateway/class-xpay-method-gateway.php:249
-#, php-format
-msgid "Shopper gave %s as their valU wallet number. The billing phone on this order was left as they entered it."
-msgstr ""
-
 #. translators: %s is a comma-separated list of payment method names (for example "valU, Fawry").
-#: includes/gateway/class-xpay-method-gateway.php:370
+#: includes/gateway/class-xpay-method-gateway.php:391
 #, php-format
 msgid "XPay: your XPay account does not have %s enabled. Shoppers who picked it were shown the full XPay payment window instead. Enable the method in your XPay dashboard, or untick it under WooCommerce → Settings → Payments → XPay."
 msgstr ""

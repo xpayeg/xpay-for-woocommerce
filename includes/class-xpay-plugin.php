@@ -78,6 +78,9 @@ final class XPay_Plugin {
 		require_once $dir . 'gateway/class-xpay-thankyou-notice.php';
 		require_once $dir . 'gateway/class-xpay-gateway.php';
 		require_once $dir . 'gateway/class-xpay-method-gateway.php';
+		// Extends nothing, so it loads whatever Blocks is doing; every
+		// Store API class it touches is guarded at the point of use.
+		require_once $dir . 'blocks/class-xpay-blocks-wallet-phone.php';
 		if ( class_exists( \Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType::class ) ) {
 			// The Blocks class extends AbstractPaymentMethodType at parse
 			// time — requiring the file without the parent loaded is a fatal,
@@ -102,6 +105,10 @@ final class XPay_Plugin {
 				add_action( 'woocommerce_blocks_loaded', array( 'XPay_Blocks_Support', 'register' ) );
 			}
 		}
+		// The valU wallet prompt on the Blocks checkout: publishes the
+		// server's verdict onto the cart response and gates the Store API
+		// submission, which never calls the gateway's validate_fields().
+		XPay_Blocks_Wallet_Phone::register();
 
 		// Public webhook receiver: https://<site>/?wc-api=xpay_webhook
 		// Trust boundary: unauthenticated internet traffic — the HMAC

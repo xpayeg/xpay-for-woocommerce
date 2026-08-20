@@ -29,3 +29,6 @@ build/
 # A dev driver, never a plugin dependency (tools/browser-tests/README.md).
 package.json
 package-lock.json
+
+# Screenshots the browser tests write; evidence, not source.
+tools/browser-tests/screenshots/

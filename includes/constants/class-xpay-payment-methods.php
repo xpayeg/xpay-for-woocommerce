@@ -39,6 +39,26 @@ final class XPay_Payment_Methods {
 		return XPay_Constants::GATEWAY_ID . '_' . $type;
 	}
 
+	/**
+	 * The method a checkout row id names, or null when the id is not one of
+	 * ours.
+	 *
+	 * The inverse of gateway_id(). Matched against the registry rather than
+	 * by trimming the prefix off the string: the combined row is plain
+	 * `xpay` and names no single method, and a foreign gateway that happens
+	 * to start with the same letters must not be read as one of ours.
+	 *
+	 * @param string $gateway_id Row id as WooCommerce knows it.
+	 */
+	public static function type_for_gateway_id( string $gateway_id ): ?string {
+		foreach ( self::SPLITTABLE as $type ) {
+			if ( self::gateway_id( $type ) === $gateway_id ) {
+				return $type;
+			}
+		}
+		return null;
+	}
+
 	/** Settings key of the "offer this method as its own row" checkbox. */
 	public static function setting_key( string $type ): string {
 		return 'split_' . $type;

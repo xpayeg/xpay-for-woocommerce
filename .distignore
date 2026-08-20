@@ -86,3 +86,6 @@ tests/
 .github/
 .phpcs.xml.dist
 .coderabbit.yaml
+
+# Browser-test screenshots: never in the WP.org ZIP.
+tools/browser-tests/screenshots/
