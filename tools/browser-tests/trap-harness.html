@@ -1,0 +1,40 @@
+<!doctype html><html><head><meta charset="utf-8"><title>trap harness</title></head><body>
+<div id="xpay-payment" class="xpay-pay"><p id="xpay-payment-status">idle</p>
+<button type="button" id="xpay-pay-button" style="display:none">Pay now</button></div>
+<script>
+// Faithful model of packages/sdk/runtime/src/checkout.ts closable semantics:
+//   closable starts true; XPAY_EMBED_CONFIRMED -> false; XPAY_EMBED_SUCCESS -> true;
+//   XPAY_EMBED_CLOSE honored only `if (this.closable)`; destroy() bypasses it.
+window.__test = { instances: 0, destroys: 0, opens: 0, sdkCloses: 0 };
+window.XPay = function () {
+  return {
+    checkout: function (opts) {
+      var self = { closable: true, destroyed: false, mounted: false };
+      window.__test.instances++;
+      window.addEventListener('message', function (e) {
+        if (self.destroyed) return;
+        var d = e.data || {};
+        if (d.type === 'XPAY_EMBED_CONFIRMED') { self.closable = false; opts.onConfirmed && opts.onConfirmed(); }
+        else if (d.type === 'XPAY_EMBED_SUCCESS') { self.closable = true; opts.onComplete && opts.onComplete(d.payload); }
+        else if (d.type === 'XPAY_EMBED_CLOSE') {
+          if (self.closable) { window.__test.sdkCloses++; self.mounted = false; opts.onClose && opts.onClose(); }
+        }
+      });
+      return {
+        open: function () { if (self.destroyed) return; self.mounted = true; window.__test.opens++; },
+        destroy: function () { self.destroyed = true; self.mounted = false; window.__test.destroys++; },
+        isMounted: function () { return self.mounted; }
+      };
+    }
+  };
+};
+window.xpayCheckoutParams = {
+  sdkUrl: location.origin + '/sdk-stub.js',
+  publishableKey: 'pk_test_harness',
+  clientSecret: 'cs_test_harness_secret',
+  hostedUrl: '', returnUrl: '#paid', locale: 'en',
+  i18n: { preparing: 'Opening secure payment…', fallback: 'Taking you…', reopen: 'Pay now', closed: 'Your order is saved. Pay when you are ready.', failed: 'Payment was not completed. Your order is saved, and you can try again.' }
+};
+</script>
+<script src="/assets/js/checkout-modal.js"></script>
+</body></html>
