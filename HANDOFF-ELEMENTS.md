@@ -175,9 +175,11 @@ tokens (Inter, `--primary: oklch(0.51 0.23 277)`, 10px radius):
 3. **valU selected** — shows the mobile-number field the store would have to
    own
 
-Working files: `scratchpad/elements-design/` (`Main.dc.html`,
-`OrderPay.dc.html`, `ValuSelected.dc.html`, `canvas.json`). Re-seed and
-republish rather than rebuilding from scratch.
+Published canvas: <https://claude.ai/code/artifact/a115f26d-2b46-41af-8922-7653839edfb4>.
+Work from that. The `.dc.html` working files lived in a session scratchpad
+(`scratchpad/elements-design/`) and did not survive the container, so
+re-seeding means rebuilding the artboards from the published canvas rather
+than reopening sources.
 
 ## Open questions for the founder
 

@@ -25,7 +25,8 @@ After every plugin change, mirror it into the store repo and commit both:
 
 ```bash
 rsync -a --delete --exclude vendor --exclude .git --exclude node_modules \
-  /workspace/xpay-for-woocommerce/ \
+  --exclude .phpunit.result.cache \
+  "$PLUGIN_REPO"/ \
   /home/user/woocommerce/wp-content/plugins/xpay-for-woocommerce/
 ```
 
@@ -62,16 +63,36 @@ are translated today.
 
 1. **Attach the other repos** (the session starts with the store repo only):
    use `add_repo` for `xpayeg/xpay-for-woocommerce` and, when platform
-   questions come up, `xpayeg/xpay`. They land in `/workspace/`.
-2. **Start the test store**:
+   questions come up, `xpayeg/xpay`. **Do not trust the path `add_repo`
+   reports.** It says `/workspace/`, but a repo the session already carries
+   is checked out under `/home/user/` instead, and `/workspace/` may not
+   exist at all until you `mkdir` it. Locate each one before using it, and
+   set `PLUGIN_REPO` for the mirror command above:
    ```bash
+   PLUGIN_REPO=$(ls -d /home/user/xpay-for-woocommerce /workspace/xpay-for-woocommerce 2>/dev/null | head -1)
+   ```
+   Last session: store at `/home/user/woocommerce`, plugin at
+   `/home/user/xpay-for-woocommerce`, monorepo at `/workspace/xpay`.
+2. **Start the test store**. MariaDB is *not* in the container image, so a
+   fresh session installs it first and gives root the password `.env`
+   expects (the restore script authenticates as root over TCP):
+   ```bash
+   sudo apt-get update -qq
+   sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq mariadb-server mariadb-client
    sudo service mariadb start
    cd /home/user/woocommerce
    set -a; . ./.env; set +a
+   sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED VIA mysql_native_password USING PASSWORD('$DB_PASSWORD'); FLUSH PRIVILEGES;"
    nohup php -S 127.0.0.1:8080 -t /home/user/woocommerce >/dev/null 2>&1 &
    ```
-   MariaDB dies when idle. Any `500`, or a `wp` command exiting 1 with no
-   output, means restart it first.
+   (`apt-get update` prints 403s for the deadsnakes and ondrej PPAs. They
+   are unrelated repositories and the install still succeeds.)
+
+   **Both services die when the session idles, not just MariaDB.** The PHP
+   server goes with its shell. Any `500`, a connection refused on `:8080`,
+   or a `wp` command exiting 1 with no output means restart both before
+   diagnosing anything else. After a restart the database itself survives on
+   disk, so the fixtures do not need restoring again.
 3. **Restore the fixtures** (a fresh container has an empty database):
    ```bash
    bash /home/user/woocommerce/dev-fixtures/restore-test-store.sh
