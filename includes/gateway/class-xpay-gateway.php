@@ -83,7 +83,7 @@ class XPay_Gateway extends WC_Payment_Gateway {
 
 	/**
 	 * The WooCommerce gateway id. Overridable so the per-method rows
-	 * (XPay_Method_Gateway) get their own id BEFORE the constructor wires
+	 * Subclasses get their own id BEFORE the constructor wires
 	 * the receipt/settings hooks that embed it.
 	 */
 	protected function gateway_id(): string {
@@ -167,38 +167,20 @@ class XPay_Gateway extends WC_Payment_Gateway {
 				'description' => sprintf( __( 'whsec_… secret for a live-mode webhook endpoint pointing at %s.', 'xpay-for-woocommerce' ), '<code>' . esc_html( $webhook_url ) . '</code>' ),
 			),
 			'display_heading'                   => array(
-				'title'       => __( 'Checkout display', 'xpay-for-woocommerce' ),
+				'title'       => __( 'Checkout appearance', 'xpay-for-woocommerce' ),
 				'type'        => 'title',
-				'description' => __( 'Choose how XPay appears on your checkout page.', 'xpay-for-woocommerce' ),
+				'description' => __( 'XPay\'s payment fields appear on your checkout page. Which methods a shopper sees is decided by your XPay account, not here.', 'xpay-for-woocommerce' ),
 			),
-			'display_mode'                      => array(
-				'title'       => __( 'Payment options', 'xpay-for-woocommerce' ),
+			'color_mode'                        => array(
+				'title'       => __( 'Theme', 'xpay-for-woocommerce' ),
 				'type'        => 'select',
-				'description' => __( 'Separate options let shoppers pick their method before the payment window opens, so it opens directly on that method.', 'xpay-for-woocommerce' ),
-				'default'     => 'combined',
+				'description' => __( 'Automatic matches your store\'s own colours, fonts and corners, and follows the shopper\'s device for light or dark. Choose Light or Dark to fix it.', 'xpay-for-woocommerce' ),
+				'default'     => 'auto',
 				'options'     => array(
-					'combined' => __( 'One XPay option for all methods', 'xpay-for-woocommerce' ),
-					'split'    => __( 'A separate option per payment method', 'xpay-for-woocommerce' ),
+					'auto'  => __( 'Automatic (match my store)', 'xpay-for-woocommerce' ),
+					'light' => __( 'Always light', 'xpay-for-woocommerce' ),
+					'dark'  => __( 'Always dark', 'xpay-for-woocommerce' ),
 				),
-			),
-			'split_card'                        => array(
-				'title'   => __( 'Card', 'xpay-for-woocommerce' ),
-				'type'    => 'checkbox',
-				'label'   => __( 'Offer Card (Visa, Mastercard, Meeza) as its own option', 'xpay-for-woocommerce' ),
-				'default' => 'yes',
-			),
-			'split_valu'                        => array(
-				'title'   => __( 'valU', 'xpay-for-woocommerce' ),
-				'type'    => 'checkbox',
-				'label'   => __( 'Offer valU as its own option', 'xpay-for-woocommerce' ),
-				'default' => 'yes',
-			),
-			'split_fawry'                       => array(
-				'title'       => __( 'Fawry', 'xpay-for-woocommerce' ),
-				'type'        => 'checkbox',
-				'label'       => __( 'Offer Fawry as its own option', 'xpay-for-woocommerce' ),
-				'description' => __( 'Only tick methods that are enabled for your XPay account. Shoppers who pick a method your account does not have are shown the full XPay window instead, and you get a notice here in admin.', 'xpay-for-woocommerce' ),
-				'default'     => 'no',
 			),
 			'wpfunnels_heading'                 => array(
 				'title'       => __( 'WPFunnels compatibility', 'xpay-for-woocommerce' ),
@@ -222,35 +204,11 @@ class XPay_Gateway extends WC_Payment_Gateway {
 		);
 	}
 
-	/* ── Checkout display (combined row vs per-method rows) ──────────── */
-
 	/**
-	 * Method types the merchant ticked for dedicated rows, or an empty
-	 * array in combined mode. The registry order is preserved so the rows
-	 * render in a stable order at checkout.
-	 *
-	 * @return array Wire strings from XPay_Payment_Methods::SPLITTABLE.
-	 */
-	public function split_types(): array {
-		if ( 'split' !== $this->get_option( 'display_mode' ) ) {
-			return array();
-		}
-		$types = array();
-		foreach ( XPay_Payment_Methods::SPLITTABLE as $type ) {
-			if ( 'yes' === $this->get_option( XPay_Payment_Methods::setting_key( $type ) ) ) {
-				$types[] = $type;
-			}
-		}
-		return $types;
-	}
-
-	/**
-	 * Enabled/configured check shared by the combined row and the
-	 * per-method rows — WITHOUT the display-mode split, which each row
-	 * layers on differently in is_available(). Reads the SHARED switch
-	 * from settings rather than $this->enabled: the per-method rows
-	 * repurpose $this->enabled to show their own state in the payments
-	 * list, so it cannot double as the plugin-wide switch.
+	 * Enabled and configured. One XPay row now, so this is the whole
+	 * availability answer rather than a base other rows layered on: the
+	 * methods a shopper can pick are decided inside XPay's own fields,
+	 * from what the merchant's XPay account has enabled.
 	 */
 	protected function base_available(): bool {
 		// needs_setup() too: an enabled gateway with no keys can only dead-
@@ -271,11 +229,17 @@ class XPay_Gateway extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * The combined row steps aside when per-method rows are active: both
-	 * at once would offer the same payment twice under different names.
+	 * The checkout row's body: XPay's own payment fields, mounted here.
+	 *
+	 * The pay page does not come through here; it still opens the window
+	 * from receipt_page(), where the order and its total are already final.
 	 */
+	public function payment_fields(): void {
+		XPay_Checkout_Elements::render_mount();
+	}
+
 	public function is_available() {
-		return $this->base_available() && array() === $this->split_types();
+		return $this->base_available();
 	}
 
 	/* ── Settings access (mode-aware) ────────────────────────────────── */

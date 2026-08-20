@@ -1,5 +1,5 @@
 /**
- * End-to-end proof that the valU wallet rule never reaches a card payment.
+ * End-to-end proof that the valU account rule never reaches a card payment.
  *
  * A shopper in the United Kingdom, with a British mobile that the Egyptian
  * mobile plan would reject outright, fills the checkout and clicks Place
@@ -30,9 +30,9 @@ const BASE = 'http://localhost:8080';
 const OUT = process.env.XPAY_SHOT_DIR || 'tools/browser-tests/screenshots';
 
 // Read from the error notice, not from the page: the prompt's own label
-// contains the words "valU wallet" too, so a whole-page text match would
+// contains the words "valU account" too, so a whole-page text match would
 // call the prompt an error and pass whatever happened.
-const WALLET_ERROR = 'valU wallet';
+const WALLET_ERROR = 'valU account';
 const REACHED_PROCESS_PAYMENT = 'payment could not be started';
 
 const results = [];
@@ -116,7 +116,7 @@ await page.screenshot( { path: `${ OUT }/foreign-card-placed.png` } );
 
 // The tightening, end to end. valU can only be charged on an Egyptian or
 // Jordanian mobile, so this British shopper is now asked for one on the
-// valU row. Before the plans moved into XPay_Wallet_Phone their number was
+// valU row. Before the plans moved into XPay_Bnpl_Phone their number was
 // accepted, because only +20 was ever checked against a plan.
 await selectMethod( 'xpay_valu' );
 check( 'UK shopper on valU: prompt rendered', await page.isVisible( '#xpay_wallet_phone' ).catch( () => false ), true );

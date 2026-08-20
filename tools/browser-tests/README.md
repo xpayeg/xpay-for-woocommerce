@@ -32,12 +32,12 @@ message naming a failed attempt, Pay now building a fresh window, the
 success path staying untouched, a normal pre-payment close remaining the
 SDK's job, and a close message from a foreign origin being ignored.
 
-## valU wallet-number tests
+## valU account-number tests
 
 Two checks against a running test store, not a harness: they drive the real
 classic checkout and the real gateway rows.
 
-`wallet-phone-test.mjs` covers the prompt itself. The card row never shows
+`bnpl-phone-test.mjs` covers the prompt itself. The card row never shows
 it, the valU row shows it for a number that completes to a well-formed +20
 that reaches nobody, it disappears once a real Egyptian mobile is entered,
 and a number typed into it survives a WooCommerce checkout refresh.
@@ -56,7 +56,7 @@ Blocks one, so create a probe page first and delete it after:
 wp post create --post_type=page --post_status=publish \
   --post_title="Classic Checkout Probe" --post_name=classic-checkout-probe \
   --post_content='[woocommerce_checkout]' --allow-root
-node tools/browser-tests/wallet-phone-test.mjs
+node tools/browser-tests/bnpl-phone-test.mjs
 node tools/browser-tests/foreign-card-test.mjs
 wp post delete <id> --force --allow-root
 ```
@@ -64,7 +64,7 @@ wp post delete <id> --force --allow-root
 Screenshots land in `tools/browser-tests/screenshots/`, which is ignored by
 both git and the distributable. Set `XPAY_SHOT_DIR` to send them elsewhere.
 
-`blocks-wallet-phone-test.mjs` covers the same prompt on the Cart & Checkout
+`blocks-bnpl-phone-test.mjs` covers the same prompt on the Cart & Checkout
 Blocks checkout, which is the test store's default page, so it needs no probe
 page. It is really a test of a round trip: the rule stays in PHP and only its
 verdict crosses, on the Store API cart response, so the test edits the billing
@@ -78,9 +78,9 @@ while the classic `validate_fields()` was still running on Store API requests
 it could not read.
 
 ```bash
-node tools/browser-tests/blocks-wallet-phone-test.mjs
+node tools/browser-tests/blocks-bnpl-phone-test.mjs
 ```
 
 Assertions there read the Store API responses rather than page text: the
-prompt's own label contains the words "valU wallet", so a whole-page match
+prompt's own label contains the words "valU account", so a whole-page match
 would read the prompt as an error and pass whatever happened.

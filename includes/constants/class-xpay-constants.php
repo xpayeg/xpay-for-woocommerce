@@ -82,7 +82,7 @@ final class XPay_Constants {
 	const META_CUSTOMER_ID      = '_xpay_customer_id';
 
 	/**
-	 * The number the shopper confirmed for their valU wallet, in E.164.
+	 * The number the shopper confirmed for their valU account, in E.164.
 	 *
 	 * Deliberately NOT written back over the order's billing phone. The
 	 * shopper gave this for the payment, not as a correction to how the

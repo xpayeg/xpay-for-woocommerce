@@ -58,12 +58,14 @@ final class XPay_Plugin {
 		require_once $dir . 'api/class-xpay-signature.php';
 		require_once $dir . 'api/class-xpay-money.php';
 		require_once $dir . 'api/class-xpay-phone.php';
-		require_once $dir . 'api/class-xpay-wallet-phone.php';
+		require_once $dir . 'api/class-xpay-bnpl-phone.php';
 		require_once $dir . 'api/class-xpay-api-client.php';
 
 		// Domain services.
 		require_once $dir . 'gateway/class-xpay-order-lock.php';
 		require_once $dir . 'gateway/class-xpay-checkout-service.php';
+		require_once $dir . 'gateway/class-xpay-cart-session.php';
+		require_once $dir . 'gateway/class-xpay-checkout-elements.php';
 		require_once $dir . 'gateway/class-xpay-order-sync.php';
 		require_once $dir . 'refunds/class-xpay-refund-service.php';
 		require_once $dir . 'webhooks/class-xpay-webhook-controller.php';
@@ -77,10 +79,8 @@ final class XPay_Plugin {
 		require_once $dir . 'gateway/class-xpay-pay-page.php';
 		require_once $dir . 'gateway/class-xpay-thankyou-notice.php';
 		require_once $dir . 'gateway/class-xpay-gateway.php';
-		require_once $dir . 'gateway/class-xpay-method-gateway.php';
 		// Extends nothing, so it loads whatever Blocks is doing; every
 		// Store API class it touches is guarded at the point of use.
-		require_once $dir . 'blocks/class-xpay-blocks-wallet-phone.php';
 		if ( class_exists( \Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType::class ) ) {
 			// The Blocks class extends AbstractPaymentMethodType at parse
 			// time — requiring the file without the parent loaded is a fatal,
@@ -105,10 +105,9 @@ final class XPay_Plugin {
 				add_action( 'woocommerce_blocks_loaded', array( 'XPay_Blocks_Support', 'register' ) );
 			}
 		}
-		// The valU wallet prompt on the Blocks checkout: publishes the
+		// The valU account prompt on the Blocks checkout: publishes the
 		// server's verdict onto the cart response and gates the Store API
 		// submission, which never calls the gateway's validate_fields().
-		XPay_Blocks_Wallet_Phone::register();
 
 		// Public webhook receiver: https://<site>/?wc-api=xpay_webhook
 		// Trust boundary: unauthenticated internet traffic — the HMAC
@@ -122,14 +121,14 @@ final class XPay_Plugin {
 		// Priority 20: the stamped receipt must read post-verification truth.
 		add_action( 'woocommerce_before_thankyou', array( 'XPay_Thankyou_Notice', 'render' ), 20 );
 		add_action( 'wp_enqueue_scripts', array( 'XPay_Thankyou_Notice', 'enqueue' ) );
-		// Carries the valU wallet-number prompt across WooCommerce's own
+		// Carries the valU account-number prompt across WooCommerce's own
 		// checkout refreshes, and makes the phone field trigger one.
-		add_action( 'wp_enqueue_scripts', array( 'XPay_Method_Gateway', 'enqueue_wallet_phone' ) );
 		add_filter( 'woocommerce_thankyou_order_received_text', array( 'XPay_Thankyou_Notice', 'filter_received_text' ), 10, 2 );
 
 		// Compatibility shims: WPFunnels' order-received rewrite, and
 		// optimizer opt-outs on the payment-critical script tags.
 		XPay_WPFunnels_Compat::register();
+		XPay_Checkout_Elements::register();
 		XPay_Script_Guard::register();
 
 		// Prune runs from WP-Cron (any request context, not just admin).
@@ -159,7 +158,6 @@ final class XPay_Plugin {
 			add_action( 'admin_post_xpay_log_export', array( 'XPay_Log_Viewer', 'handle_export' ) );
 			add_action( 'admin_enqueue_scripts', array( 'XPay_Settings_Screen', 'enqueue' ) );
 			add_action( 'add_meta_boxes', array( 'XPay_Order_Panel', 'register' ) );
-			add_action( 'admin_notices', array( 'XPay_Method_Gateway', 'render_pin_rejected_notice' ) );
 			add_action( 'admin_notices', array( 'XPay_Checkout_Service', 'render_currency_rejected_notice' ) );
 			XPay_WPFunnels_Compat::register_admin();
 			XPay_Legacy_Notice::register_admin();
@@ -169,33 +167,20 @@ final class XPay_Plugin {
 	}
 
 	/**
-	 * The combined gateway plus one row per splittable method. On shopper
-	 * surfaces all are always registered — each row's is_available()
-	 * decides what checkout actually shows, so mode switches never need
-	 * cache-sensitive registration logic. WooCommerce accepts instances
-	 * here, which the per-method rows need (their constructor takes the
-	 * method type).
+	 * One XPay row, everywhere.
 	 *
-	 * Plain admin page requests get ONLY the main gateway: merchants see
-	 * one XPay row in the Payments list and the order screens, exactly
-	 * like PayPal's and Paymob's multi-method plugins. Modern WooCommerce
-	 * hides the per-method rows there anyway via its shell-gateway rule
-	 * (see XPay_Method_Gateway), but the legacy settings table on older
-	 * WooCommerce has no such rule — skipping registration covers it.
-	 * AJAX stays fully registered: refunds for per-method orders run
-	 * through admin-ajax and need the row's gateway instance.
+	 * There used to be an optional row per payment method, so a shopper
+	 * could pick Card or valU before the payment window opened. Elements
+	 * makes that redundant: XPay's own fields render the method accordion
+	 * on the page, listing exactly what the merchant's XPay account has
+	 * enabled. A second list in WooCommerce would be a copy that can
+	 * disagree with the real one.
 	 *
 	 * @param array $gateways Registered gateway class names/instances.
 	 * @return array
 	 */
 	public function register_gateway( array $gateways ): array {
 		$gateways[] = 'XPay_Gateway';
-		if ( is_admin() && ! wp_doing_ajax() ) {
-			return $gateways;
-		}
-		foreach ( XPay_Payment_Methods::SPLITTABLE as $type ) {
-			$gateways[] = new XPay_Method_Gateway( $type );
-		}
 		return $gateways;
 	}
 

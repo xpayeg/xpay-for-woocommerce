@@ -20,6 +20,24 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
+/**
+ * What the SDK was mounted into, named by its selector.
+ *
+ * The SDK's mount() takes `string | HTMLElement`, and this module resolves
+ * a selector to its node before calling it so that Blocks — which owns its
+ * DOM and hands us the node directly — goes down the same path. These
+ * tests therefore assert the resolved target, not the string.
+ *
+ * @param {*} target Whatever mount() received.
+ * @return {?string} The selector it stands for.
+ */
+function mountedSelector( target ) {
+	if ( ! target ) {
+		return null;
+	}
+	return 'string' === typeof target ? target : target.__selector || null;
+}
+
 const here = path.dirname( fileURLToPath( import.meta.url ) );
 const assets = path.join( here, '..', '..', 'assets', 'js' );
 
@@ -28,7 +46,7 @@ function load( { xpay = null, appearance = null, timers = true } = {} ) {
 	const scripts = [];
 	const win = {
 		document: {
-			querySelector: () => ( { tagName: 'DIV' } ),
+			querySelector: ( sel ) => ( { tagName: 'DIV', __selector: sel } ),
 			createElement: () => {
 				const el = {};
 				scripts.push( el );
@@ -123,7 +141,7 @@ test( 'mounts the payment element at the given selector', async () => {
 	mod.mount( { ...BASE } );
 	await Promise.resolve();
 	await Promise.resolve();
-	assert.equal( state.mountedAt, '#xpay-element' );
+	assert.equal( mountedSelector( state.mountedAt ), '#xpay-element' );
 	assert.equal( state.clientSecret, BASE.clientSecret );
 } );
 
@@ -152,7 +170,7 @@ test( 'a theme that breaks measurement still gets a payment form', async () => {
 	await Promise.resolve();
 	await Promise.resolve();
 	assert.deepEqual( state.appearance, {} );
-	assert.equal( state.mountedAt, '#xpay-element' );
+	assert.equal( mountedSelector( state.mountedAt ), '#xpay-element' );
 } );
 
 /* ── Method selection ─────────────────────────────────────────────────── */
@@ -310,7 +328,7 @@ test( 'restyle updates appearance in place without recreating the element', asyn
 
 	handle.restyle( 'dark' );
 	assert.deepEqual( state.appearanceUpdates, [ { colorMode: 'dark' } ] );
-	assert.equal( state.mountedAt, '#xpay-element', 'still mounted' );
+	assert.equal( mountedSelector( state.mountedAt ), '#xpay-element', 'still mounted' );
 } );
 
 test( 'restyle before mount is a no-op, not a crash', () => {

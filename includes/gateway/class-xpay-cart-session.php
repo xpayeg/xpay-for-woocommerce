@@ -196,6 +196,103 @@ final class XPay_Cart_Session {
 		return null === $known || '' === $known ? null : (int) $known;
 	}
 
+	/* ── Creation ────────────────────────────────────────────────────── */
+
+	/**
+	 * The cart's session, creating one if there is not a usable one yet.
+	 *
+	 * Returns { id, clientSecret } or null when a session cannot be had.
+	 *
+	 * uiMode is "custom", which is what makes the fields render on the
+	 * store's page rather than in a window. That choice brings three
+	 * platform rules with it, all enforced at creation: cancelUrl is
+	 * banned, afterCompletion must be a redirect and is required, and the
+	 * five customer-collection flags are rejected outright. So none of them
+	 * are sent, and the shopper details ride at confirm time instead.
+	 *
+	 * @param int    $amount_minor Cart total in minor units.
+	 * @param string $currency     Cart currency.
+	 * @param string $return_url   Where the shopper lands after paying.
+	 * @return array|null { id, clientSecret }
+	 * @throws XPay_Api_Exception When creation fails.
+	 */
+	public function ensure( int $amount_minor, string $currency, string $return_url ): ?array {
+		$existing = $this->session_id();
+		if ( '' !== $existing && '' !== $this->client_secret() ) {
+			$known = (string) $this->session_get( self::CURRENCY_KEY );
+			if ( '' === $known || strtoupper( $known ) === strtoupper( $currency ) ) {
+				return array(
+					'id'           => $existing,
+					'clientSecret' => $this->client_secret(),
+				);
+			}
+			// Currency is immutable, so a changed store currency means this
+			// session can never be right again. Start over rather than
+			// PATCH something the platform will refuse.
+			$this->forget();
+		}
+
+		$created = $this->client->create_checkout_session(
+			array(
+				'mode'            => 'payment',
+				'uiMode'          => 'custom',
+				'currency'        => strtoupper( $currency ),
+				'lineItems'       => array(
+					array(
+						'name'       => $this->line_item_name(),
+						'unitAmount' => $amount_minor,
+						'quantity'   => 1,
+					),
+				),
+				'afterCompletion' => array(
+					'type'     => 'redirect',
+					'redirect' => array( 'url' => $return_url ),
+				),
+				'metadata'        => array( 'integration' => 'woocommerce' ),
+			),
+			$this->create_key( $amount_minor, $currency )
+		);
+
+		$id     = (string) ( $created['id'] ?? '' );
+		$secret = (string) ( $created['clientSecret'] ?? '' );
+		if ( '' === $id || '' === $secret ) {
+			return null;
+		}
+
+		$this->remember( $id, $secret, $amount_minor, $currency );
+
+		XPay_Logger::event(
+			'cart_session.created',
+			array(
+				'session_id' => $id,
+				'amount'     => $amount_minor,
+				'currency'   => strtoupper( $currency ),
+			)
+		);
+
+		return array(
+			'id'           => $id,
+			'clientSecret' => $secret,
+		);
+	}
+
+	/**
+	 * Idempotency key for creating this cart's session.
+	 *
+	 * Scoped to the WooCommerce customer and the amount, so a double-submit
+	 * from one shopper collapses while two shoppers never collide.
+	 *
+	 * @param int    $amount_minor Amount at creation.
+	 * @param string $currency     Currency at creation.
+	 */
+	private function create_key( int $amount_minor, string $currency ): string {
+		$who = '';
+		if ( function_exists( 'WC' ) && WC()->session ) {
+			$who = (string) WC()->session->get_customer_id();
+		}
+		return 'cartnew_' . md5( $who . '|' . $amount_minor . '|' . strtoupper( $currency ) );
+	}
+
 	/* ── Session identity ────────────────────────────────────────────── */
 
 	/** The cart's session id, or an empty string when there is none yet. */

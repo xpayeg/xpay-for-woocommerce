@@ -35,7 +35,12 @@
 	 * Mount the Payment Element.
 	 *
 	 * @param {Object}   options                 Mount options.
-	 * @param {string}   options.selector        CSS selector for the mount point.
+	 * @param {string}   [options.selector]      CSS selector for the mount point.
+	 * @param {Object}   [options.node]          The mount point itself. Blocks
+	 *                                           owns its DOM and hands us the
+	 *                                           node rather than a selector
+	 *                                           that may match the wrong copy
+	 *                                           when two carts render at once.
 	 * @param {string}   options.clientSecret    Session client secret.
 	 * @param {string}   options.publishableKey  Merchant publishable key.
 	 * @param {string}   options.sdkUrl          SDK script URL.
@@ -46,6 +51,22 @@
 	 * @param {Function} options.onUnavailable   Called when the SDK cannot load.
 	 * @return {Object} A handle with confirm() and destroy().
 	 */
+	/**
+	 * The element to mount into, from either shape of the option.
+	 *
+	 * @param {Object} opts Mount options.
+	 * @return {?Object} The node, or null when it is not on the page.
+	 */
+	function mountNode( opts ) {
+		if ( opts.node ) {
+			return opts.node;
+		}
+		if ( opts.selector && typeof document !== 'undefined' ) {
+			return document.querySelector( opts.selector );
+		}
+		return null;
+	}
+
 	XPayElements.mount = function ( options ) {
 		var opts = options || {};
 		var handle = {
@@ -81,7 +102,7 @@
 			try {
 				if ( window.XPayAppearance ) {
 					appearance = window.XPayAppearance.detect( {
-						anchor: document.querySelector( opts.selector ) || undefined,
+						anchor: mountNode( opts ) || undefined,
 						colorMode: opts.colorMode || 'system',
 					} );
 				}
@@ -117,7 +138,7 @@
 						call( opts.onReady );
 					} );
 
-					handle.element.mount( opts.selector );
+					handle.element.mount( mountNode( opts ) || opts.selector );
 				} )
 				.catch( function ( error ) {
 					call( opts.onError, messageFrom( error ) );
@@ -178,7 +199,7 @@
 			try {
 				handle.elements.changeAppearance(
 					window.XPayAppearance.detect( {
-						anchor: document.querySelector( opts.selector ) || undefined,
+						anchor: mountNode( opts ) || undefined,
 						colorMode: colorMode || opts.colorMode || 'system',
 					} )
 				);

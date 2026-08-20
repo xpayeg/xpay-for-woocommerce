@@ -1,8 +1,8 @@
 <?php
 /**
- * XPay_Wallet_Phone
+ * XPay_Bnpl_Phone
  *
- * Decides which number goes to XPay as the valU wallet, and whether the
+ * Decides which number goes to XPay as the valU account, and whether the
  * shopper has to be asked for one.
  *
  * XPay_Phone answers "is this number real". This answers the question the
@@ -20,21 +20,21 @@
  * phoneNumberCollection off the combined session, which is session wide and
  * would have made the phone required for card shoppers too.
  *
- * Pure class: no WordPress dependencies, covered by tests/WalletPhoneTest.php.
+ * Pure class: no WordPress dependencies, covered by tests/BnplPhoneTest.php.
  *
  * @package XPay_For_WooCommerce
  */
 
 defined( 'ABSPATH' ) || exit;
 
-final class XPay_Wallet_Phone {
+final class XPay_Bnpl_Phone {
 
 	/**
 	 * The mobile plans valU can actually charge, keyed by calling code and
 	 * matched against the number in national form.
 	 *
 	 * valU operates in Egypt and Jordan, so a number outside those two
-	 * plans names no wallet, however well formed it is. This is the whole
+	 * plans matches no valU account, however well formed it is. This is the whole
 	 * point of the class: a British mobile is a real number and a valid
 	 * contact detail, and still cannot be charged.
 	 *
@@ -85,7 +85,7 @@ final class XPay_Wallet_Phone {
 	 * @param string $billing_country Billing country, ISO 3166-1 alpha-2.
 	 */
 	public static function must_ask( string $method_type, string $submitted, string $billing_phone, string $billing_country ): bool {
-		if ( ! self::spends_a_wallet( $method_type ) ) {
+		if ( ! self::needs_bnpl_number( $method_type ) ) {
 			return false;
 		}
 		return null === self::resolve( $submitted, $billing_phone, $billing_country );
@@ -125,7 +125,33 @@ final class XPay_Wallet_Phone {
 	 *
 	 * @param string $method_type Wire string of the method.
 	 */
-	public static function spends_a_wallet( string $method_type ): bool {
-		return XPay_Payment_Methods::VALU === $method_type;
+	public static function needs_bnpl_number( string $method_type ): bool {
+		return in_array( $method_type, self::METHODS, true );
+	}
+
+	/**
+	 * Methods that charge a registered mobile, as wire strings.
+	 *
+	 * Published to the page so the browser never decides this by reading
+	 * method names it happens to recognise. The accordion inside XPay's
+	 * fields reports the shopper's choice; this says which choices need a
+	 * number from us.
+	 */
+	const METHODS = array( XPay_Payment_Methods::VALU );
+
+	/**
+	 * An example number in the shopper's own country, for the prompt's
+	 * placeholder.
+	 *
+	 * A Jordanian shopper shown an Egyptian example has to translate it
+	 * before it helps them, so the example follows their billing country
+	 * and falls back to Egypt, which is where most valU shoppers are.
+	 *
+	 * These are reserved-for-documentation ranges, not live numbers.
+	 *
+	 * @param string $billing_country Billing country, ISO 3166-1 alpha-2.
+	 */
+	public static function example_for( string $billing_country ): string {
+		return 'JO' === strtoupper( trim( $billing_country ) ) ? '07 9012 3456' : '010 1234 5678';
 	}
 }

@@ -45,36 +45,18 @@ final class XPay_Blocks_Support extends AbstractPaymentMethodType {
 			'woocommerce_blocks_payment_method_type_registration',
 			function ( $registry ) {
 				$gateway = XPay_Plugin::instance()->gateway();
-				$split   = $gateway->split_types();
 
-				if ( array() === $split ) {
-					$registry->register(
-						new self(
-							XPay_Constants::GATEWAY_ID,
-							array(
-								'title'       => $gateway->get_option( 'title', 'XPay' ),
-								'description' => $gateway->get_option( 'description', '' ),
-								'icon'        => '',
-								'active'      => true,
-							)
+				$registry->register(
+					new self(
+						XPay_Constants::GATEWAY_ID,
+						array(
+							'title'       => $gateway->get_option( 'title', 'XPay' ),
+							'description' => $gateway->get_option( 'description', '' ),
+							'icon'        => '',
+							'active'      => true,
 						)
-					);
-					return;
-				}
-
-				foreach ( $split as $type ) {
-					$registry->register(
-						new self(
-							XPay_Payment_Methods::gateway_id( $type ),
-							array(
-								'title'       => XPay_Payment_Methods::label( $type ),
-								'description' => XPay_Payment_Methods::description( $type ),
-								'icon'        => XPay_Payment_Methods::icon_url( $type ),
-								'active'      => true,
-							)
-						)
-					);
-				}
+					)
+				);
 			}
 		);
 	}
@@ -114,26 +96,24 @@ final class XPay_Blocks_Support extends AbstractPaymentMethodType {
 
 	public function get_payment_method_data(): array {
 		return array(
-			'title'        => $this->row['title'],
-			'description'  => $this->row['description'],
-			'icon'         => $this->row['icon'],
-			'name'         => $this->name,
-			'supports'     => array( 'products', 'refunds' ),
+			'title'       => $this->row['title'],
+			'description' => $this->row['description'],
+			'icon'        => $this->row['icon'],
+			'name'        => $this->name,
+			'supports'    => array( 'products', 'refunds' ),
 			// Blocks' Place Order button label while an XPay row is
 			// selected — the same string classic checkout gets from the
 			// gateway's order_button_text.
-			'buttonLabel'  => __( 'Pay now', 'xpay-for-woocommerce' ),
-			// Whether this row pays from a phone-identified wallet. A server
-			// fact, published rather than inferred: the JS must not decide
-			// which methods are wallets by reading row ids.
-			'spendsWallet' => XPay_Wallet_Phone::spends_a_wallet(
-				(string) XPay_Payment_Methods::type_for_gateway_id( $this->name )
-			),
-			'walletPhone'  => array(
-				'field'      => XPay_Blocks_Wallet_Phone::FIELD,
-				'label'      => __( 'Mobile number for your valU wallet', 'xpay-for-woocommerce' ),
-				'whyKnown'   => __( 'valU pays from the wallet registered to your mobile number, and the number on this order is not an Egyptian or Jordanian mobile. Enter the one your valU account uses.', 'xpay-for-woocommerce' ),
-				'whyMissing' => __( 'valU pays from the wallet registered to your mobile number. Enter the Egyptian or Jordanian mobile your valU account uses.', 'xpay-for-woocommerce' ),
+			'buttonLabel' => __( 'Pay now', 'xpay-for-woocommerce' ),
+			// Copy for the valU number prompt. Which method is selected is
+			// not a row fact any more: XPay's own accordion decides that on
+			// the page, so the strings ride along and the mount asks for
+			// them when the shopper picks valU.
+			'bnplPhone'   => array(
+				'field'      => 'xpay_bnpl_phone',
+				'label'      => __( 'Mobile number for your valU account', 'xpay-for-woocommerce' ),
+				'whyKnown'   => __( 'valU pays from the mobile number registered with valU, and the number on this order is not an Egyptian or Jordanian mobile. Enter the one your valU account uses.', 'xpay-for-woocommerce' ),
+				'whyMissing' => __( 'valU pays from the mobile number registered with valU. Enter the Egyptian or Jordanian mobile your valU account uses.', 'xpay-for-woocommerce' ),
 			),
 		);
 	}

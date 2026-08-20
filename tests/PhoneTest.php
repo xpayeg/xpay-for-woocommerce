@@ -4,7 +4,7 @@
  *
  * This class canonicalises and nothing more. Several cases below are real
  * numbers that valU cannot charge, and they are expected to canonicalise
- * cleanly here: refusing them is XPay_Wallet_Phone's job, and the tests are
+ * cleanly here: refusing them is XPay_Bnpl_Phone's job, and the tests are
  * split the same way the classes are so that neither drifts into answering
  * the other's question.
  *
@@ -44,7 +44,7 @@ final class PhoneTest extends TestCase {
 
 			// Numbers this class canonicalises and does NOT judge. Each one
 			// is a real, well-formed number that valU cannot charge, and
-			// each is refused by XPay_Wallet_Phone rather than here. Pinned
+			// each is refused by XPay_Bnpl_Phone rather than here. Pinned
 			// so the two questions stay separate: a Cairo landline is a
 			// perfectly good contact number for a card shopper.
 			'EG Cairo landline'             => array( '0223456789', 'EG', '+20223456789' ),
@@ -54,7 +54,7 @@ final class PhoneTest extends TestCase {
 			'EG mobile one digit short'     => array( '0101234567', 'EG', '+20101234567' ),
 			'EG mobile one digit long'      => array( '010123456789', 'EG', '+2010123456789' ),
 			// The Emirati number typed with the picker on Egypt. Still a
-			// number; still not a wallet.
+			// number; still not a valU account.
 			'EG billing, Emirati digits'    => array( '563333431', 'EG', '+20563333431' ),
 
 			// A national number for a country whose calling code we do not
@@ -105,7 +105,7 @@ final class PhoneTest extends TestCase {
 	/**
 	 * No three-digit calling code begins with Egypt's two-digit 20, so
 	 * matching on that prefix cannot capture another country's number.
-	 * Pinned because XPay_Wallet_Phone applies Egypt's mobile plan behind
+	 * Pinned because XPay_Bnpl_Phone applies Egypt's mobile plan behind
 	 * exactly that prefix test.
 	 */
 	public function test_neighbouring_calling_codes_are_not_treated_as_egypt(): void {

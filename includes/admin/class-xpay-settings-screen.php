@@ -302,10 +302,7 @@ final class XPay_Settings_Screen {
 		self::hidden_field( $gateway, 'mode' );
 		self::hidden_field( $gateway, 'title' );
 		self::hidden_field( $gateway, 'description' );
-		self::hidden_field( $gateway, 'display_mode' );
-		self::hidden_checkbox( $gateway, 'split_card' );
-		self::hidden_checkbox( $gateway, 'split_valu' );
-		self::hidden_checkbox( $gateway, 'split_fawry' );
+		self::hidden_field( $gateway, 'color_mode' );
 		self::hidden_field( $gateway, 'test_api_key' );
 		self::hidden_field( $gateway, 'test_publishable_key' );
 		self::hidden_field( $gateway, 'test_webhook_secret' );
@@ -374,10 +371,7 @@ final class XPay_Settings_Screen {
 		self::hidden_field( $gateway, 'mode' );
 		self::hidden_field( $gateway, 'title' );
 		self::hidden_field( $gateway, 'description' );
-		self::hidden_field( $gateway, 'display_mode' );
-		self::hidden_checkbox( $gateway, 'split_card' );
-		self::hidden_checkbox( $gateway, 'split_valu' );
-		self::hidden_checkbox( $gateway, 'split_fawry' );
+		self::hidden_field( $gateway, 'color_mode' );
 		self::hidden_field( $gateway, 'test_webhook_secret' );
 		self::hidden_field( $gateway, 'live_api_key' );
 		self::hidden_field( $gateway, 'live_publishable_key' );
@@ -542,34 +536,17 @@ final class XPay_Settings_Screen {
 		echo '<div class="xpay-adm__section">';
 		echo '<div class="xpay-adm__section-head">';
 		echo '<div><div class="xpay-adm__section-title">' . esc_html__( 'Checkout appearance', 'xpay-for-woocommerce' ) . '</div>';
-		echo '<div class="xpay-adm__section-sub">' . esc_html__( 'Separate options open the payment window directly on the shopper’s method.', 'xpay-for-woocommerce' ) . '</div></div>';
+		echo '<div class="xpay-adm__section-sub">' . esc_html__( 'Which payment methods shoppers see is set in your XPay account, not here.', 'xpay-for-woocommerce' ) . '</div></div>';
 		self::segment(
-			self::name( $gateway, 'display_mode' ),
+			self::name( $gateway, 'color_mode' ),
 			array(
-				'combined' => __( 'One XPay option', 'xpay-for-woocommerce' ),
-				'split'    => __( 'Separate options', 'xpay-for-woocommerce' ),
+				'auto'  => __( 'Match my store', 'xpay-for-woocommerce' ),
+				'light' => __( 'Always light', 'xpay-for-woocommerce' ),
+				'dark'  => __( 'Always dark', 'xpay-for-woocommerce' ),
 			),
-			(string) $gateway->get_option( 'display_mode', 'combined' ),
-			'display'
+			(string) $gateway->get_option( 'color_mode', 'auto' ),
+			'color-mode'
 		);
-		echo '</div>';
-
-		echo '<div class="xpay-adm__tiles">';
-		foreach ( XPay_Payment_Methods::SPLITTABLE as $type ) {
-			$key     = XPay_Payment_Methods::setting_key( $type );
-			$checked = 'yes' === $gateway->get_option( $key, 'no' );
-			$icon    = XPay_Payment_Methods::icon_url( $type );
-			echo '<label class="xpay-adm__tile' . ( $checked ? ' is-on' : '' ) . '">';
-			echo '<input type="checkbox" name="' . esc_attr( self::name( $gateway, $key ) ) . '" value="1"' . checked( $checked, true, false ) . '>';
-			if ( '' !== $icon ) {
-				echo '<img src="' . esc_url( $icon ) . '" alt="">';
-				echo '<span class="xpay-adm__tile-name">' . esc_html( XPay_Payment_Methods::label( $type ) ) . '</span>';
-			} else {
-				echo '<span class="xpay-adm__tile-name xpay-adm__tile-name--brand">' . esc_html( XPay_Payment_Methods::label( $type ) ) . '</span>';
-			}
-			echo '<span class="xpay-adm__switch" aria-hidden="true"></span>';
-			echo '</label>';
-		}
 		echo '</div>';
 
 		echo '<div class="xpay-adm__grid2">';

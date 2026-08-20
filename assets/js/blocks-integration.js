@@ -1,24 +1,26 @@
 /**
- * Cart & Checkout Blocks registration for the XPay checkout rows.
+ * Cart & Checkout Blocks registration for the XPay checkout row.
  *
- * Deliberately build-less plain JS (no JSX/webpack): each row is a label,
- * an optional logo, and a description — Blocks' standard redirect flow
- * does the rest, and a build step would be tooling overhead with no
- * shopper benefit. WP.org review also favors reviewable, unminified source.
+ * Deliberately build-less plain JS (no JSX/webpack): a build step would be
+ * tooling overhead with no shopper benefit, and WP.org review favors
+ * reviewable, unminified source.
  *
- * The PHP side registers one payment method type per active row (combined
- * XPay, or Card/valU/Fawry in split mode); each publishes its data under
- * '<gateway id>_data'. The candidate id list arrives from PHP too
- * (xpayBlocksRowIds, built from the method registry), so adding a method
- * server-side reaches Blocks without touching this file.
+ * One row now. There used to be an optional row per payment method so a
+ * shopper could pick Card or valU before a window opened; Elements makes
+ * that redundant, because XPay's own fields render the method accordion
+ * inside this row, listing exactly what the merchant's XPay account has
+ * enabled.
  *
- * The valU row also asks for the wallet number when the order does not
- * carry one that can be sent. Nothing here judges a phone number: whether
- * to ask is decided by XPay_Phone in PHP and published on the Store API
- * cart response, which Blocks refetches whenever the address changes. A
- * second copy of that rule in JavaScript would drift from the one that
- * gates the payment, and tell the shopper something the server disagrees
- * with.
+ * WHAT IS DIFFERENT ABOUT BLOCKS
+ *
+ * Blocks owns the DOM and re-renders freely, and the payment fields live
+ * in an iframe that cannot survive being moved. So the mount point is a
+ * ref'd node that React is told never to touch, and the fields are mounted
+ * into it once and torn down only when the row genuinely unmounts.
+ *
+ * Blocks also owns the Place Order button, so the payment runs inside
+ * onPaymentSetup: the money is arranged first, and the order is only
+ * created once it has been.
  */
 ( function () {
 	'use strict';
@@ -33,8 +35,36 @@
 	var element = window.wp.element;
 	var createElement = element.createElement;
 
-	var ROW_IDS = window.xpayBlocksRowIds || [ 'xpay' ];
+	var params = window.xpayElementsParams || {};
 
+	/**
+	 * Ask one of the plugin's endpoints. Same three as classic checkout.
+	 *
+	 * @param {string} action Endpoint suffix.
+	 * @return {Promise<Object>} { ok, json }
+	 */
+	function ask( action ) {
+		var form = new window.FormData();
+		form.append( 'action', 'xpay_elements_' + action );
+		form.append( 'nonce', params.nonce );
+		return window
+			.fetch( params.ajaxUrl, {
+				method: 'POST',
+				credentials: 'same-origin',
+				body: form,
+			} )
+			.then( function ( response ) {
+				return response.json().then( function ( json ) {
+					return { ok: response.ok, json: json };
+				} );
+			} );
+	}
+
+	/**
+	 * @param {string} title   Row title.
+	 * @param {string} iconUrl Optional logo.
+	 * @return {Object|string} The label Blocks renders.
+	 */
 	function labelElement( title, iconUrl ) {
 		if ( ! iconUrl ) {
 			return title;
@@ -52,46 +82,78 @@
 	}
 
 	/**
-	 * The server's answer to "must this shopper be asked for a wallet
-	 * number", read off the cart rather than worked out here.
-	 */
-	function useVerdict() {
-		var data = window.wp.data;
-		if ( ! data || ! data.useSelect ) {
-			return null;
-		}
-		return data.useSelect( function ( select ) {
-			var store = select( 'wc/store/cart' );
-			if ( ! store || ! store.getCartData ) {
-				return null;
-			}
-			var cart = store.getCartData();
-			return cart && cart.extensions ? cart.extensions.xpay || null : null;
-		}, [] );
-	}
-
-	/**
-	 * A row's checkout body: its description, plus the wallet-number prompt
-	 * when the server says one is needed.
+	 * The row's body: XPay's fields, and the valU number prompt when the
+	 * shopper picks a method that charges a registered mobile.
 	 *
-	 * @param {Object} props Blocks passes billing, eventRegistration and
+	 * @param {Object} props Blocks passes eventRegistration and
 	 *                       emitResponse in; settings is bound per row.
 	 */
 	function RowContent( props ) {
 		var settings = props.settings;
-		var description = props.description;
-		var copy = settings.walletPhone || {};
-		var verdict = useVerdict();
-		var state = element.useState( '' );
-		var value = state[ 0 ];
-		var setValue = state[ 1 ];
+		var copy = params.bnplPhone || {};
 
-		var needed = !! ( settings.spendsWallet && verdict && verdict.walletPhoneNeeded );
+		var mountRef = element.useRef( null );
+		var handleRef = element.useRef( null );
 
-		// Hand the typed number to the checkout request. Registered even
-		// when nothing is being asked, so that a shopper who types a number
-		// and then fixes their billing phone does not silently send the
-		// leftover: an empty field sends nothing at all.
+		var methodState = element.useState( '' );
+		var method = methodState[ 0 ];
+		var setMethod = methodState[ 1 ];
+
+		var numberState = element.useState( '' );
+		var number = numberState[ 0 ];
+		var setNumber = numberState[ 1 ];
+
+		var errorState = element.useState( '' );
+		var error = errorState[ 0 ];
+		var setError = errorState[ 1 ];
+
+		// Mount once. The dependency list is deliberately empty: the fields
+		// live in an iframe, and re-running this would throw away whatever
+		// the shopper has typed into it.
+		element.useEffect( function () {
+			var cancelled = false;
+
+			ask( 'session' ).then( function ( result ) {
+				if ( cancelled || ! result.ok || ! result.json || ! result.json.success ) {
+					setError( ( params.i18n && params.i18n.unavailable ) || '' );
+					return;
+				}
+				if ( ! window.XPayElements || ! mountRef.current ) {
+					return;
+				}
+				handleRef.current = window.XPayElements.mount( {
+					node: mountRef.current,
+					clientSecret: result.json.data.clientSecret,
+					publishableKey: params.publishableKey,
+					sdkUrl: params.sdkUrl,
+					colorMode: params.colorMode,
+					onMethodChange: function ( picked ) {
+						setMethod( picked || '' );
+					},
+					onReady: function () {
+						setError( '' );
+					},
+					onError: function ( message ) {
+						setError( message || '' );
+					},
+					onUnavailable: function () {
+						setError( ( params.i18n && params.i18n.unavailable ) || '' );
+					},
+				} );
+			} );
+
+			return function () {
+				cancelled = true;
+				if ( handleRef.current ) {
+					handleRef.current.destroy();
+					handleRef.current = null;
+				}
+			};
+		}, [] );
+
+		// Run the payment before Blocks creates the order. Success here
+		// means the money is arranged; a failure keeps the shopper on the
+		// page with a reason.
 		element.useEffect(
 			function () {
 				var registration = props.eventRegistration;
@@ -99,33 +161,89 @@
 				if ( ! registration || ! registration.onPaymentSetup || ! emit ) {
 					return undefined;
 				}
+
 				return registration.onPaymentSetup( function () {
-					var data = {};
-					if ( settings.spendsWallet && value ) {
-						data[ copy.field ] = value;
+					if ( ! handleRef.current ) {
+						return {
+							type: emit.responseTypes.ERROR,
+							message: ( params.i18n && params.i18n.unavailable ) || '',
+						};
 					}
-					return {
-						type: emit.responseTypes.SUCCESS,
-						meta: { paymentMethodData: data },
-					};
+
+					return ask( 'paying' )
+						.then( function ( locked ) {
+							if ( ! locked.ok || ! locked.json || ! locked.json.success ) {
+								var reason = locked.json && locked.json.data && locked.json.data.reason;
+								throw new Error(
+									'stale-amount' === reason
+										? ( params.i18n && params.i18n.totalChanged ) || ''
+										: ( params.i18n && params.i18n.unavailable ) || ''
+								);
+							}
+							return handleRef.current.confirm( { phone: number || undefined } );
+						} )
+						.then( function ( outcome ) {
+							return ask( 'paid' ).then( function () {
+								return outcome;
+							} );
+						} )
+						.then( function ( outcome ) {
+							if ( outcome && outcome.ok ) {
+								return { type: emit.responseTypes.SUCCESS };
+							}
+							return {
+								type: emit.responseTypes.ERROR,
+								message:
+									( outcome && outcome.message ) ||
+									( params.i18n && params.i18n.notCompleted ) ||
+									'',
+							};
+						} )
+						.catch( function ( thrown ) {
+							return ask( 'paid' ).then( function () {
+								return {
+									type: emit.responseTypes.ERROR,
+									message:
+										( thrown && thrown.message ) ||
+										( params.i18n && params.i18n.notCompleted ) ||
+										'',
+								};
+							} );
+						} );
 				} );
 			},
-			[ props.eventRegistration, props.emitResponse, value, settings.spendsWallet, copy.field ]
+			[ props.eventRegistration, props.emitResponse, number ]
 		);
 
+		var needsNumber = !! ( copy.methods && copy.methods.indexOf( method ) !== -1 );
+
 		var children = [
-			createElement( 'p', { key: 'desc', style: { margin: 0 } }, description ),
+			createElement( 'div', {
+				key: 'mount',
+				ref: mountRef,
+				className: 'xpay-el__mount',
+			} ),
 		];
 
-		if ( needed ) {
+		if ( error ) {
+			children.push(
+				createElement(
+					'p',
+					{ key: 'error', role: 'alert', style: { margin: '8px 0 0' } },
+					error
+				)
+			);
+		}
+
+		if ( needsNumber ) {
 			children.push(
 				createElement(
 					'div',
-					{ key: 'wallet', className: 'xpay-wallet-phone', style: { marginTop: '12px' } },
+					{ key: 'bnpl', className: 'xpay-bnpl-phone', style: { marginTop: '12px' } },
 					createElement(
 						'label',
 						{
-							htmlFor: copy.field,
+							htmlFor: copy.field || 'xpay_bnpl_phone',
 							style: { display: 'block', fontWeight: 600, marginBottom: '4px' },
 						},
 						decodeEntities( copy.label || '' )
@@ -133,20 +251,18 @@
 					createElement(
 						'p',
 						{ style: { margin: '0 0 8px' } },
-						decodeEntities(
-							verdict.hasBillingPhone ? copy.whyKnown || '' : copy.whyMissing || ''
-						)
+						decodeEntities( ( number || copy.prefill ) ? copy.whyKnown || '' : copy.whyMissing || '' )
 					),
 					createElement( 'input', {
 						type: 'tel',
-						id: copy.field,
-						name: copy.field,
+						id: copy.field || 'xpay_bnpl_phone',
+						name: copy.field || 'xpay_bnpl_phone',
 						inputMode: 'tel',
 						autoComplete: 'tel',
-						placeholder: '01012345678',
-						value: value,
+						placeholder: copy.placeholder || '',
+						value: number,
 						onChange: function ( event ) {
-							setValue( event.target.value );
+							setNumber( event.target.value );
 						},
 						style: { width: '100%' },
 					} )
@@ -157,37 +273,28 @@
 		return createElement( element.Fragment, null, children );
 	}
 
-	ROW_IDS.forEach( function ( id ) {
-		var settings = getSetting( id + '_data', null );
-		if ( ! settings ) {
-			return;
-		}
+	var settings = getSetting( ( params.gatewayId || 'xpay' ) + '_data', null );
+	if ( ! settings ) {
+		return;
+	}
 
-		var title = decodeEntities( settings.title || 'XPay' );
-		var description = decodeEntities( settings.description || '' );
+	var title = decodeEntities( settings.title || 'XPay' );
+	var description = decodeEntities( settings.description || '' );
 
-		registerPaymentMethod( {
-			name: id,
-			label: labelElement( title, settings.icon ),
-			ariaLabel: title,
-			content: createElement( RowContent, {
-				settings: settings,
-				description: description,
-			} ),
-			// The editor preview has no cart and no shopper, so it shows the
-			// row as a shopper with nothing to correct would see it.
-			edit: createElement( 'p', { style: { margin: 0 } }, description ),
-			// Blocks swaps the Place Order label for this while the row is
-			// selected — same string classic checkout shows via the
-			// gateway's order_button_text.
-			placeOrderButtonLabel:
-				decodeEntities( settings.buttonLabel || '' ) || undefined,
-			canMakePayment: function () {
-				return true;
-			},
-			supports: {
-				features: ( settings.supports || [ 'products' ] ),
-			},
-		} );
+	registerPaymentMethod( {
+		name: params.gatewayId || 'xpay',
+		label: labelElement( title, settings.icon ),
+		ariaLabel: title,
+		content: createElement( RowContent, { settings: settings } ),
+		// The editor preview has no cart and no shopper, so it shows the
+		// row's description rather than trying to mount a payment form.
+		edit: createElement( 'p', { style: { margin: 0 } }, description ),
+		placeOrderButtonLabel: decodeEntities( settings.buttonLabel || '' ) || undefined,
+		canMakePayment: function () {
+			return true;
+		},
+		supports: {
+			features: settings.supports || [ 'products' ],
+		},
 	} );
 } )();

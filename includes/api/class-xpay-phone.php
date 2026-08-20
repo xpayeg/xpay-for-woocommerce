@@ -9,12 +9,12 @@
  * sent to XPay as `customerDetails.phone`. It has no opinion about payment
  * methods: a Cairo landline and a British mobile are both real numbers and
  * both come back canonicalised. Whether a number can be CHARGED is a
- * different question, asked by XPay_Wallet_Phone, which is where the mobile
+ * different question, asked by XPay_Bnpl_Phone, which is where the mobile
  * plans live.
  *
  * The split matters. Holding every number to valU's rules here would refuse
  * a card shopper's perfectly good landline as their contact number, and
- * would make "is this a real number" and "can valU spend it" the same
+ * would make "is this a real number" and "can valU charge it" the same
  * question when they are not.
  *
  * Deliberately not libphonenumber: the plugin ships no third-party runtime
