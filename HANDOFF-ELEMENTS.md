@@ -6,7 +6,8 @@ the evidence lives. Every claim below was read out of source in
 `xpayeg/xpay` at the paths given, not recalled.
 
 Read `HANDOFF.md` first for repo, branch and gate discipline. This file only
-covers the Elements question.
+covers the Elements question. Once Elements was chosen, the customer side of
+it was designed separately in `HANDOFF-CUSTOMER-DETAILS.md`.
 
 ---
 

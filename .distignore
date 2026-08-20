@@ -75,6 +75,7 @@ wporg-assets/
 AGENTS.md
 HANDOFF.md
 HANDOFF-ELEMENTS.md
+HANDOFF-CUSTOMER-DETAILS.md
 tools/
 composer.json
 composer.lock
