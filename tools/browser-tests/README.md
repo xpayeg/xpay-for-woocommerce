@@ -32,55 +32,54 @@ message naming a failed attempt, Pay now building a fresh window, the
 success path staying untouched, a normal pre-payment close remaining the
 SDK's job, and a close message from a foreign origin being ignored.
 
-## valU account-number tests
+## Elements tests
 
-Two checks against a running test store, not a harness: they drive the real
-classic checkout and the real gateway rows.
+Two suites against a running test store, covering the payment fields on
+the store's own checkout page.
 
-`bnpl-phone-test.mjs` covers the prompt itself. The card row never shows
-it, the valU row shows it for a number that completes to a well-formed +20
-that reaches nobody, it disappears once a real Egyptian mobile is entered,
-and a number typed into it survives a WooCommerce checkout refresh.
+`elements-test.mjs` needs no SDK. It covers the markup and the server
+rules: one XPay row where there used to be up to four, the mount point and
+the valU prompt present, a forged nonce refused, and the in-flight guard —
+lock a payment, move the cart, and watch the amount change be refused
+(`locked`) and the pay attempt refused (`stale-amount`) until the payment
+ends. That guard is the plugin standing in for a platform check that does
+not exist; see xpayeg/woocommerce#2.
 
-`foreign-card-test.mjs` covers the rule that must never leak. A shopper in
-the United Kingdom with a British mobile pays by card and is not stopped.
-The proof is precise: with dummy keys the session call fails and the shopper
-sees "The payment could not be started", which is produced inside
-process_payment, and WooCommerce only reaches process_payment once
-validate_fields() has passed.
+`elements-sdk-test.mjs` needs a fake SDK, because the real one is remote
+and a test store has dummy keys. It covers what only appears once the
+fields are mounted: the valU prompt following the method picked inside the
+fields (card no, valU yes, Fawry no — the rule is a method list, not a
+not-card test), the store's own theme reaching the SDK, and the number the
+shopper types being the one sent to be charged. Both checkouts, classic
+and Blocks.
 
-Both need the classic checkout. The test store's checkout page is the
-Blocks one, so create a probe page first and delete it after:
+### Setup
 
-```bash
-wp post create --post_type=page --post_status=publish \
-  --post_title="Classic Checkout Probe" --post_name=classic-checkout-probe \
-  --post_content='[woocommerce_checkout]' --allow-root
-node tools/browser-tests/bnpl-phone-test.mjs
-node tools/browser-tests/foreign-card-test.mjs
-wp post delete <id> --force --allow-root
+The store needs a stub API and a fake SDK, and `wp-config.php` must point
+at them:
+
+```php
+define( 'XPAY_WC_API_BASE', 'http://127.0.0.1:8099/v1' );
+define( 'XPAY_WC_SDK_URL', 'http://127.0.0.1:8099/sdk/sdk.js' );
 ```
 
-Screenshots land in `tools/browser-tests/screenshots/`, which is ignored by
-both git and the distributable. Set `XPAY_SHOT_DIR` to send them elsewhere.
+Both overrides are honoured only when the API base itself is loopback, so
+they cannot quietly redirect a real store.
 
-`blocks-bnpl-phone-test.mjs` covers the same prompt on the Cart & Checkout
-Blocks checkout, which is the test store's default page, so it needs no probe
-page. It is really a test of a round trip: the rule stays in PHP and only its
-verdict crosses, on the Store API cart response, so the test edits the billing
-phone and asks whether the prompt follows.
-
-It also pins the two traps that surfaced while building it. Selecting the valU
-row makes Blocks sync its draft order against the same endpoint the gate
-listens on, and nothing may be refused at that point; and an order whose
-prompt has been answered must reach the payment attempt, which it did not
-while the classic `validate_fields()` was still running on Store API requests
-it could not read.
+The tests assume a classic checkout page (the `[woocommerce_checkout]`
+shortcode) alongside the Blocks one, since a modern store's `/checkout` is
+Blocks. Point them elsewhere with `CLASSIC_CHECKOUT`, `BLOCKS_CHECKOUT`
+and `SHOP_PAGE`.
 
 ```bash
-node tools/browser-tests/blocks-bnpl-phone-test.mjs
+node tools/browser-tests/elements-test.mjs
+node tools/browser-tests/elements-sdk-test.mjs
 ```
 
-Assertions there read the Store API responses rather than page text: the
-prompt's own label contains the words "valU account", so a whole-page match
-would read the prompt as an error and pass whatever happened.
+## Foreign-card test
+
+`foreign-card-test.mjs` covers the rule that must never leak: a shopper
+whose billing number is not Egyptian or Jordanian must not have that
+number sent as a valU number. It predates the Elements switch and drives
+the old per-method rows, so it needs rewriting against the single row
+before it can run again.

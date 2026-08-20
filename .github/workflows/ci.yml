@@ -35,7 +35,11 @@ jobs:
       # detector converts every colour the browser reports into the hex
       # the API accepts, and a bad conversion is a checkout that will not
       # open. Node ships on the runner, so this needs no setup step.
-      - run: node --check assets/js/checkout-appearance.js
+      - name: Check shipped JavaScript parses
+        run: |
+          for f in assets/js/*.js; do
+            node --check "$f" || exit 1
+          done
       - run: node --test tools/js-tests/*.mjs
 
   phpunit:
