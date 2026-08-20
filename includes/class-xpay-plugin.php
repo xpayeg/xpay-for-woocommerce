@@ -57,6 +57,8 @@ final class XPay_Plugin {
 		require_once $dir . 'api/class-xpay-api-exception.php';
 		require_once $dir . 'api/class-xpay-signature.php';
 		require_once $dir . 'api/class-xpay-money.php';
+		require_once $dir . 'api/class-xpay-phone.php';
+		require_once $dir . 'api/class-xpay-wallet-phone.php';
 		require_once $dir . 'api/class-xpay-api-client.php';
 
 		// Domain services.
@@ -113,6 +115,9 @@ final class XPay_Plugin {
 		// Priority 20: the stamped receipt must read post-verification truth.
 		add_action( 'woocommerce_before_thankyou', array( 'XPay_Thankyou_Notice', 'render' ), 20 );
 		add_action( 'wp_enqueue_scripts', array( 'XPay_Thankyou_Notice', 'enqueue' ) );
+		// Carries the valU wallet-number prompt across WooCommerce's own
+		// checkout refreshes, and makes the phone field trigger one.
+		add_action( 'wp_enqueue_scripts', array( 'XPay_Method_Gateway', 'enqueue_wallet_phone' ) );
 		add_filter( 'woocommerce_thankyou_order_received_text', array( 'XPay_Thankyou_Notice', 'filter_received_text' ), 10, 2 );
 
 		// Compatibility shims: WPFunnels' order-received rewrite, and

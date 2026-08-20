@@ -38,4 +38,5 @@ require_once dirname( __DIR__ ) . '/includes/api/class-xpay-api-exception.php';
 require_once dirname( __DIR__ ) . '/includes/api/class-xpay-signature.php';
 require_once dirname( __DIR__ ) . '/includes/api/class-xpay-money.php';
 require_once dirname( __DIR__ ) . '/includes/api/class-xpay-phone.php';
+require_once dirname( __DIR__ ) . '/includes/api/class-xpay-wallet-phone.php';
 require_once dirname( __DIR__ ) . '/includes/logger/class-xpay-redactor.php';

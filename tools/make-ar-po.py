@@ -359,6 +359,21 @@ AR = {
     "Add": "إضافة",
     "Logging on": "التسجيل مفعّل",
     "Logging off": "التسجيل متوقف",
+
+    # valU wallet number, asked for on the checkout page when nothing the
+    # order holds can be sent as the wallet the payment will spend.
+    "Mobile number for your valU wallet":
+        "رقم الموبايل الخاص بمحفظة ڤاليو",
+    "valU pays from the wallet registered to your mobile number, and the number on this order does not look like an Egyptian mobile. Enter the one your valU account uses.":
+        "تدفع ڤاليو من المحفظة المسجّلة برقم موبايلك، والرقم الموجود على هذا الطلب لا يبدو رقم موبايل مصري. أدخل الرقم المسجّل بحساب ڤاليو.",
+    "valU pays from the wallet registered to your mobile number. Enter the one your valU account uses.":
+        "تدفع ڤاليو من المحفظة المسجّلة برقم موبايلك. أدخل الرقم المسجّل بحساب ڤاليو.",
+    "Enter the mobile number registered to your valU wallet.":
+        "أدخل رقم الموبايل المسجّل بمحفظة ڤاليو.",
+    "That does not look like an Egyptian mobile number. Check the number registered to your valU wallet and try again.":
+        "هذا لا يبدو رقم موبايل مصري. راجع الرقم المسجّل بمحفظة ڤاليو وحاول مرة أخرى.",
+    "Shopper gave %s as their valU wallet number. The billing phone on this order was left as they entered it.":
+        "أعطى المتسوق %s كرقم محفظة ڤاليو. تُرك رقم هاتف الفوترة في هذا الطلب كما أدخله.",
 }
 
 # The one plural entry: msgid "%d item" / msgid_plural "%d items".

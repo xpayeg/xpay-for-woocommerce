@@ -530,11 +530,19 @@ class XPay_Checkout_Service {
 			}
 		}
 
+		// A valU shopper may have confirmed a different number for their
+		// wallet than the one they gave for delivery. That confirmation is
+		// the number the payment spends, so it outranks the billing field
+		// here, and only here: the order keeps the phone the shopper
+		// entered. See XPay_Constants::META_WALLET_PHONE.
+		$wallet = (string) $order->get_meta( XPay_Constants::META_WALLET_PHONE );
+		$phone  = '' !== $wallet ? $wallet : (string) $order->get_billing_phone();
+
 		$body['customerDetails'] = array_filter(
 			array(
 				'name'  => trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() ),
 				'email' => $order->get_billing_email(),
-				'phone' => $order->get_billing_phone(),
+				'phone' => $phone,
 			)
 		);
 		if ( $user_id > 0 ) {

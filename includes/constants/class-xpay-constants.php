@@ -82,6 +82,17 @@ final class XPay_Constants {
 	const META_CUSTOMER_ID      = '_xpay_customer_id';
 
 	/**
+	 * The number the shopper confirmed for their valU wallet, in E.164.
+	 *
+	 * Deliberately NOT written back over the order's billing phone. The
+	 * shopper gave this for the payment, not as a correction to how the
+	 * merchant reaches them about delivery, and silently rewriting a field
+	 * they filled elsewhere on the same page would be the plugin deciding
+	 * something it was not asked to decide.
+	 */
+	const META_WALLET_PHONE = '_xpay_wallet_phone';
+
+	/**
 	 * Unix time the stored session was last confirmed against the API
 	 * (stamped at creation and on every successful reuse validation). The
 	 * pay page trusts the stored client secret only within a short window
