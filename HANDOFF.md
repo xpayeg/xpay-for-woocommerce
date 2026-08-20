@@ -14,7 +14,7 @@ ships to WordPress.org.
 | What | Where | Branch | Never do |
 |---|---|---|---|
 | Plugin (primary) | `xpayeg/xpay-for-woocommerce` | **`v3`** | push anywhere else |
-| Test store (vendors the plugin) | `xpayeg/woocommerce` | **`claude/woocommerce-xpay-v3-plugin-uw52aj`** | push anywhere else |
+| Test store (vendors the plugin) | `xpayeg/woocommerce` | **`v3-test-store`** | push anywhere else |
 | Platform monorepo (read-only reference) | `xpayeg/xpay` | `master` | never push |
 
 No pull requests unless explicitly asked. No model identifiers in anything
