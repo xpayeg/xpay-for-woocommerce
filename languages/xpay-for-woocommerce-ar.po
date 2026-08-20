@@ -991,7 +991,11 @@ msgstr "جارٍ نقلك إلى صفحة الدفع الآمنة…"
 msgid "Your order is saved. Pay when you are ready."
 msgstr "تم حفظ طلبك. ادفع متى كنت مستعدًا."
 
-#: includes/gateway/class-xpay-gateway.php:659
+#: includes/gateway/class-xpay-gateway.php:627
+msgid "Payment was not completed. Your order is saved, and you can try again."
+msgstr "لم تكتمل عملية الدفع. طلبك محفوظ، ويمكنك المحاولة مرة أخرى."
+
+#: includes/gateway/class-xpay-gateway.php:665
 msgid "Refund amount is required."
 msgstr "مبلغ الاسترداد مطلوب."
 

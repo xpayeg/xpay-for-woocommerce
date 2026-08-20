@@ -131,7 +131,11 @@
 			}
 		} catch ( e ) {} // Already gone: the paused state below is still correct.
 		setWindowOpen( false );
-		setStatus( params.i18n.closed );
+		// This path is only reached after a payment was submitted and did
+		// not succeed, so the shopper gets the truer line rather than the
+		// one for closing an untouched window. Falls back if an older
+		// cached script meets a newer page.
+		setStatus( params.i18n.failed || params.i18n.closed );
 		setPaused( true );
 		if ( payButton ) {
 			payButton.style.display = '';

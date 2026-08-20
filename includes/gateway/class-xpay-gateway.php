@@ -619,6 +619,12 @@ class XPay_Gateway extends WC_Payment_Gateway {
 					'fallback'  => __( 'Taking you to the secure payment page…', 'xpay-for-woocommerce' ),
 					'reopen'    => __( 'Pay now', 'xpay-for-woocommerce' ),
 					'closed'    => __( 'Your order is saved. Pay when you are ready.', 'xpay-for-woocommerce' ),
+					// Shown after an attempt that did not succeed, which is a
+					// different situation from closing the window untouched:
+					// the shopper knows something went wrong and needs to hear
+					// that the order survived it. The reason stays unsaid
+					// because the payment window never tells us one.
+					'failed'    => __( 'Payment was not completed. Your order is saved, and you can try again.', 'xpay-for-woocommerce' ),
 				),
 			)
 		);
