@@ -2,7 +2,7 @@
 Contributors: xpay
 Tags: woocommerce, payments, payment gateway, egypt, valu
 Requires at least: 6.2
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
 Stable tag: 3.0.0
 License: GPL-2.0-or-later
