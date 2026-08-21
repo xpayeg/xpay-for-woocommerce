@@ -12,15 +12,27 @@
  * shipping and typing coupons, so the session must exist before the order
  * does and its amount must follow the cart.
  *
- * THREE THINGS CROSS BETWEEN THE PAGE AND THE SERVER
+ * FIVE THINGS CROSS BETWEEN THE PAGE AND THE SERVER
  *
  * The browser cannot be trusted with any of them, so each has its own
  * endpoint and each re-derives its answer server-side:
  *
- *   sync   — the cart total changed; bring the session in line. Refused
- *            while a payment is running (XPay_Cart_Session holds that lock).
- *   paying — a payment is starting. Takes the lock.
- *   paid   — the payment ended, however it ended. Releases the lock.
+ *   session — the shopper picked XPay; hand back something to mount
+ *             against, creating this cart's session if it has none yet.
+ *   sync    — the cart total changed; bring the session in line. Refused
+ *             while a payment is running (XPay_Cart_Session holds that
+ *             lock).
+ *   restart — the session the page was handed can never be paid. Checked
+ *             against the platform, then replaced.
+ *   paying  — a payment is starting. Takes the lock.
+ *   paid    — the payment ended, however it ended. Releases the lock.
+ *
+ * None of them are answered before the shopper is on the XPay row. The
+ * scripts load on every checkout the gateway is offered on, but a session
+ * is a real object on the platform, and a checkout that ends on another
+ * gateway must not leave one behind. So nothing here is done in advance:
+ * the page asks when XPay is the row in front of the shopper, and the
+ * session is made on that ask.
  *
  * The amount is never taken from the request. It is recomputed from the
  * cart on every call, because a browser that can name its own price is a
@@ -33,7 +45,7 @@ defined( 'ABSPATH' ) || exit;
 
 final class XPay_Checkout_Elements {
 
-	/** Nonce action shared by all three endpoints. */
+	/** Nonce action shared by all four endpoints. */
 	const NONCE_ACTION = 'xpay_checkout_elements';
 
 	/** Script handle for the mount module. Protected by XPay_Script_Guard. */
@@ -48,7 +60,7 @@ final class XPay_Checkout_Elements {
 	public static function register(): void {
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue' ) );
 
-		foreach ( array( 'session', 'sync', 'paying', 'paid' ) as $action ) {
+		foreach ( array( 'session', 'sync', 'restart', 'paying', 'paid' ) as $action ) {
 			add_action( 'wp_ajax_xpay_elements_' . $action, array( __CLASS__, 'handle_' . $action ) );
 			add_action( 'wp_ajax_nopriv_xpay_elements_' . $action, array( __CLASS__, 'handle_' . $action ) );
 		}
@@ -65,6 +77,13 @@ final class XPay_Checkout_Elements {
 	 *
 	 * Not on the pay page, which still opens the window, and not on the
 	 * order-received page, which has nothing to pay.
+	 *
+	 * This runs on every checkout the gateway is offered on, and creates
+	 * nothing. It publishes what the page needs in order to ask later: the
+	 * endpoint, a nonce for it, the publishable key, and every line of
+	 * wording the browser side may have to show a shopper. The session
+	 * itself waits for the page to ask, which it does only once XPay is the
+	 * row in front of the shopper.
 	 */
 	public static function enqueue(): void {
 		if ( ! function_exists( 'is_checkout' ) || ! is_checkout() || is_wc_endpoint_url( 'order-pay' ) || is_wc_endpoint_url( 'order-received' ) ) {
@@ -115,6 +134,10 @@ final class XPay_Checkout_Elements {
 					'unavailable'  => __( 'Payment is unavailable right now. Please try again in a moment.', 'xpay-for-woocommerce' ),
 					'totalChanged' => __( 'Your order total changed. Check the new total and try again.', 'xpay-for-woocommerce' ),
 					'notCompleted' => __( 'Payment was not completed. Your order is saved, and you can try again.', 'xpay-for-woocommerce' ),
+					'notReady'     => __( 'The payment fields are still loading. Please try again in a moment.', 'xpay-for-woocommerce' ),
+					'incomplete'   => __( 'Please finish filling in the payment details before placing your order.', 'xpay-for-woocommerce' ),
+					'expired'      => __( 'This payment session expired. Refresh the page to start a new one.', 'xpay-for-woocommerce' ),
+					'completed'    => __( 'This payment has already been completed.', 'xpay-for-woocommerce' ),
 				),
 			)
 		);
@@ -164,7 +187,7 @@ final class XPay_Checkout_Elements {
 
 		echo '<div class="xpay-el__bnpl" data-xpay-bnpl-phone hidden>';
 		echo '<label class="xpay-el__label" for="xpay-bnpl-phone">' . esc_html__( 'Mobile number registered with valU', 'xpay-for-woocommerce' ) . '</label>';
-		echo '<input type="tel" inputmode="tel" autocomplete="tel" class="xpay-el__input" id="xpay-bnpl-phone" name="xpay_bnpl_phone" value="" data-xpay-bnpl-input>';
+		echo '<input type="tel" inputmode="tel" autocomplete="tel" class="xpay-el__input" id="xpay-bnpl-phone" name="' . esc_attr( XPay_Bnpl_Phone::FIELD ) . '" value="" data-xpay-bnpl-input>';
 		echo '<p class="xpay-el__hint" data-xpay-bnpl-hint></p>';
 		echo '</div>';
 
@@ -189,6 +212,7 @@ final class XPay_Checkout_Elements {
 		}
 
 		return array(
+			'field'       => XPay_Bnpl_Phone::FIELD,
 			'methods'     => XPay_Bnpl_Phone::METHODS,
 			'prefill'     => self::billing_phone(),
 			'placeholder' => XPay_Bnpl_Phone::example_for( $country ),
@@ -213,6 +237,18 @@ final class XPay_Checkout_Elements {
 	 *
 	 * The amount is recomputed here from the cart, never read from the
 	 * request. The browser is only telling us that something changed.
+	 *
+	 * The answer carries two things, because the page can work out neither
+	 * for itself. The outcome, because only 'updated' means the session
+	 * actually moved, and only then is there anything for the mounted
+	 * fields to go and re-read: they hold the copy they were handed when
+	 * they loaded and go on quoting it until asked to look again. And the
+	 * amount the session now holds, which is what those fields are about to
+	 * quote and is not the cart total whenever the update was refused.
+	 *
+	 * Outcomes are 'unchanged', 'updated', 'locked', 'currency-changed' or
+	 * 'none' (this cart has no session yet, which is ordinary before the
+	 * shopper picks XPay).
 	 */
 	public static function handle_sync(): void {
 		self::verify();
@@ -250,9 +286,23 @@ final class XPay_Checkout_Elements {
 	/**
 	 * The session the page mounts against, created on first ask.
 	 *
-	 * The browser asks for this once the checkout form is on screen. It
-	 * carries no amount: the total is read from the cart here, so a page
-	 * that lies about the price gets the real one anyway.
+	 * The browser asks for this when it is about to mount the fields, which
+	 * is when the shopper is on the XPay row. Nothing before that reaches
+	 * the platform, so a checkout that ends on another gateway never causes
+	 * a session to exist. The ask carries no amount: the total is read from
+	 * the cart here, so a page that lies about the price gets the real one
+	 * anyway.
+	 *
+	 * Because the ask can now come long after the page was drawn, this cart
+	 * may already hold a session whose amount was right when it was made and
+	 * is not any more. Mounting against that gives the shopper fields that
+	 * quote one number and a confirm-time check that refuses it, with
+	 * nothing on screen to explain the gap. So the session is brought back
+	 * in line before it is handed over. When it was just created, or is
+	 * already right, this costs nothing: sync_amount compares before it
+	 * calls, and after ensure() the currency is guaranteed to agree, so the
+	 * only outcomes left are unchanged, updated, or refused because a
+	 * payment is already running.
 	 */
 	public static function handle_session(): void {
 		self::verify();
@@ -262,14 +312,21 @@ final class XPay_Checkout_Elements {
 			wp_send_json_error( array( 'reason' => 'unavailable' ), 503 );
 		}
 
-		$total = self::cart_total_minor();
+		$total    = self::cart_total_minor();
+		$currency = get_woocommerce_currency();
 		if ( null === $total ) {
 			wp_send_json_error( array( 'reason' => 'no-cart' ), 409 );
 		}
 
 		try {
-			$session = $cart_session->ensure( $total, get_woocommerce_currency(), self::return_url() );
+			$session = $cart_session->ensure( $total, $currency, self::return_url() );
+			if ( null !== $session ) {
+				$cart_session->sync_amount( $total, $currency );
+			}
 		} catch ( XPay_Api_Exception $e ) {
+			// A session that cannot be brought in line is a session that
+			// cannot be paid, so this fails rather than handing back fields
+			// the shopper would only be refused at.
 			XPay_Logger::event( 'elements.session_failed', array( 'error' => $e->getMessage() ) );
 			wp_send_json_error( array( 'reason' => 'api' ), 502 );
 		}
@@ -281,7 +338,61 @@ final class XPay_Checkout_Elements {
 		wp_send_json_success(
 			array(
 				'clientSecret' => $session['clientSecret'],
-				'amount'       => $total,
+				// What the session holds, which is what the fields will
+				// quote. It is the cart total in every case except a payment
+				// already running, where the update was refused on purpose.
+				'amount'       => $cart_session->known_amount() ?? $total,
+			)
+		);
+	}
+
+	/**
+	 * Replace a session the page reports it can never pay.
+	 *
+	 * Only the page can see this. The platform serves an expired session
+	 * with a 200 exactly as it serves a live one, and the status that tells
+	 * them apart is read in the browser after the SDK loads it. Asking the
+	 * platform ourselves on every mount would put a round trip in front of
+	 * every shopper to catch the few who need it.
+	 *
+	 * So the page reports and the server checks. XPay_Cart_Session::restart()
+	 * fetches the session before it acts on the claim, which is what stops a
+	 * browser retiring a perfectly good session on its own say-so.
+	 *
+	 * The reply carries a client secret whenever there is something payable
+	 * to mount against, which covers 'open' as well as 'restarted': the page
+	 * may have given up on a session the platform still considers fine, and
+	 * the way out of that is to mount it again rather than to strand the
+	 * shopper. 'paid' means money already moved on this cart and no order
+	 * followed it, so no replacement is offered: a payable session there
+	 * would charge the shopper twice for one basket.
+	 */
+	public static function handle_restart(): void {
+		self::verify();
+
+		$cart_session = self::cart_session();
+		if ( null === $cart_session ) {
+			wp_send_json_error( array( 'reason' => 'unavailable' ), 503 );
+		}
+
+		$total    = self::cart_total_minor();
+		$currency = get_woocommerce_currency();
+		if ( null === $total ) {
+			wp_send_json_error( array( 'reason' => 'no-cart' ), 409 );
+		}
+
+		try {
+			$outcome = $cart_session->restart( $total, $currency, self::return_url() );
+		} catch ( XPay_Api_Exception $e ) {
+			XPay_Logger::event( 'elements.restart_failed', array( 'error' => $e->getMessage() ) );
+			wp_send_json_error( array( 'reason' => 'api' ), 502 );
+		}
+
+		wp_send_json_success(
+			array(
+				'outcome'      => $outcome,
+				'clientSecret' => in_array( $outcome, array( 'restarted', 'open' ), true ) ? $cart_session->client_secret() : '',
+				'amount'       => $cart_session->known_amount(),
 			)
 		);
 	}
@@ -302,6 +413,14 @@ final class XPay_Checkout_Elements {
 		$cart_session = self::cart_session();
 		if ( null === $cart_session ) {
 			wp_send_json_error( array( 'reason' => 'unavailable' ), 503 );
+		}
+
+		// A payment cannot start against a session that does not exist. The
+		// session is made when the shopper picks XPay, so an ask that comes
+		// before that would take the lock, freeze cart syncing for the whole
+		// of its TTL, and guard a payment that can never happen.
+		if ( '' === $cart_session->session_id() ) {
+			wp_send_json_error( array( 'reason' => 'no-session' ), 409 );
 		}
 
 		// Last word before the shopper pays: if the cart has drifted since

@@ -13,6 +13,9 @@ class XPay_Capture_Client extends XPay_Api_Client {
 	/** @var array[] Every create_checkout_session body, in order. */
 	public $created = array();
 
+	/** @var string[] Idempotency-Key of every create_checkout_session, in order. */
+	public $create_keys = array();
+
 	/** @var string[] Session ids passed to expire_checkout_session. */
 	public $expired = array();
 
@@ -49,7 +52,8 @@ class XPay_Capture_Client extends XPay_Api_Client {
 				throw $failure;
 			}
 		}
-		$this->created[] = $body;
+		$this->created[]     = $body;
+		$this->create_keys[] = $idempotency_key;
 		return $this->serve( array( 'id' => 'cs_test_contract_' . count( $this->created ) ) );
 	}
 

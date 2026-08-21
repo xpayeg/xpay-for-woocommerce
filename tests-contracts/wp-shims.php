@@ -29,11 +29,14 @@ function xpay_tests_reset_world(): void {
 /**
  * Minimal stand-in for WooCommerce's session handler.
  *
- * Only get() and set() are modelled, and set( key, null ) removes the key,
- * which is how WooCommerce itself behaves and what XPay_Cart_Session relies
- * on to clear a lock.
+ * Only get(), set() and the customer id are modelled, and set( key, null )
+ * removes the key, which is how WooCommerce itself behaves and what
+ * XPay_Cart_Session relies on to clear a lock.
  */
 class XPay_Test_WC_Session {
+	public function get_customer_id() {
+		return 'cust_test_contract';
+	}
 	public function get( $key, $default_value = null ) {
 		return array_key_exists( $key, $GLOBALS['xpay_test_wc_session'] )
 			? $GLOBALS['xpay_test_wc_session'][ $key ]

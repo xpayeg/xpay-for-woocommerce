@@ -42,6 +42,11 @@
 	var mountedNode = null;
 	var selectedMethod = '';
 	var paying = false;
+	// Whether this mount point has already traded in a spent session for a
+	// fresh one. One attempt is a recovery; repeating it on whatever comes
+	// back is a loop that hammers the platform for as long as the shopper
+	// sits on the page.
+	var restarted = false;
 
 	/**
 	 * Ask one of our endpoints. Always POST, always nonced.
@@ -158,50 +163,130 @@
 			handle = null;
 		}
 		mountedNode = node;
+		restarted = false;
 
 		ask( 'session', {} ).then( function ( result ) {
 			if ( ! result.ok || ! result.json || ! result.json.success ) {
 				showError( params.i18n && params.i18n.unavailable );
 				return;
 			}
+			attach( result.json.data.clientSecret );
+		} );
+	}
 
-			handle = window.XPayElements.mount( {
-				selector: '#xpay-elements-mount',
-				clientSecret: result.json.data.clientSecret,
-				publishableKey: params.publishableKey,
-				sdkUrl: params.sdkUrl,
-				colorMode: params.colorMode,
-				onMethodChange: function ( method ) {
-					selectedMethod = method || '';
-					updatePrompt( selectedMethod );
-				},
-				onReady: function () {
-					showError( '' );
-				},
-				onError: function ( message ) {
-					showError( message );
-				},
-				onUnavailable: function () {
-					showError( params.i18n && params.i18n.unavailable );
-				},
-			} );
+	/**
+	 * Put XPay's fields in the mount point, against one client secret.
+	 *
+	 * Separate from mount() because a session can be replaced without the
+	 * mount point changing: a session that expired under a shopper is traded
+	 * in for a fresh one and the fields go back into the same box.
+	 *
+	 * @param {string} clientSecret The session to mount against.
+	 */
+	function attach( clientSecret ) {
+		if ( handle ) {
+			handle.destroy();
+			handle = null;
+		}
+
+		handle = window.XPayElements.mount( {
+			selector: '#xpay-elements-mount',
+			clientSecret: clientSecret,
+			publishableKey: params.publishableKey,
+			sdkUrl: params.sdkUrl,
+			colorMode: params.colorMode,
+			// The library holds no wording of its own, so every line it
+			// may need to show a shopper is handed to it here.
+			i18n: params.i18n,
+			onMethodChange: function ( method ) {
+				selectedMethod = method || '';
+				updatePrompt( selectedMethod );
+			},
+			onReady: function () {
+				showError( '' );
+			},
+			onSessionChange: function () {
+				// A session that has been spent announces itself on the same
+				// change that carries the totals, and the message it left is
+				// the only explanation the shopper has. Clearing it here
+				// would replace it with an empty box.
+				if ( handle && handle.terminal ) {
+					return;
+				}
+				// The total the fields are quoting has just been re-read
+				// from the server, so any complaint about a stale one is
+				// now about a state that no longer exists.
+				showError( '' );
+			},
+			onTerminal: recover,
+			onError: function ( message ) {
+				showError( message || ( params.i18n && params.i18n.unavailable ) );
+			},
+			onUnavailable: function () {
+				showError( params.i18n && params.i18n.unavailable );
+			},
+		} );
+	}
+
+	/**
+	 * Trade in a session that can never be paid for one that can.
+	 *
+	 * Nothing on the server knows this session is spent. The platform serves
+	 * an expired session with a 200 exactly as it serves a live one, so the
+	 * page is the only thing that ever sees the difference, and until it
+	 * says so the same dead secret is handed back on every remount and every
+	 * refresh — for as long as the shopper's cart survives, which is twice
+	 * as long as a session lives. The advice to reload the page is only true
+	 * because of this.
+	 *
+	 * The server checks the claim before acting on it, and may answer that
+	 * there is nothing to replace: a session already paid for is left alone,
+	 * because a payable replacement would charge the shopper twice for one
+	 * basket. In that case the message the library already showed stands.
+	 */
+	function recover() {
+		if ( restarted ) {
+			return;
+		}
+		restarted = true;
+
+		ask( 'restart', {} ).then( function ( result ) {
+			var data = result.ok && result.json && result.json.success ? result.json.data : null;
+			if ( ! data || ! data.clientSecret ) {
+				return;
+			}
+			showError( '' );
+			attach( data.clientSecret );
 		} );
 	}
 
 	/* ── Keeping the amount honest ───────────────────────────────────── */
 
 	/**
-	 * Tell the server the cart moved.
+	 * Tell the server the cart moved, then tell the fields.
 	 *
 	 * The amount is not sent: the server reads the cart itself. A refusal
 	 * because a payment is running is expected and silent.
+	 *
+	 * The second half is the part that is easy to leave out and wrong to.
+	 * Patching the session server-side is invisible to the mounted
+	 * element: it holds the copy it was given at load and keeps quoting
+	 * that number until something asks it to look again. Only 'updated'
+	 * warrants the round trip, since the other outcomes mean the session
+	 * was not touched.
+	 *
+	 * @return {Promise<string>} The server's outcome for the sync.
 	 */
 	function sync() {
 		return ask( 'sync', {} ).then( function ( result ) {
-			if ( result.ok && result.json && result.json.success ) {
-				return result.json.data.outcome;
+			if ( ! result.ok || ! result.json || ! result.json.success ) {
+				return 'failed';
 			}
-			return 'failed';
+			var outcome = result.json.data.outcome;
+			if ( 'updated' === outcome && handle ) {
+				handle.refresh();
+			}
+			return outcome;
 		} );
 	}
 
@@ -218,9 +303,36 @@
 		if ( paying || ! handle ) {
 			return;
 		}
+
 		paying = true;
 		showError( '' );
 
+		// Settled before the lock, not after. Taking the payment lock freezes
+		// cart syncing, so a shopper who has not finished the fields yet
+		// would stop their own total updating by mis-clicking.
+		//
+		// Asked rather than remembered. The fields report their state when
+		// something changes and report nothing at all about the method they
+		// select for themselves when they load, so what they last said is
+		// not an answer — and the reason they give back is the reason for
+		// the state the shopper is actually in, which for a session that has
+		// expired under them is not advice to fill in more fields.
+		handle.check().then( function ( problem ) {
+			if ( problem ) {
+				// Refused before the lock was taken, so there is nothing to
+				// release and nothing to undo.
+				paying = false;
+				showError( problem );
+				return;
+			}
+			charge();
+		} );
+	}
+
+	/**
+	 * Lock the amount, take the payment, then hand the order to WooCommerce.
+	 */
+	function charge() {
 		ask( 'paying', {} )
 			.then( function ( result ) {
 				if ( ! result.ok || ! result.json || ! result.json.success ) {

@@ -140,6 +140,16 @@ final class XPay_Bnpl_Phone {
 	const METHODS = array( XPay_Payment_Methods::VALU );
 
 	/**
+	 * The form field the shopper's valU number arrives in.
+	 *
+	 * One name, defined once: the classic checkout renders it, the Blocks
+	 * row renders it, the drivers read it back, and process_payment looks
+	 * for it on submit. Four places that must agree, so none of them get to
+	 * spell it themselves.
+	 */
+	const FIELD = 'xpay_bnpl_phone';
+
+	/**
 	 * An example number in the shopper's own country, for the prompt's
 	 * placeholder.
 	 *

@@ -112,34 +112,108 @@
 		// the shopper has typed into it.
 		element.useEffect( function () {
 			var cancelled = false;
+			// One recovery attempt per row. Repeating it on whatever comes
+			// back is a loop that hammers the platform for as long as the
+			// shopper sits on the page.
+			var restarted = false;
 
-			ask( 'session' ).then( function ( result ) {
-				if ( cancelled || ! result.ok || ! result.json || ! result.json.success ) {
-					setError( ( params.i18n && params.i18n.unavailable ) || '' );
+			/**
+			 * Put XPay's fields in the mount point against one client secret.
+			 *
+			 * Separate from the ask below because a session can be replaced
+			 * without the row being rebuilt: one that expired under the
+			 * shopper is traded in and the fields go back into the same box.
+			 *
+			 * @param {string} clientSecret The session to mount against.
+			 */
+			function attach( clientSecret ) {
+				if ( cancelled || ! window.XPayElements || ! mountRef.current ) {
 					return;
 				}
-				if ( ! window.XPayElements || ! mountRef.current ) {
-					return;
+				if ( handleRef.current ) {
+					handleRef.current.destroy();
+					handleRef.current = null;
 				}
 				handleRef.current = window.XPayElements.mount( {
 					node: mountRef.current,
-					clientSecret: result.json.data.clientSecret,
+					clientSecret: clientSecret,
 					publishableKey: params.publishableKey,
 					sdkUrl: params.sdkUrl,
 					colorMode: params.colorMode,
+					// The library holds no wording of its own, so every line
+					// it may need to show a shopper is handed to it here.
+					i18n: params.i18n,
 					onMethodChange: function ( picked ) {
 						setMethod( picked || '' );
 					},
 					onReady: function () {
 						setError( '' );
 					},
+					onSessionChange: function () {
+						// A spent session announces itself on the same change
+						// the totals arrive on, and the message it left is
+						// the only explanation the shopper has.
+						if ( handleRef.current && handleRef.current.terminal ) {
+							return;
+						}
+						// The fields have just re-read their total from the
+						// server, so a complaint about a stale one is now
+						// about a state that no longer exists.
+						setError( '' );
+					},
+					onTerminal: function () {
+						// Nothing was mounted and nothing can be. The message
+						// arrives through onError; this only stops the row
+						// pretending it is still waiting on the shopper.
+						setMethod( '' );
+						recover();
+					},
 					onError: function ( message ) {
-						setError( message || '' );
+						setError( message || ( params.i18n && params.i18n.unavailable ) || '' );
 					},
 					onUnavailable: function () {
 						setError( ( params.i18n && params.i18n.unavailable ) || '' );
 					},
 				} );
+			}
+
+			/**
+			 * Trade in a session that can never be paid for one that can.
+			 *
+			 * Nothing on the server knows the session is spent: the platform
+			 * serves an expired one with a 200 exactly as it serves a live
+			 * one, so this row is the only thing that ever sees the
+			 * difference. Until it says so, the same dead secret comes back
+			 * on every mount and every reload, for as long as the shopper's
+			 * cart survives.
+			 *
+			 * The claim is checked server-side before anything is replaced,
+			 * and a session already paid for is deliberately left alone: a
+			 * payable replacement would charge the shopper twice for one
+			 * basket. Then the message already on screen stands.
+			 */
+			function recover() {
+				if ( restarted ) {
+					return;
+				}
+				restarted = true;
+
+				ask( 'restart' ).then( function ( result ) {
+					var data = result.ok && result.json && result.json.success ? result.json.data : null;
+					if ( cancelled || ! data || ! data.clientSecret ) {
+						return;
+					}
+					setError( '' );
+					attach( data.clientSecret );
+				} );
+			}
+
+			ask( 'session' ).then( function ( result ) {
+				if ( cancelled || ! result.ok || ! result.json || ! result.json.success ) {
+					setError( ( params.i18n && params.i18n.unavailable ) || '' );
+					return;
+				}
+				attach( result.json.data.clientSecret );
 			} );
 
 			return function () {
@@ -150,6 +224,28 @@
 				}
 			};
 		}, [] );
+
+		// Blocks recalculates the cart without rebuilding this row, so the
+		// session can drift from what the shopper is looking at. Sync the
+		// server, then tell the mounted fields to re-read what it now
+		// holds: the patch is invisible to the iframe until asked for.
+		var cartTotal = props.billing && props.billing.cartTotal ? props.billing.cartTotal.value : null;
+		element.useEffect(
+			function () {
+				if ( handleRef.current ) {
+					ask( 'sync' ).then( function ( result ) {
+						var synced = result.ok && result.json && result.json.success;
+						// Only 'updated' means the session actually moved;
+						// the other outcomes leave it exactly as the fields
+						// already have it.
+						if ( handleRef.current && synced && 'updated' === result.json.data.outcome ) {
+							handleRef.current.refresh();
+						}
+					} );
+				}
+			},
+			[ cartTotal ]
+		);
 
 		// Run the payment before Blocks creates the order. Success here
 		// means the money is arranged; a failure keeps the shopper on the
@@ -162,14 +258,16 @@
 					return undefined;
 				}
 
-				return registration.onPaymentSetup( function () {
-					if ( ! handleRef.current ) {
-						return {
-							type: emit.responseTypes.ERROR,
-							message: ( params.i18n && params.i18n.unavailable ) || '',
-						};
-					}
-
+				/**
+				 * Lock the amount, take the payment, release the lock.
+				 *
+				 * The lock is released down every path, success included:
+				 * Blocks creates the order after this resolves, and the
+				 * thank-you page drops the session either way.
+				 *
+				 * @return {Promise<Object>} A Blocks payment-setup response.
+				 */
+				function charge() {
 					return ask( 'paying' )
 						.then( function ( locked ) {
 							if ( ! locked.ok || ! locked.json || ! locked.json.success ) {
@@ -210,6 +308,38 @@
 								};
 							} );
 						} );
+				}
+
+				return registration.onPaymentSetup( function () {
+					if ( ! handleRef.current ) {
+						return {
+							type: emit.responseTypes.ERROR,
+							message: ( params.i18n && params.i18n.unavailable ) || '',
+						};
+					}
+
+					// Settled before the lock, not after. Taking the payment
+					// lock freezes cart syncing, so a shopper who has not
+					// finished the fields would stop their own total updating
+					// by pressing the button early.
+					//
+					// Asked rather than remembered: the fields report their
+					// state when something changes and say nothing at all
+					// about the method they select for themselves, so what
+					// they last announced is not an answer. The reason that
+					// comes back is the reason for the state the shopper is
+					// in, a spent session included.
+					return handleRef.current.check().then( function ( problem ) {
+						if ( problem ) {
+							// Refused before the lock was taken, so there is
+							// nothing to release.
+							return {
+								type: emit.responseTypes.ERROR,
+								message: problem,
+							};
+						}
+						return charge();
+					} );
 				} );
 			},
 			[ props.eventRegistration, props.emitResponse, number ]
@@ -243,7 +373,7 @@
 					createElement(
 						'label',
 						{
-							htmlFor: copy.field || 'xpay_bnpl_phone',
+							htmlFor: copy.field,
 							style: { display: 'block', fontWeight: 600, marginBottom: '4px' },
 						},
 						decodeEntities( copy.label || '' )
@@ -255,8 +385,8 @@
 					),
 					createElement( 'input', {
 						type: 'tel',
-						id: copy.field || 'xpay_bnpl_phone',
-						name: copy.field || 'xpay_bnpl_phone',
+						id: copy.field,
+						name: copy.field,
 						inputMode: 'tel',
 						autoComplete: 'tel',
 						placeholder: copy.placeholder || '',

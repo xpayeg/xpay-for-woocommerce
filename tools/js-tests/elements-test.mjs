@@ -90,8 +90,24 @@ function rebind( mod, win ) {
 }
 
 /** A stub standing in for a mounted Payment Element. */
-function fakeSdk( { confirmResult = { type: 'success' }, failInit = null } = {} ) {
-	const state = { handlers: {}, mountedAt: null, appearance: null, confirmedWith: null, appearanceUpdates: [] };
+function fakeSdk( {
+	confirmResult = { type: 'success' },
+	failInit = null,
+	status = { type: 'open' },
+	canConfirm = true,
+	// submit() resolves a bare object, not an ActionResult: no `type`
+	// discriminant, and `error` absent rather than null when all is well.
+	submitResult = {},
+} = {} ) {
+	const state = {
+		handlers: {},
+		checkoutHandlers: {},
+		submits: 0,
+		mountedAt: null,
+		appearance: null,
+		confirmedWith: null,
+		appearanceUpdates: [],
+	};
 	const element = {
 		on: ( name, fn ) => {
 			state.handlers[ name ] = fn;
@@ -115,7 +131,16 @@ function fakeSdk( { confirmResult = { type: 'success' }, failInit = null } = {} 
 				return Promise.reject( failInit );
 			}
 			return Promise.resolve( {
+				status,
+				canConfirm,
 				getElements: () => elements,
+				on: ( name, fn ) => {
+					state.checkoutHandlers[ name ] = fn;
+				},
+				submit: () => {
+					state.submits += 1;
+					return Promise.resolve( submitResult );
+				},
 				confirm: ( args ) => {
 					state.confirmedWith = args;
 					return Promise.resolve( confirmResult );
@@ -124,6 +149,24 @@ function fakeSdk( { confirmResult = { type: 'success' }, failInit = null } = {} 
 		},
 	};
 	return { xpay, state };
+}
+
+/**
+ * Put a mounted handle in the state a shopper filling in a card reaches.
+ *
+ * Not a precondition of paying — see the tests below about the method the
+ * element selects for itself, which never produces one of these — but it
+ * is what the common path looks like, and the tests about confirming want
+ * the common path.
+ *
+ * @param {Object} state The fake SDK's recorded state.
+ */
+function makePayable( state ) {
+	state.handlers.change( {
+		complete: true,
+		value: { type: 'card' },
+		session: { canConfirm: true, status: { type: 'open' } },
+	} );
 }
 
 const BASE = {
@@ -226,13 +269,14 @@ test( 'customer details reach confirm', async () => {
 	await Promise.resolve();
 	await Promise.resolve();
 
+	makePayable( state );
 	const out = await handle.confirm( { phone: '+201012345678' } );
 	assert.equal( out.ok, true );
 	assert.deepEqual( state.confirmedWith, { customerDetails: { phone: '+201012345678' } } );
 } );
 
 test( 'a declined payment comes back as a message, not a throw', async () => {
-	const { xpay } = fakeSdk( {
+	const { xpay, state } = fakeSdk( {
 		confirmResult: { type: 'error', error: { message: 'Your card was declined.' } },
 	} );
 	const { mod } = load( { xpay } );
@@ -240,6 +284,7 @@ test( 'a declined payment comes back as a message, not a throw', async () => {
 	await Promise.resolve();
 	await Promise.resolve();
 
+	makePayable( state );
 	const out = await handle.confirm( {} );
 	assert.equal( out.ok, false );
 	assert.equal( out.message, 'Your card was declined.' );
@@ -253,17 +298,151 @@ test( 'confirming before the form is ready fails closed', async () => {
 	assert.equal( out.message, 'Not ready yet.' );
 } );
 
-/* ── The in-flight flag ───────────────────────────────────────────────── */
+/* ── The pay gate ─────────────────────────────────────────────────────── */
 
-test( 'in-flight is false before paying and true once a payment is submitted', async () => {
-	// The platform will accept an amount change on an open session even
-	// while a payment is running. This flag is the only guard.
-	const { xpay } = fakeSdk();
+test( 'a method the element picked for itself can still be paid', async () => {
+	// The element raises a change event when the shopper does something,
+	// and raises none at all for the method it selects on load. A merchant
+	// whose first method is valU or Fawry therefore has shoppers looking at
+	// an already-selected method with nothing to fill in and no event ever
+	// sent. A gate that waited to be told the form was complete would
+	// refuse them forever, over fields that were never shown.
+	const { xpay, state } = fakeSdk();
+	const { mod } = load( { xpay } );
+	const handle = mod.mount( { ...BASE, i18n: { incomplete: 'Finish the fields.' } } );
+	await Promise.resolve();
+	await Promise.resolve();
+
+	assert.equal( handle.complete, false, 'nothing ever announced it' );
+	assert.equal( await handle.check(), null, 'and nothing may be inferred from that' );
+
+	const out = await handle.confirm( {} );
+	assert.equal( out.ok, true );
+	assert.equal( state.confirmedWith !== null, true );
+} );
+
+test( 'the fields get the last word on whether the form is complete', async () => {
+	// Asked, not remembered: submit() computes the same verdict on demand
+	// and is right without a prior event.
+	const { xpay, state } = fakeSdk( {
+		submitResult: { error: { type: 'invalid_request_error', message: 'Please complete the payment form' } },
+	} );
+	const { mod } = load( { xpay } );
+	const handle = mod.mount( { ...BASE, i18n: { incomplete: 'Finish the fields.' } } );
+	await Promise.resolve();
+	await Promise.resolve();
+
+	assert.equal( await handle.check(), 'Please complete the payment form' );
+	assert.equal( state.submits, 1 );
+
+	const out = await handle.confirm( {} );
+	assert.equal( out.ok, false );
+	assert.equal( out.message, 'Please complete the payment form' );
+	assert.equal( state.confirmedWith, null, 'nothing may reach confirm past a refusal' );
+} );
+
+test( 'a transport failure inside submit does not strand a filled-in form', async () => {
+	// Only a verdict about the shopper's input stops a payment. The embed
+	// not answering in time is not evidence anyone typed anything wrong.
+	const { xpay } = fakeSdk( {
+		submitResult: { error: { type: 'api_error', message: 'Validation timed out' } },
+	} );
 	const { mod } = load( { xpay } );
 	const handle = mod.mount( { ...BASE } );
 	await Promise.resolve();
 	await Promise.resolve();
 
+	assert.equal( await handle.check(), null );
+} );
+
+/* ── Sessions that can never be paid ──────────────────────────────────── */
+
+test( 'a spent session is never mounted over', async () => {
+	// An expired session loads exactly like a live one — the client
+	// endpoint answers 200 either way — so mounting first and checking
+	// after puts a working card form over a session the platform refuses.
+	const { xpay, state } = fakeSdk( { status: { type: 'expired' }, canConfirm: false } );
+	const { mod } = load( { xpay } );
+	const seen = [];
+	const handle = mod.mount( {
+		...BASE,
+		i18n: { expired: 'That session expired.' },
+		onTerminal: ( type ) => seen.push( type ),
+	} );
+	await Promise.resolve();
+	await Promise.resolve();
+
+	assert.equal( handle.terminal, 'expired' );
+	assert.deepEqual( seen, [ 'expired' ] );
+	assert.equal( mountedSelector( state.mountedAt ), null );
+} );
+
+test( 'a spent session explains itself rather than blaming the shopper', async () => {
+	// The wording the shopper is given has to be about the state they are
+	// in. Advice to finish filling in payment details cannot be acted on
+	// when no payment details were ever asked for, and it replaces advice
+	// that could be.
+	const { xpay } = fakeSdk( { status: { type: 'expired' }, canConfirm: false } );
+	const { mod } = load( { xpay } );
+	const handle = mod.mount( {
+		...BASE,
+		i18n: { expired: 'That session expired.', incomplete: 'Finish the fields.' },
+	} );
+	await Promise.resolve();
+	await Promise.resolve();
+
+	assert.equal( await handle.check(), 'That session expired.' );
+	assert.equal( ( await handle.confirm( {} ) ).message, 'That session expired.' );
+} );
+
+test( 'a session paid in another tab reports that, not an unfinished form', async () => {
+	const { xpay } = fakeSdk( {
+		status: { type: 'complete', paymentStatus: 'paid' },
+		canConfirm: false,
+	} );
+	const { mod } = load( { xpay } );
+	const handle = mod.mount( {
+		...BASE,
+		i18n: { completed: 'Already paid for.', incomplete: 'Finish the fields.' },
+	} );
+	await Promise.resolve();
+	await Promise.resolve();
+
+	assert.equal( handle.terminal, 'complete' );
+	assert.equal( await handle.check(), 'Already paid for.' );
+} );
+
+test( 'a session that expires mid-flow goes terminal on the change that says so', async () => {
+	const { xpay, state } = fakeSdk();
+	const { mod } = load( { xpay } );
+	const seen = [];
+	const handle = mod.mount( {
+		...BASE,
+		i18n: { expired: 'That session expired.' },
+		onTerminal: ( type ) => seen.push( type ),
+	} );
+	await Promise.resolve();
+	await Promise.resolve();
+
+	state.checkoutHandlers.change( { canConfirm: false, status: { type: 'expired' } } );
+
+	assert.equal( handle.terminal, 'expired' );
+	assert.deepEqual( seen, [ 'expired' ] );
+	assert.equal( await handle.check(), 'That session expired.' );
+} );
+
+/* ── The in-flight flag ───────────────────────────────────────────────── */
+
+test( 'in-flight is false before paying and true once a payment is submitted', async () => {
+	// The platform will accept an amount change on an open session even
+	// while a payment is running. This flag is the only guard.
+	const { xpay, state } = fakeSdk();
+	const { mod } = load( { xpay } );
+	const handle = mod.mount( { ...BASE } );
+	await Promise.resolve();
+	await Promise.resolve();
+
+	makePayable( state );
 	assert.equal( handle.paying, false );
 	const pending = handle.confirm( {} );
 	assert.equal( handle.paying, true, 'must be set synchronously, before any await' );
@@ -272,7 +451,7 @@ test( 'in-flight is false before paying and true once a payment is submitted', a
 } );
 
 test( 'a declined payment clears in-flight so the shopper can retry', async () => {
-	const { xpay } = fakeSdk( {
+	const { xpay, state } = fakeSdk( {
 		confirmResult: { type: 'error', error: { message: 'Declined.' } },
 	} );
 	const { mod } = load( { xpay } );
@@ -280,6 +459,7 @@ test( 'a declined payment clears in-flight so the shopper can retry', async () =
 	await Promise.resolve();
 	await Promise.resolve();
 
+	makePayable( state );
 	await handle.confirm( {} );
 	assert.equal( handle.paying, false );
 } );

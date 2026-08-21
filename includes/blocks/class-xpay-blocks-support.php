@@ -110,7 +110,7 @@ final class XPay_Blocks_Support extends AbstractPaymentMethodType {
 			// the page, so the strings ride along and the mount asks for
 			// them when the shopper picks valU.
 			'bnplPhone'   => array(
-				'field'      => 'xpay_bnpl_phone',
+				'field'      => XPay_Bnpl_Phone::FIELD,
 				'label'      => __( 'Mobile number for your valU account', 'xpay-for-woocommerce' ),
 				'whyKnown'   => __( 'valU pays from the mobile number registered with valU, and the number on this order is not an Egyptian or Jordanian mobile. Enter the one your valU account uses.', 'xpay-for-woocommerce' ),
 				'whyMissing' => __( 'valU pays from the mobile number registered with valU. Enter the Egyptian or Jordanian mobile your valU account uses.', 'xpay-for-woocommerce' ),
