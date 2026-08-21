@@ -205,7 +205,7 @@ final class XPay_Checkout_Elements {
 	 * shopper is shown a Jordanian number rather than an Egyptian one they
 	 * would have to mentally translate.
 	 */
-	private static function bnpl_copy(): array {
+	public static function bnpl_copy(): array {
 		$country = '';
 		if ( function_exists( 'WC' ) && WC()->customer ) {
 			$country = (string) WC()->customer->get_billing_country();

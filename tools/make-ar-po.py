@@ -16,6 +16,34 @@ POT = str(_LANG / "xpay-for-woocommerce.pot")
 OUT = str(_LANG / "xpay-for-woocommerce-ar.po")
 
 AR = {
+    'Which payment methods shoppers see is set in your XPay account, not here.':
+        'طرق الدفع التي يراها المشتري تُحدَّد من حساب XPay الخاص بك، وليس من هنا.',
+    'Match my store': 'مطابقة متجري',
+    'Always light': 'فاتح دائمًا',
+    'Always dark': 'داكن دائمًا',
+    'Order total': 'إجمالي الطلب',
+    'Payment is unavailable right now. Please try again in a moment.':
+        'الدفع غير متاح الآن. برجاء المحاولة بعد قليل.',
+    'Your order total changed. Check the new total and try again.':
+        'تغيّر إجمالي طلبك. راجع الإجمالي الجديد ثم حاول مرة أخرى.',
+    'The payment fields are still loading. Please try again in a moment.':
+        'حقول الدفع ما زالت قيد التحميل. برجاء المحاولة بعد قليل.',
+    'Please finish filling in the payment details before placing your order.':
+        'برجاء استكمال بيانات الدفع قبل تأكيد الطلب.',
+    'This payment session expired. Refresh the page to start a new one.':
+        'انتهت صلاحية جلسة الدفع هذه. حدِّث الصفحة لبدء جلسة جديدة.',
+    'This payment has already been completed.': 'تم إتمام هذا الدفع بالفعل.',
+    'Mobile number registered with valU': 'رقم الموبايل المسجَّل لدى ڤاليو',
+    'valU charges the mobile number registered with it, and the number on this order is not an Egyptian or Jordanian mobile. Enter the one your valU account uses.':
+        'ڤاليو تخصم من رقم الموبايل المسجَّل لديها، والرقم الموجود على هذا الطلب ليس رقم موبايل مصري أو أردني. أدخل الرقم المستخدَم في حساب ڤاليو الخاص بك.',
+    'valU charges the mobile number registered with it. Enter the Egyptian or Jordanian mobile your valU account uses.':
+        'ڤاليو تخصم من رقم الموبايل المسجَّل لديها. أدخل رقم الموبايل المصري أو الأردني المستخدَم في حساب ڤاليو الخاص بك.',
+    "XPay's payment fields appear on your checkout page. Which methods a shopper sees is decided by your XPay account, not here.":
+        'تظهر حقول دفع XPay داخل صفحة الدفع في متجرك. طرق الدفع التي يراها المشتري تُحدَّد من حساب XPay الخاص بك، وليس من هنا.',
+    'Theme': 'المظهر',
+    "Automatic matches your store's own colours, fonts and corners, and follows the shopper's device for light or dark. Choose Light or Dark to fix it.":
+        'الوضع التلقائي يطابق ألوان متجرك وخطوطه وزواياه، ويتبع جهاز المشتري في الفاتح أو الداكن. اختر فاتح أو داكن لتثبيته.',
+    'Automatic (match my store)': 'تلقائي (مطابقة متجري)',
     "XPay for WooCommerce": "XPay لـ WooCommerce",
     "https://xpay.app/": "https://xpay.app/",
     "Accept payments on your WooCommerce store via XPay (Egypt): cards, valU and more, in a secure on-site checkout.":

@@ -119,29 +119,110 @@ parked on hold, currency-rejection notice, cron schema convergence); the
 "Pay now" checkout button and `metadata.integration = woocommerce`; and the
 escape from a payment window the SDK refuses to close.
 
+**The Elements switch.** XPay's payment fields now render on the store's own
+checkout page instead of opening the drop-in window, which is what avoids
+issue #1 (the window that will not close after a failed attempt). The pay
+page is deliberately unchanged and still uses the window: there the order
+and its total are already final.
+
+This brought a session that must exist *before* the order does, because the
+fields live in an iframe whose URL is built from the session id
+(`packages/sdk/runtime/src/elements.ts:296`). So the session is created from
+the cart and its amount has to follow a cart that is still moving. Four
+admin-ajax endpoints carry that: `session`, `sync`, `paying`, `paid`. The
+amount is never read from the request; it is recomputed from the cart on
+every call.
+
+The per-method gateway rows are gone — one XPay row now, because the
+element's own accordion lists exactly what the merchant's account has
+enabled and a second list in WooCommerce can disagree with it. `wallet` was
+renamed to `bnpl` throughout (valU is buy-now-pay-later, not a wallet). The
+methods selector in settings was replaced by a Theme setting: Auto (measures
+the store's real colours and follows the shopper's device) / Light / Dark.
+
+**Rebuilt at `87a2737` after reading the documentation properly.** The first
+cut was written from SDK source and inference; the Elements docs at
+`/workspace/xpay/apps/docs/content/docs/(docs)/integrate/integration-patterns/elements.mdx`
+answer almost all of it and were not read. That cost:
+
+- The `lineItems` payload was invalid. `LineItemInputDto` takes
+  `price | priceData | quantity | adjustableQuantity`; the plugin sent flat
+  `{ name, unitAmount, quantity }`, which the API rejects rather than strips
+  (`forbidNonWhitelisted`). Every session it opened would have failed.
+- `checkout.fetchUpdates()` is the documented way to tell a mounted element
+  the session changed. It was never called, so `sync` patched server-side
+  and the fields kept quoting their load-time total.
+- The pay button had no gate. The docs require `event.complete` **and**
+  `checkout.canConfirm`; neither was consulted.
+- Terminal sessions (`expired`, `complete`) were not checked before mounting.
+- `checkout.on('error')` was not subscribed.
+
+All fixed. Three adversarial reviewers (invented-API, wrong-amount,
+regression) raised ten findings that reduced to four real bugs, all fixed.
+
 ## Queue — work on these one at a time, in this order
 
-1. **Checkout-page modal** — open the payment window on the checkout page
+0. **Test API keys, then delete the stub.** Nothing has ever run against the
+   real XPay API. Set `XPAY_TEST_API_KEY` (`rk_test_…`, restricted, Checkout
+   Sessions + Refunds), `XPAY_TEST_PUBLISHABLE_KEY` (`pk_test_…`) and
+   optionally `XPAY_TEST_WEBHOOK_SECRET` (`whsec_…`) as environment
+   variables, write them into `woocommerce_xpay_settings` without echoing
+   them, then **delete the `XPAY_WC_API_BASE` define from the store's
+   `wp-config.php`**. That define points at a local stub which validated
+   nothing: it read `lineItems[0].unitAmount` out of whatever it was handed
+   and echoed a session back, which is exactly why an invalid payload passed
+   18 of 18 browser tests. The SDK is not stubbed and must not be — the real
+   one at `https://checkout.xpay.app/v1/sdk.js` is reachable.
+
+   There is **no firewall problem**. An earlier session claimed XPay's WAF
+   was blocking this host; that was wrong and is corrected in
+   `xpayeg/woocommerce@1f9ac4ac`. `POST /checkout/sessions` answers 401;
+   only the invented `/v1/` prefix trips the WAF, because no such path
+   exists.
+
+1. **Verify the pay gate per payment method. Ship blocker.** `confirm()` is
+   gated on `event.complete && checkout.canConfirm`. `complete` is confirmed
+   to arrive for card and is **unverified for valU and Fawry**, whose embeds
+   may need no local input and may never emit it. If one does not, that
+   method can never be paid and the button stays dead. If it bites: treat a
+   non-card selection as complete, or fall back to `submit()` alone.
+
+2. **Rewrite `tools/browser-tests/foreign-card-test.mjs`.** It drives the
+   per-method rows that no longer exist, so it does not run. It covers a
+   rule that must never leak: a shopper whose billing number is not Egyptian
+   or Jordanian must never have that number sent as a valU number.
+
+3. **Give the new behaviour permanent tests.** Terminal states, the pay
+   gate, `refresh()` and the error subscription were proven by a throwaway
+   smoke script that no longer exists. Promote that into
+   `tools/js-tests/elements-test.mjs`.
+
+4. **Verify the Blocks sync prop.** `blocks-integration.js` keys its sync
+   effect on `props.billing.cartTotal.value`, unverified against the Blocks
+   version this plugin targets. It degrades safely, so the symptom is a fix
+   that silently does nothing.
+
+5. **Checkout-page modal** — open the payment window on the checkout page
    itself, keeping that page alive underneath. Mechanics are fully verified
    against WooCommerce core; see the task notes. **Blocked on two product
    calls from the user:** does it replace the redirect by default or become
    a setting, and what (if anything) the shopper sees when they close it.
-2. **Full refunds for non-EGP orders** — the platform refunds the whole
+6. **Full refunds for non-EGP orders** — the platform refunds the whole
    remaining balance when the amount is omitted, so full refunds need no
    conversion and could be re-enabled for non-EGP stores while partials stay
    blocked. **Blocked on the user's yes/no** (money policy).
-3. **WordPress.org listing screenshots** — `readme.txt` still has no
+7. **WordPress.org listing screenshots** — `readme.txt` still has no
    `== Screenshots ==` section. Propose five or six screens for approval.
    `wporg-assets/` and `screenshots/` are distignored by design; the SVN
    `/assets/` directory is the destination.
-4. **WordPress 7.1 smoke test** — `readme.txt` declares "Tested up to: 7.1"
+8. **WordPress 7.1 smoke test** — `readme.txt` declares "Tested up to: 7.1"
    because Plugin Check requires the current version, but no 7.1 install was
    ever exercised: this environment's network policy blocks wordpress.org.
    The claim currently rests on an API review only (every core and
    WooCommerce function the plugin calls is long-stable). Owed: update core
    on a machine with wordpress.org access, then walk settings, checkout
    (classic and Blocks), pay page, receipt and log.
-5. **Currency-notice copy fix** — the admin notice says "your XPay account
+9. **Currency-notice copy fix** — the admin notice says "your XPay account
    has no exchange rate configured"; rates are platform-global, not
    per-account. Fold into the next commit.
 
@@ -170,6 +251,22 @@ records what the workaround cannot cover.
   <https://claude.ai/code/artifact/cc092d2b-7f53-496f-bf38-5a6359f4069d>,
   manage screen
   <https://claude.ai/code/artifact/59d63401-409b-4b1d-826e-b794ddc8a993>.
+- **Read the documentation before the source.** The Elements docs and this
+  repo's own `AGENTS.md` both existed and both went unread for a whole
+  session, which produced an invalid payload, a reinvented `fetchUpdates()`,
+  and a rule violation (a registry key dissolved into five hardcoded
+  copies). Inference from source is the fallback, not the opening move.
+- **Never state a URL, endpoint or API you have not fetched or grepped.**
+  One session invented `sdk.xpay.app` and a `/v1/` path prefix, then built a
+  confident story about XPay's firewall blocking its own API on top of the
+  second one and reported it as fact. Note that this project had *already*
+  refuted one WAF theory before that.
+- **A stub that does not validate is worse than no stub**, and a test that
+  passes against your own assumptions has proven nothing. Ask what the test
+  would have to do to fail; if the answer is "nothing the real system does",
+  it is not a test.
+- **Say "I am inferring" while inferring.** If a user has to ask whether
+  something was verified or assumed, the answer was already assumed.
 - Never paint a status green without a real truth source. This rule is why
   webhook health is per-plane and why the 7.1 claim above is stated as debt.
 - Audits and multi-agent work run as workflows with at least two aggressive
@@ -183,6 +280,13 @@ records what the workaround cannot cover.
 
 ## Standing items
 
+- Environment quirks worth not rediscovering: `ignoreHTTPSErrors` is a
+  Playwright **context** option, not a launch option; the store's
+  `wp-config.php` is CRLF, so edit it byte-wise or the diff rewrites every
+  line; `wp-cli` is not installed and must be fetched as a phar for the i18n
+  steps; the store's `/checkout` (page 12) is the **Blocks** checkout and a
+  classic `[woocommerce_checkout]` page lives at **page 29** — both need
+  testing and they render the XPay row differently.
 - **Security cleanup owed by the user**: roll the test API key that was
   pasted into chat earlier in the project, and remove the tunnel entry
   pointing an `*.xpay.app` hostname at localhost from `~/.cloudflared/config.yml`.
