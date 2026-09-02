@@ -4,7 +4,7 @@ Tags: woocommerce, payments, payment gateway, egypt, valu
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -92,6 +92,10 @@ Yes, when the payment method supports refunds. ValU refunds are not currently su
 Yes. If customers return to the cart after paying and you do not use a working WPFunnels Pro upsell step, turn on WPFunnels compatibility in the XPay settings.
 
 == Changelog ==
+
+= 1.0.1 =
+
+* Point the plugin's `Plugin URI` header at the public repository so it differs from `Author URI`, resolving the WordPress.org Plugin Check error that blocks submission.
 
 = 1.0.0 =
 

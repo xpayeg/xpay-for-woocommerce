@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1
+
+### Patch Changes
+
+- Point the plugin's `Plugin URI` header at the public repository so it differs from `Author URI`, resolving the WordPress.org Plugin Check error that blocks submission.
+
 ## 1.0.0
 
 ### Major Changes
