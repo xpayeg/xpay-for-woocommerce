@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="XPay">
+  <rect x="0.5" y="0.5" width="47" height="47" rx="8" fill="#ffffff" stroke="#e5e5e5"/>
+  <g transform="translate(8.5 14.61) scale(0.0905)">
+    <path d="M96 0H28.4L136 103.8l35.3-33.1L96 0zM28.4 207.5h70.8l72.1-69.6-35.3-34.1L28.4 207.5zM0 85.7h56.9v37.9H0z" fill="#413df6"/>
+    <path d="M314.1 0h-67.6l-75.2 70.7-35.3 33.1 35.3 34.1 72 69.6h70.8L206.5 103.8 314.1 0z" fill="#3eb8eb"/>
+    <path d="M285.7 85.7h56.9v37.9h-56.9z" fill="#3eb8eb"/>
+  </g>
+</svg>

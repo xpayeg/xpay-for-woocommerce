@@ -1,0 +1,767 @@
+/**
+ * XPay settings screen.
+ *
+ * Deliberately quiet: white cards, hairline borders, the admin's own
+ * typography. The screen this replaced carried a dashboard-lookalike
+ * design system; merchants compared it to Stripe's WooCommerce settings
+ * and preferred Stripe's restraint, so restraint is the design.
+ */
+
+.xpay-ad {
+	max-width: 760px;
+	margin: 16px 0 32px;
+}
+
+/* The hidden attribute hides through the BROWSER's stylesheet, and any
+   author display value (the overlay's flex, the panes' flex) outranks it.
+   Without this line the connection dialog ignores hidden entirely: open
+   on page load, Close doing nothing, both mode panes stacked. */
+.xpay-ad [hidden],
+.xpay-ad__overlay[hidden] {
+	display: none !important;
+}
+
+/* WooCommerce renders its own Save button under admin_options(); the
+   screen brings its own submit buttons, so core's would be a second,
+   unstyled way to do the same thing. This stylesheet loads only on the
+   XPay section, so nothing else is touched. */
+.woocommerce-save-button,
+p.submit .woocommerce-save-button {
+	display: none !important;
+}
+
+/* ── Header band ─────────────────────────────────────────────────── */
+
+.xpay-ad__header {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 16px;
+}
+
+.xpay-ad__mark {
+	width: 28px;
+	height: 28px;
+	border-radius: 6px;
+}
+
+.xpay-ad__name {
+	font-size: 16px;
+	font-weight: 600;
+	color: #1e1e1e;
+}
+
+.xpay-ad__spacer {
+	flex: 1;
+}
+
+.xpay-ad__pill {
+	font-size: 11px;
+	font-weight: 600;
+	padding: 2px 8px;
+	border-radius: 10px;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+}
+
+.xpay-ad__pill--test {
+	background: #fcf9e8;
+	color: #8a6d1a;
+	border: 1px solid #f0e6bb;
+}
+
+.xpay-ad__pill--live {
+	background: #edfaef;
+	color: #1a7a2e;
+	border: 1px solid #c6e8cc;
+}
+
+.xpay-ad__ext {
+	text-decoration: none;
+}
+
+/* ── Cards ───────────────────────────────────────────────────────── */
+
+.xpay-ad__card {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	padding: 20px 24px;
+	margin-bottom: 16px;
+}
+
+.xpay-ad__card-head {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.xpay-ad__card-title {
+	font-size: 14px;
+	font-weight: 600;
+	margin: 0;
+	padding: 0;
+	color: #1e1e1e;
+}
+
+.xpay-ad__card-head .xpay-ad__menu {
+	margin-left: auto;
+}
+
+.xpay-ad__muted {
+	color: #757575;
+	font-size: 12px;
+}
+
+.xpay-ad__mono {
+	font-family: Consolas, Monaco, monospace;
+}
+
+/* ── Hero (get started) ──────────────────────────────────────────── */
+
+/* No banner: a strip with a logo across it is decoration that says
+   nothing about the product and dates on sight. The card is one flat
+   surface, left-aligned, where the type carries the hierarchy and the
+   payment marks carry the picture. */
+.xpay-ad__card--hero {
+	padding: 36px 40px 0;
+}
+
+/* The mark alone, in its own colours on the card's white: no tile, no
+   backing shape. */
+.xpay-ad__hero-logo {
+	display: block;
+	height: 32px;
+	width: auto;
+	margin-bottom: 22px;
+}
+
+.xpay-ad__hero-title {
+	font-size: 24px;
+	line-height: 1.25;
+	font-weight: 600;
+	letter-spacing: -0.02em;
+	margin: 0 0 8px;
+	color: #101828;
+}
+
+.xpay-ad__hero-sub {
+	color: #50575e;
+	font-size: 14px;
+	line-height: 1.6;
+	max-width: 46em;
+	margin: 0 0 24px;
+	text-wrap: pretty;
+}
+
+.xpay-ad__hero-actions {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.xpay-ad__hero-aside {
+	color: #757575;
+	font-size: 12px;
+}
+
+/* The methods sit in their own quiet register under a hairline, so the
+   card ends on what the merchant gets rather than on more copy. */
+.xpay-ad__hero-methods {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+	margin: 28px -40px 0;
+	padding: 16px 40px;
+	border-top: 1px solid #f0f0f1;
+	background: #fcfcfd;
+	border-radius: 0 0 8px 8px;
+}
+
+.xpay-ad__hero-method {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: 28px;
+	padding: 0 10px;
+	border: 1px solid #e6e7e9;
+	border-radius: 6px;
+	background: #fff;
+}
+
+.xpay-ad__hero-method img {
+	height: 16px;
+	width: auto;
+}
+
+/* ── Connect with XPay (the auth panel) ──────────────────────────── */
+
+/* The store-to-XPay diagram: Stripe's shape (stripe-auth-account/
+   styles.scss __diagram: centered tiles, dashed connector with end
+   dots), with our own tiles. */
+.xpay-ad__diagram {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 16px;
+	margin: 28px 0 20px;
+}
+
+.xpay-ad__diagram-tile {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 56px;
+	height: 56px;
+	border-radius: 12px;
+	border: 1px solid #e0e0e0;
+	background: #fff;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+	overflow: hidden;
+}
+
+.xpay-ad__diagram-tile img {
+	width: 40px;
+	height: 40px;
+	border-radius: 8px;
+}
+
+.xpay-ad__diagram-tile--store {
+	background: #f6f7f7;
+}
+
+.xpay-ad__diagram-tile--store .dashicons {
+	font-size: 28px;
+	width: 28px;
+	height: 28px;
+	color: #50575e;
+}
+
+.xpay-ad__diagram-line {
+	position: relative;
+	width: 50px;
+	border-top: 1px dashed #949494;
+}
+
+.xpay-ad__diagram-line::before,
+.xpay-ad__diagram-line::after {
+	content: '';
+	position: absolute;
+	top: -2.5px;
+	width: 4px;
+	height: 4px;
+	background: #949494;
+	border-radius: 50%;
+}
+
+.xpay-ad__diagram-line::before {
+	left: -4px;
+}
+
+.xpay-ad__diagram-line::after {
+	right: -4px;
+}
+
+.xpay-ad__auth-heading {
+	font-size: 15px;
+	margin: 14px 0 6px;
+}
+
+.xpay-ad__auth-sub {
+	color: #3c434a;
+	margin: 0 0 8px;
+	text-wrap: pretty;
+}
+
+.xpay-ad__auth-help {
+	color: #757575;
+	font-size: 12px;
+	margin: 6px 0 0;
+}
+
+.xpay-ad__auth-help:empty {
+	display: none;
+}
+
+.xpay-ad__auth-actions {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin: 16px 0 4px;
+}
+
+/* Inline, next to the button it belongs to: a toast outlives its
+   moment, and the merchant is looking at the button that failed. */
+.xpay-ad__connect-error {
+	color: #b32d2e;
+	font-size: 12px;
+	margin: 8px 0 0;
+}
+
+/* ── Badges ──────────────────────────────────────────────────────── */
+
+.xpay-ad__badges {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 18px;
+	margin: 14px 0 4px;
+}
+
+.xpay-ad__badge {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.xpay-ad__badge-label {
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: #757575;
+}
+
+.xpay-ad__badge-value {
+	font-size: 12px;
+	font-weight: 500;
+	padding: 2px 8px;
+	border-radius: 4px;
+}
+
+.xpay-ad__badge-value--ok {
+	background: #edfaef;
+	color: #1a7a2e;
+}
+
+.xpay-ad__badge-value--warn {
+	background: #fcf0f1;
+	color: #a4262c;
+}
+
+.xpay-ad__health {
+	margin: 10px 0 0;
+	color: #50575e;
+	font-size: 12px;
+}
+
+/* ── Kebab menu ──────────────────────────────────────────────────── */
+
+.xpay-ad__menu {
+	position: relative;
+}
+
+.xpay-ad__menu-btn {
+	background: none;
+	border: 1px solid transparent;
+	border-radius: 4px;
+	font-size: 16px;
+	line-height: 1;
+	padding: 4px 8px;
+	cursor: pointer;
+	color: #50575e;
+}
+
+.xpay-ad__menu-btn:hover {
+	border-color: #dcdcde;
+}
+
+.xpay-ad__menu-list {
+	position: absolute;
+	right: 0;
+	top: calc(100% + 4px);
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+	min-width: 200px;
+	z-index: 20;
+	padding: 4px;
+}
+
+.xpay-ad__menu-item {
+	display: block;
+	width: 100%;
+	text-align: start;
+	background: none;
+	border: 0;
+	border-radius: 4px;
+	padding: 8px 10px;
+	cursor: pointer;
+	font-size: 13px;
+}
+
+.xpay-ad__menu-item:hover {
+	background: #f6f7f7;
+}
+
+.xpay-ad__menu-item--danger {
+	color: #a4262c;
+}
+
+/* ── Fields ──────────────────────────────────────────────────────── */
+
+.xpay-ad__fields {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	margin-top: 16px;
+}
+
+.xpay-ad__field {
+	display: flex;
+	align-items: baseline;
+	gap: 12px;
+}
+
+.xpay-ad__field--check {
+	align-items: flex-start;
+	cursor: pointer;
+}
+
+.xpay-ad__field--check input[type="checkbox"] {
+	margin-top: 2px;
+}
+
+.xpay-ad__field-label {
+	font-weight: 600;
+	font-size: 13px;
+	min-width: 140px;
+	color: #1e1e1e;
+}
+
+.xpay-ad__field--check .xpay-ad__field-label {
+	min-width: 0;
+}
+
+.xpay-ad__field-main {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	flex: 1;
+	min-width: 0;
+}
+
+.xpay-ad__field-help {
+	color: #757575;
+	font-size: 12px;
+	font-weight: 400;
+}
+
+
+.xpay-ad__actions {
+	margin-top: 20px;
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+}
+
+.xpay-ad__docs {
+	margin: 16px 0 0;
+	color: #757575;
+	font-size: 12px;
+}
+
+/* ── Modal ───────────────────────────────────────────────────────── */
+
+.xpay-ad__overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(30, 30, 30, 0.55);
+	z-index: 100000;
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	padding: 6vh 16px;
+	overflow: auto;
+}
+
+.xpay-ad__modal {
+	background: #fff;
+	border-radius: 10px;
+	width: 560px;
+	max-width: 100%;
+	padding: 20px 24px 24px;
+	box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+.xpay-ad__modal-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 12px;
+}
+
+.xpay-ad__close {
+	background: none;
+	border: 0;
+	font-size: 22px;
+	line-height: 1;
+	cursor: pointer;
+	color: #757575;
+	padding: 2px 6px;
+}
+
+.xpay-ad__tabs {
+	display: flex;
+	gap: 4px;
+	border-bottom: 1px solid #dcdcde;
+	margin-bottom: 16px;
+}
+
+.xpay-ad__tab {
+	background: none;
+	border: 0;
+	border-bottom: 2px solid transparent;
+	padding: 8px 14px;
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+	color: #50575e;
+}
+
+.xpay-ad__tab.is-active {
+	color: #1e1e1e;
+	border-bottom-color: #2271b1;
+	font-weight: 600;
+}
+
+.xpay-ad__pane {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.xpay-ad__pane .xpay-ad__badges {
+	margin-top: 0;
+}
+
+
+/* ── Segmented control ───────────────────────────────────────────── */
+
+.xpay-ad__segment {
+	display: inline-flex;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	overflow: hidden;
+	width: fit-content;
+}
+
+.xpay-ad__segment-opt {
+	padding: 6px 14px;
+	font-size: 12px;
+	font-weight: 500;
+	cursor: pointer;
+	color: #50575e;
+	background: #fff;
+	border-inline-end: 1px solid #dcdcde;
+}
+
+.xpay-ad__segment-opt:last-child {
+	border-inline-end: 0;
+}
+
+.xpay-ad__segment-opt.is-active {
+	background: #f0f6fc;
+	color: #2271b1;
+	font-weight: 600;
+}
+
+.xpay-ad__segment-opt input {
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+}
+
+/* ── Snackbar ────────────────────────────────────────────────────── */
+
+.xpay-ad__toast {
+	position: fixed;
+	inset-inline-start: 24px;
+	bottom: 24px;
+	background: #1e1e1e;
+	color: #fff;
+	font-size: 13px;
+	padding: 10px 16px;
+	border-radius: 6px;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+	z-index: 100001;
+	max-width: 420px;
+	opacity: 0;
+	transform: translateY(8px);
+	transition: opacity 0.18s ease, transform 0.18s ease;
+	pointer-events: none;
+}
+
+.xpay-ad__toast.is-visible {
+	opacity: 1;
+	transform: translateY(0);
+}
+
+/* ── Account identity (name over id, card head right) ────────────── */
+
+.xpay-ad__identity {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	line-height: 1.3;
+}
+
+.xpay-ad__identity-name {
+	font-size: 13px;
+	font-weight: 600;
+	color: #1e1e1e;
+}
+
+/* ── Payment Methods tab ─────────────────────────────────────────── */
+
+.xpay-ad__tabs--page {
+	margin-bottom: 20px;
+}
+
+/*
+ * The header buttons, in the two WordPress component styles Stripe's
+ * card head uses (section-heading.js): tertiary for Change display
+ * order and Cancel (blue bold text, light-blue hover fill, no border),
+ * secondary for Save display order (the outlined blue button). Core's
+ * admin .button classes are the gray legacy set, so these are written
+ * out with the component palette.
+ */
+.xpay-ad__btn {
+	border: 0;
+	background: none;
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.4;
+	padding: 6px 12px;
+	border-radius: 3px;
+	color: #2271b1;
+}
+
+.xpay-ad__btn--tertiary:hover,
+.xpay-ad__btn--tertiary:focus {
+	background: #f0f6fc;
+	color: #135e96;
+}
+
+.xpay-ad__btn--outline {
+	border: 1px solid #2271b1;
+	background: #fff;
+}
+
+.xpay-ad__btn--outline:hover,
+.xpay-ad__btn--outline:focus {
+	background: #f0f6fc;
+	color: #135e96;
+	border-color: #135e96;
+}
+
+.xpay-ad__methods-idle {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+/* The mode lock's sentence under the checkbox: bold, its own line, the
+   admin's text color rather than the help gray (Stripe renders theirs
+   as a strong block the same way). */
+.xpay-ad__lock-notice {
+	display: block;
+	margin-top: 6px;
+	color: #1e1e1e;
+}
+
+.xpay-ad__methods {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+}
+
+.xpay-ad__method {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px 14px;
+	margin: 0;
+	background: #fff;
+}
+
+.xpay-ad__method + .xpay-ad__method {
+	border-top: 1px solid #f0f0f1;
+}
+
+/* The drag handle exists only while reordering; the checkbox only while
+   not. Both are the same slot, so the row never shifts sideways. */
+.xpay-ad__method-drag {
+	display: none;
+	color: #757575;
+	cursor: grab;
+	font-size: 14px;
+	letter-spacing: -3px;
+	user-select: none;
+}
+
+.xpay-ad__method-check {
+	margin: 0;
+}
+
+[data-xpay-methods].is-reordering .xpay-ad__method-drag {
+	display: inline;
+}
+
+[data-xpay-methods].is-reordering .xpay-ad__method-check {
+	display: none;
+}
+
+[data-xpay-methods].is-reordering .xpay-ad__method {
+	cursor: grab;
+}
+
+.xpay-ad__method.is-dragging {
+	opacity: 0.5;
+	background: #f6f7f7;
+}
+
+/* The brand mark in a bordered tile, Stripe's row anatomy. */
+.xpay-ad__method-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 52px;
+	height: 34px;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	background: #fff;
+	flex-shrink: 0;
+}
+
+.xpay-ad__method-icon img {
+	max-width: 42px;
+	max-height: 24px;
+}
+
+.xpay-ad__method-main {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	cursor: pointer;
+}
+
+.xpay-ad__method-name {
+	font-size: 13px;
+	font-weight: 600;
+	color: #1e1e1e;
+}
+
+.xpay-ad__methods-note {
+	margin-top: 12px;
+}
+
+.xpay-ad__reorder-actions {
+	display: flex;
+	gap: 6px;
+}

@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<ruleset name="XPay for WooCommerce">
+	<description>Coding standard for the XPay for WooCommerce plugin: WordPress-Extra plus i18n and PHP 7.4+ compatibility.</description>
+
+	<file>.</file>
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+	<exclude-pattern>*/node_modules/*</exclude-pattern>
+	<exclude-pattern>*/dist/*</exclude-pattern>
+	<exclude-pattern>*/tests/*</exclude-pattern>
+	<exclude-pattern>*/tests-contracts/*</exclude-pattern>
+	<exclude-pattern>*/tests-integration/*</exclude-pattern>
+	<exclude-pattern>*/languages/*</exclude-pattern>
+
+	<arg value="sp"/>
+	<arg name="extensions" value="php"/>
+	<arg name="parallel" value="8"/>
+
+	<config name="minimum_supported_wp_version" value="6.2"/>
+	<config name="testVersion" value="7.4-"/>
+
+	<rule ref="WordPress-Extra">
+		<!-- Filenames follow WP's class-file convention already; the sniff
+		     mis-fires on the constants files holding two tiny status classes
+		     (one registry file per concern beats two 8-line files). -->
+		<exclude name="Generic.Files.OneObjectStructurePerFile.MultipleFound"/>
+	</rule>
+
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="xpay-for-woocommerce"/>
+			</property>
+		</properties>
+	</rule>
+
+	<rule ref="WordPress.WP.Capabilities">
+		<properties>
+			<!-- WooCommerce's own capability, registered by WC core. -->
+			<property name="custom_capabilities" type="array">
+				<element value="manage_woocommerce"/>
+			</property>
+		</properties>
+	</rule>
+
+	<rule ref="PHPCompatibilityWP"/>
+</ruleset>

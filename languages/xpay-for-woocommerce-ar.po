@@ -1,0 +1,997 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: XPay for WooCommerce\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ar\n"
+"Plural-Forms: nplurals=6; plural=(n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : "
+"n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5);\n"
+
+#. Plugin Name of the plugin
+#: xpay-for-woocommerce.php
+msgid "XPay for WooCommerce"
+msgstr "XPay لـ WooCommerce"
+
+#. Plugin URI of the plugin
+#. Author URI of the plugin
+#: xpay-for-woocommerce.php
+msgid "https://xpay.app/"
+msgstr "https://xpay.app/"
+
+#. Description of the plugin
+#: xpay-for-woocommerce.php
+msgid "Accept payments on your WooCommerce store via XPay (Egypt): cards, ValU and more, in a secure on-site checkout."
+msgstr "استقبل المدفوعات في متجر WooCommerce الخاص بك عبر XPay (مصر) — البطاقات وڤاليو والمزيد، في صفحة دفع آمنة داخل متجرك."
+
+#. Author of the plugin
+#: xpay-for-woocommerce.php
+#: includes/admin/class-xpay-order-panel.php:45
+#: includes/gateway/class-xpay-gateway.php:67
+#: includes/gateway/class-xpay-gateway.php:108
+msgid "XPay"
+msgstr "XPay"
+
+#: includes/admin/class-xpay-admin-screen.php:107
+msgid "Connecting…"
+msgstr "جارٍ الاتصال…"
+
+#: includes/admin/class-xpay-admin-screen.php:108
+msgid "Refreshing…"
+msgstr "جارٍ التحديث…"
+
+#: includes/admin/class-xpay-admin-screen.php:109
+msgid "Settings saved."
+msgstr "تم حفظ الإعدادات."
+
+#: includes/admin/class-xpay-admin-screen.php:110
+msgid "Account details refreshed."
+msgstr "تم تحديث بيانات الحساب."
+
+#: includes/admin/class-xpay-admin-screen.php:111
+msgid "Disconnected."
+msgstr "تم الفصل."
+
+#: includes/admin/class-xpay-admin-screen.php:112
+msgid "Could not reach the store. Reload the page and try again."
+msgstr "تعذر الوصول إلى المتجر. أعد تحميل الصفحة وحاول مرة أخرى."
+
+#: includes/admin/class-xpay-admin-screen.php:113
+msgid "Disconnect this mode? Its keys are removed from this store and its webhook endpoint is deleted at XPay. Payments in this mode stop until you connect again."
+msgstr "فصل هذا الوضع؟ ستتم إزالة مفاتيحه من هذا المتجر وحذف نقطة اتصال الويب هوك الخاصة به في XPay. تتوقف المدفوعات في هذا الوضع حتى تتصل مرة أخرى."
+
+#: includes/admin/class-xpay-admin-screen.php:177
+msgid "Payment Methods"
+msgstr "طرق الدفع"
+
+#: includes/admin/class-xpay-admin-screen.php:178
+#: includes/admin/class-xpay-admin-screen.php:445
+msgid "Settings"
+msgstr "الإعدادات"
+
+#: includes/admin/class-xpay-admin-screen.php:203
+msgid "Payment methods"
+msgstr "طرق الدفع"
+
+#: includes/admin/class-xpay-admin-screen.php:213
+msgid "Change display order"
+msgstr "تغيير ترتيب العرض"
+
+#: includes/admin/class-xpay-admin-screen.php:215
+msgid "Payment methods menu"
+msgstr "قائمة طرق الدفع"
+
+#: includes/admin/class-xpay-admin-screen.php:220
+msgid "Refresh payment methods"
+msgstr "تحديث طرق الدفع"
+
+#: includes/admin/class-xpay-admin-screen.php:224
+msgid "Cancel"
+msgstr "إلغاء"
+
+#: includes/admin/class-xpay-admin-screen.php:225
+msgid "Save display order"
+msgstr "حفظ ترتيب العرض"
+
+#: includes/admin/class-xpay-admin-screen.php:229
+msgid "Choose which payment methods appear at checkout. Manage available methods in your XPay dashboard."
+msgstr "اختر طرق الدفع التي تظهر عند إتمام الطلب. أدر الطرق المتاحة من لوحة تحكم XPay."
+
+#: includes/admin/class-xpay-admin-screen.php:242
+msgid "This only changes the order of XPay methods. Manage all payment methods in WooCommerce → Settings → Payments."
+msgstr "هذا يغيّر ترتيب طرق XPay فقط. أدر جميع طرق الدفع من WooCommerce ← الإعدادات ← المدفوعات."
+
+#: includes/admin/class-xpay-admin-screen.php:244
+#: includes/admin/class-xpay-admin-screen.php:519
+msgid "Save changes"
+msgstr "حفظ التغييرات"
+
+#: includes/admin/class-xpay-admin-screen.php:280
+msgid "Live mode"
+msgstr "الوضع الفعلي"
+
+#: includes/admin/class-xpay-admin-screen.php:280
+msgid "Test mode"
+msgstr "الوضع التجريبي"
+
+#: includes/admin/class-xpay-admin-screen.php:282
+msgid "Open XPay dashboard"
+msgstr "افتح لوحة تحكم XPay"
+
+#: includes/admin/class-xpay-admin-screen.php:300
+msgid "Start accepting payments"
+msgstr "ابدأ بقبول المدفوعات"
+
+#: includes/admin/class-xpay-admin-screen.php:301
+msgid "Connect your XPay account to start accepting payments. Setup is automatic, and card details never touch your server."
+msgstr "اربط حساب XPay لبدء قبول المدفوعات. يتم الإعداد تلقائيًا، ولا تمر بيانات البطاقة بخادمك أبدًا."
+
+#: includes/admin/class-xpay-admin-screen.php:309
+msgid "Connect with XPay"
+msgstr "الاتصال بـ XPay"
+
+#: includes/admin/class-xpay-admin-screen.php:310
+msgid "Starts in test mode. Nothing goes live until you switch it yourself."
+msgstr "يبدأ في الوضع التجريبي. لا شيء يصبح فعلياً حتى تبدّله بنفسك."
+
+#: includes/admin/class-xpay-admin-screen.php:314
+#: includes/admin/class-xpay-admin-screen.php:621
+#: includes/admin/class-xpay-admin-screen.php:833
+msgid "Connecting needs your site served over HTTPS."
+msgstr "يتطلب الاتصال أن يعمل موقعك عبر HTTPS."
+
+#: includes/admin/class-xpay-admin-screen.php:374
+msgid "Account status"
+msgstr "حالة الحساب"
+
+#: includes/admin/class-xpay-admin-screen.php:393
+#: includes/admin/class-xpay-admin-screen.php:599
+msgid "Account"
+msgstr "الحساب"
+
+#: includes/admin/class-xpay-admin-screen.php:393
+#: includes/admin/class-xpay-admin-screen.php:599
+msgid "Connected"
+msgstr "متصل"
+
+#: includes/admin/class-xpay-admin-screen.php:393
+#: includes/admin/class-xpay-admin-screen.php:599
+msgid "Disconnected"
+msgstr "غير متصل"
+
+#: includes/admin/class-xpay-admin-screen.php:394
+msgid "Payments"
+msgstr "المدفوعات"
+
+#: includes/admin/class-xpay-admin-screen.php:394
+msgid "Awaiting activation"
+msgstr "في انتظار التفعيل"
+
+#: includes/admin/class-xpay-admin-screen.php:394
+msgid "Enabled"
+msgstr "مفعّل"
+
+#: includes/admin/class-xpay-admin-screen.php:394
+msgid "Disabled"
+msgstr "معطّل"
+
+#: includes/admin/class-xpay-admin-screen.php:395
+#: includes/admin/class-xpay-admin-screen.php:600
+msgid "Webhook"
+msgstr "Webhook"
+
+#: includes/admin/class-xpay-admin-screen.php:395
+#: includes/admin/class-xpay-admin-screen.php:600
+msgid "Configured"
+msgstr "مُعدّ"
+
+#: includes/admin/class-xpay-admin-screen.php:395
+#: includes/admin/class-xpay-admin-screen.php:600
+msgid "Not configured"
+msgstr "غير مُعدّ"
+
+#: includes/admin/class-xpay-admin-screen.php:401
+msgid "Refresh"
+msgstr "تحديث"
+
+#: includes/admin/class-xpay-admin-screen.php:416
+msgid "Connection actions"
+msgstr "إجراءات الاتصال"
+
+#: includes/admin/class-xpay-admin-screen.php:418
+msgid "Configure connection"
+msgstr "إعداد الاتصال"
+
+#: includes/admin/class-xpay-admin-screen.php:419
+msgid "Refresh account details"
+msgstr "تحديث بيانات الحساب"
+
+#: includes/admin/class-xpay-admin-screen.php:421
+msgid "Disconnect"
+msgstr "فصل"
+
+#: includes/admin/class-xpay-admin-screen.php:449
+#: includes/gateway/class-xpay-gateway.php:101
+msgid "Enable XPay"
+msgstr "تفعيل XPay"
+
+#: includes/admin/class-xpay-admin-screen.php:449
+msgid "When off, no XPay option appears at checkout."
+msgstr "عند الإيقاف، لا يظهر أي خيار XPay في صفحة إتمام الطلب."
+
+#: includes/admin/class-xpay-admin-screen.php:472
+msgid "Enable test mode"
+msgstr "تفعيل الوضع التجريبي"
+
+#: includes/admin/class-xpay-admin-screen.php:473
+msgid "Test mode never charges real money."
+msgstr "الوضع التجريبي لا يخصم أموالًا حقيقية أبدًا."
+
+#: includes/admin/class-xpay-admin-screen.php:475
+msgid "Live mode cannot be enabled before you have connected a live XPay account."
+msgstr "لا يمكن تفعيل الوضع الفعلي قبل ربط حساب XPay فعلي."
+
+#: includes/admin/class-xpay-admin-screen.php:476
+msgid "Connect your live account"
+msgstr "اربط حسابك الفعلي"
+
+#: includes/admin/class-xpay-admin-screen.php:479
+msgid "Test mode cannot be enabled before you have connected a test XPay account."
+msgstr "لا يمكن تفعيل الوضع التجريبي قبل ربط حساب XPay تجريبي."
+
+#: includes/admin/class-xpay-admin-screen.php:480
+msgid "Connect your test account"
+msgstr "اربط حسابك التجريبي"
+
+#: includes/admin/class-xpay-admin-screen.php:495
+#: includes/admin/class-xpay-admin-screen.php:498
+#: includes/gateway/class-xpay-gateway.php:166
+msgid "Theme"
+msgstr "المظهر"
+
+#: includes/admin/class-xpay-admin-screen.php:500
+msgid "Automatic"
+msgstr "تلقائي"
+
+#: includes/admin/class-xpay-admin-screen.php:501
+msgid "Light"
+msgstr "فاتح"
+
+#: includes/admin/class-xpay-admin-screen.php:502
+msgid "Dark"
+msgstr "داكن"
+
+#: includes/admin/class-xpay-admin-screen.php:510
+msgid "Payment fields use the branding from your XPay dashboard. Automatic matches your checkout theme."
+msgstr "تستخدم حقول الدفع إعدادات العلامة التجارية من لوحة تحكم XPay. الوضع التلقائي يطابق مظهر صفحة الدفع."
+
+#: includes/admin/class-xpay-admin-screen.php:513
+#: includes/gateway/class-xpay-gateway.php:190
+msgid "Diagnostic logging"
+msgstr "التسجيل التشخيصي"
+
+#: includes/admin/class-xpay-admin-screen.php:513
+msgid "Write redacted diagnostic logs to WooCommerce → Status → Logs (source \"xpay\"). Failures are always recorded either way."
+msgstr "كتابة سجلات تشخيصية منقّحة إلى WooCommerce ← الحالة ← السجلات (المصدر \"xpay\"). تُسجّل الأعطال دائمًا في كل الأحوال."
+
+#: includes/admin/class-xpay-admin-screen.php:515
+msgid "WPFunnels: force the standard confirmation page"
+msgstr "WPFunnels: فرض صفحة التأكيد القياسية"
+
+#: includes/admin/class-xpay-admin-screen.php:515
+msgid "Only relevant when the WPFunnels plugin is active. Keeps shoppers on the normal order-received page after paying, unless you run a working upsell flow."
+msgstr "مهم فقط عندما تكون إضافة WPFunnels نشطة. يُبقي المتسوقين على صفحة استلام الطلب العادية بعد الدفع، ما لم تكن لديك مسار بيع إضافي يعمل."
+
+#. translators: %s is the documentation URL.
+#: includes/admin/class-xpay-admin-screen.php:523
+#, php-format
+msgid "Guides and troubleshooting live at <a href=\"%s\" target=\"_blank\" rel=\"noopener noreferrer\">docs.xpay.app</a>."
+msgstr "الأدلة وحل المشكلات على <a href=\"%s\" target=\"_blank\" rel=\"noopener noreferrer\">docs.xpay.app</a>."
+
+#: includes/admin/class-xpay-admin-screen.php:550
+msgid "XPay account and webhooks"
+msgstr "حساب XPay ونقاط الويب هوك"
+
+#: includes/admin/class-xpay-admin-screen.php:553
+msgid "XPay account & webhooks"
+msgstr "حساب XPay ونقاط الويب هوك"
+
+#: includes/admin/class-xpay-admin-screen.php:554
+msgid "Close"
+msgstr "إغلاق"
+
+#: includes/admin/class-xpay-admin-screen.php:560
+#: includes/gateway/class-xpay-gateway.php:125
+msgid "Live"
+msgstr "مباشر"
+
+#: includes/admin/class-xpay-admin-screen.php:560
+#: includes/gateway/class-xpay-gateway.php:124
+msgid "Test"
+msgstr "اختبار"
+
+#: includes/admin/class-xpay-admin-screen.php:603
+msgid "Connect with XPay in live mode"
+msgstr "الاتصال بـ XPay في الوضع الفعلي"
+
+#: includes/admin/class-xpay-admin-screen.php:603
+msgid "Connect with XPay in test mode"
+msgstr "الاتصال بـ XPay في الوضع التجريبي"
+
+#: includes/admin/class-xpay-admin-screen.php:604
+msgid "Connect your XPay account. Payment methods and order updates are set up automatically."
+msgstr "اربط حساب XPay. يتم إعداد طرق الدفع وتحديثات الطلبات تلقائيًا."
+
+#: includes/admin/class-xpay-admin-screen.php:609
+msgid "Connect live account"
+msgstr "اتصال بالحساب الفعلي"
+
+#: includes/admin/class-xpay-admin-screen.php:609
+msgid "Connect test account"
+msgstr "اتصال بالحساب التجريبي"
+
+#: includes/admin/class-xpay-admin-screen.php:616
+msgid "Reconfigure webhook"
+msgstr "إعادة إعداد الويب هوك"
+
+#. translators: %s is this store's webhook URL.
+#: includes/admin/class-xpay-admin-screen.php:629
+#, php-format
+msgid "Your webhook endpoint is set up. Events are sent to: %s."
+msgstr "نقطة الويب هوك الخاصة بك جاهزة. تُرسل الأحداث إلى: %s."
+
+#. translators: %s is this store's webhook URL.
+#: includes/admin/class-xpay-admin-screen.php:631
+#, php-format
+msgid "Webhook events will be sent to: %s."
+msgstr "ستُرسل أحداث الويب هوك إلى: %s."
+
+#: includes/admin/class-xpay-admin-screen.php:767
+msgid "Just reconfigured. Give it a minute before trying again."
+msgstr "تمت إعادة الإعداد للتو. انتظر دقيقة قبل المحاولة مرة أخرى."
+
+#: includes/admin/class-xpay-admin-screen.php:774
+msgid "Save this mode's keys first."
+msgstr "احفظ مفاتيح هذا الوضع أولًا."
+
+#: includes/admin/class-xpay-admin-screen.php:782
+msgid "Webhook reconfigured. The signing secret was stored for you."
+msgstr "تمت إعادة إعداد الويب هوك. تم حفظ سر التوقيع لك."
+
+#: includes/admin/class-xpay-admin-screen.php:812
+msgid "The method list changed while you were editing. Reload the page and try again."
+msgstr "تغيّرت قائمة طرق الدفع أثناء التعديل. أعد تحميل الصفحة وحاول مرة أخرى."
+
+#: includes/admin/class-xpay-admin-screen.php:819
+msgid "Display order saved."
+msgstr "تم حفظ ترتيب العرض."
+
+#: includes/admin/class-xpay-admin-screen.php:840
+msgid "The connection could not be started. Check that your store can reach XPay and try again."
+msgstr "تعذّر بدء الاتصال. تأكد من أن متجرك يمكنه الوصول إلى XPay ثم حاول مرة أخرى."
+
+#. translators: 1: the order's currency code, e.g. USD. 2: the currency XPay settles in, e.g. EGP.
+#: includes/admin/class-xpay-order-panel.php:85
+#, php-format
+msgid "This order is priced in %1$s and XPay settles in %2$s. You can refund it in full from here. For part of it, use your XPay dashboard: the refund is recorded on this order automatically, usually within a minute."
+msgstr "هذا الطلب مسعَّر بعملة %1$s بينما يسوّي XPay بعملة %2$s. يمكنك استرداده بالكامل من هنا. أما الاسترداد الجزئي فمن لوحة تحكم XPay، ويُسجَّل على هذا الطلب تلقائيًا خلال دقيقة عادةً."
+
+#: includes/admin/class-xpay-order-panel.php:105
+msgid "This order was not paid with XPay."
+msgstr "لم يتم دفع هذا الطلب عبر XPay."
+
+#: includes/admin/class-xpay-order-panel.php:116
+msgid "Session:"
+msgstr "الجلسة:"
+
+#: includes/admin/class-xpay-order-panel.php:117
+msgid "Payment intent:"
+msgstr "نية الدفع:"
+
+#: includes/admin/class-xpay-order-panel.php:118
+msgid "Customer:"
+msgstr "العميل:"
+
+#. translators: %d is how many payment attempts were made for this order.
+#: includes/admin/class-xpay-order-panel.php:120
+#, php-format
+msgid "Attempts: %d"
+msgstr "المحاولات: %d"
+
+#: includes/blocks/class-xpay-blocks-support.php:159
+#: includes/gateway/class-xpay-gateway.php:74
+#: includes/gateway/class-xpay-gateway.php:1433
+#: includes/gateway/class-xpay-method-gateway.php:68
+msgid "Pay now"
+msgstr "ادفع الآن"
+
+#: includes/compat/class-xpay-wpfunnels-compat.php:106
+msgid "XPay: WPFunnels is active. Unless you run a WPFunnels Pro upsell flow, shoppers who pay with XPay can land on the cart page instead of the order confirmation. Turn on the WPFunnels safeguard in the XPay settings."
+msgstr "XPay: إضافة WPFunnels مفعّلة. ما لم تكن تستخدم مسار بيع إضافي (Upsell) من WPFunnels Pro، فقد يصل المتسوقون الذين يدفعون عبر XPay إلى صفحة السلة بدلًا من تأكيد الطلب. فعِّل خيار حماية WPFunnels من إعدادات XPay."
+
+#: includes/compat/class-xpay-wpfunnels-compat.php:108
+msgid "Open XPay settings"
+msgstr "فتح إعدادات XPay"
+
+#: includes/compat/class-xpay-wpfunnels-compat.php:109
+msgid "Dismiss: I run a WPFunnels Pro upsell flow"
+msgstr "تجاهل — أستخدم مسار بيع إضافي من WPFunnels Pro"
+
+#: includes/connect/class-xpay-connect.php:248
+msgid "XPay: your WordPress account cannot manage store settings, so the connection was not applied. Sign in as a store manager and connect again."
+msgstr "XPay: حساب ووردبريس الخاص بك لا يستطيع إدارة إعدادات المتجر، لذلك لم يُطبَّق الاتصال. سجّل الدخول كمدير متجر ثم اتصل مرة أخرى."
+
+#: includes/connect/class-xpay-connect.php:306
+msgid "XPay: this connection link is stale or was already used. Nothing changed. Start again from the Connect button."
+msgstr "XPay: رابط الاتصال هذا قديم أو استُخدم من قبل. لم يتغير شيء. ابدأ من جديد من زر الاتصال."
+
+#: includes/connect/class-xpay-connect.php:420
+msgid "XPay connected."
+msgstr "تم الاتصال بـ XPay."
+
+#. translators: %s is XPay's own explanation of why the connection was not approved.
+#: includes/connect/class-xpay-connect.php:575
+#, php-format
+msgid "XPay: the connection was not completed. %s"
+msgstr "XPay: لم يكتمل الاتصال. %s"
+
+#: includes/connect/class-xpay-connect.php:578
+msgid "XPay: the connection was canceled before it finished. Nothing changed. To try again, click Connect."
+msgstr "XPay: أُلغي الاتصال قبل اكتماله. لم يتغير شيء. للمحاولة مرة أخرى اضغط زر الاتصال."
+
+#: includes/connect/class-xpay-connect.php:588
+msgid "XPay: the connection could not be completed. Nothing changed. Try again in a moment. If it keeps failing, the WooCommerce logs (source \"xpay\") carry the details."
+msgstr "XPay: تعذّر إكمال الاتصال. لم يتغير شيء. حاول مرة أخرى بعد قليل. إذا استمر الفشل فستجد التفاصيل في سجلات ووكومرس (المصدر \"xpay\")."
+
+#: includes/constants/class-xpay-payment-methods.php:45
+msgid "Card"
+msgstr "بطاقة بنكية"
+
+#: includes/constants/class-xpay-payment-methods.php:47
+msgid "ValU"
+msgstr "ڤاليو"
+
+#: includes/constants/class-xpay-payment-methods.php:49
+msgid "Fawry"
+msgstr "فوري"
+
+#: includes/constants/class-xpay-payment-methods.php:58
+msgid "Pay with your Visa, Mastercard or Meeza card."
+msgstr "ادفع ببطاقة فيزا أو ماستركارد أو ميزة."
+
+#: includes/constants/class-xpay-payment-methods.php:60
+msgid "Split your payment into installments with ValU."
+msgstr "قسّم مبلغك إلى أقساط مع ڤاليو."
+
+#: includes/constants/class-xpay-payment-methods.php:62
+msgid "Get a reference code and pay at any Fawry point or in the app."
+msgstr "احصل على كود مرجعي وادفع في أي منفذ فوري أو من التطبيق."
+
+#: includes/gateway/class-xpay-checkout-elements.php:224
+#: includes/gateway/class-xpay-checkout-elements.php:292
+msgid "Payment is unavailable right now. Please try again in a moment."
+msgstr "الدفع غير متاح الآن. برجاء المحاولة بعد قليل."
+
+#: includes/gateway/class-xpay-checkout-elements.php:225
+msgid "Your order total changed. Check the new total and try again."
+msgstr "تغيّر إجمالي طلبك. راجع الإجمالي الجديد ثم حاول مرة أخرى."
+
+#: includes/gateway/class-xpay-checkout-elements.php:226
+msgid "Your basket is empty, so there is nothing to pay for. Add something to it and try again."
+msgstr "سلة مشترياتك فارغة، فلا يوجد ما تدفع مقابله. أضف شيئًا إليها وحاول مرة أخرى."
+
+#: includes/gateway/class-xpay-checkout-elements.php:227
+#: includes/gateway/class-xpay-checkout-elements.php:294
+msgid "Payment was not completed. Your order is saved, and you can try again."
+msgstr "لم تكتمل عملية الدفع. طلبك محفوظ، ويمكنك المحاولة مرة أخرى."
+
+#: includes/gateway/class-xpay-checkout-elements.php:228
+#: includes/gateway/class-xpay-checkout-elements.php:295
+msgid "This payment is taking longer than expected. Do not pay again. Check your order status or your XPay app before retrying, and contact us if you are unsure."
+msgstr "تستغرق هذه الدفعة وقتًا أطول من المتوقع. لا تدفع مرة أخرى. تحقق من حالة طلبك أو من تطبيق XPay قبل إعادة المحاولة، وتواصل معنا إذا لم تكن متأكدًا."
+
+#: includes/gateway/class-xpay-checkout-elements.php:229
+#: includes/gateway/class-xpay-checkout-elements.php:296
+msgid "The payment fields are still loading. Please try again in a moment."
+msgstr "حقول الدفع ما زالت قيد التحميل. برجاء المحاولة بعد قليل."
+
+#: includes/gateway/class-xpay-checkout-elements.php:230
+#: includes/gateway/class-xpay-checkout-elements.php:297
+msgid "Please finish filling in the payment details before placing your order."
+msgstr "برجاء استكمال بيانات الدفع قبل تأكيد الطلب."
+
+#: includes/gateway/class-xpay-checkout-elements.php:293
+msgid "The payment form could not load. Reload the page to try again."
+msgstr "تعذّر تحميل نموذج الدفع. أعد تحميل الصفحة للمحاولة مرة أخرى."
+
+#. translators: %s is the new order total with currency.
+#: includes/gateway/class-xpay-checkout-service.php:355
+#, php-format
+msgid "XPay payment session updated to %s after the order total changed. The shopper keeps the same payment session."
+msgstr "تم تحديث جلسة دفع XPay إلى %s بعد تغيّر إجمالي الطلب. يحتفظ المتسوق بنفس جلسة الدفع."
+
+#. translators: %s is the order number shown on the XPay payment form.
+#: includes/gateway/class-xpay-checkout-service.php:401
+#, php-format
+msgid "Order %s"
+msgstr "طلب %s"
+
+#. translators: 1: XPay checkout session id, 2: attempt number.
+#: includes/gateway/class-xpay-checkout-service.php:611
+#, php-format
+msgid "XPay checkout session %1$s created (attempt %2$d)."
+msgstr "تم إنشاء جلسة دفع XPay ‏%1$s (المحاولة %2$d)."
+
+#: includes/gateway/class-xpay-gateway.php:68
+msgid "Accept cards, ValU and more via XPay (Egypt). Customers pay without leaving your store, and each payment method appears as its own option at checkout."
+msgstr "استقبل البطاقات وڤاليو والمزيد عبر XPay (مصر). يدفع العملاء دون مغادرة متجرك، وتظهر كل وسيلة دفع كخيار مستقل في صفحة إتمام الطلب."
+
+#: includes/gateway/class-xpay-gateway.php:99
+msgid "Enable/Disable"
+msgstr "تفعيل/تعطيل"
+
+#: includes/gateway/class-xpay-gateway.php:105
+msgid "Title"
+msgstr "العنوان"
+
+#: includes/gateway/class-xpay-gateway.php:107
+msgid "Payment method name shown to customers at checkout."
+msgstr "اسم وسيلة الدفع الظاهر للعملاء عند إتمام الشراء."
+
+#: includes/gateway/class-xpay-gateway.php:112
+msgid "Description"
+msgstr "الوصف"
+
+#: includes/gateway/class-xpay-gateway.php:114
+msgid "One sentence under the payment method name."
+msgstr "جملة واحدة تظهر أسفل اسم وسيلة الدفع."
+
+#: includes/gateway/class-xpay-gateway.php:115
+msgid "Pay securely by card or ValU."
+msgstr "ادفع بأمان بالبطاقة أو ڤاليو."
+
+#: includes/gateway/class-xpay-gateway.php:119
+msgid "Mode"
+msgstr "الوضع"
+
+#: includes/gateway/class-xpay-gateway.php:121
+msgid "Test mode never charges real money. Keys and webhook secrets are separate per mode."
+msgstr "وضع الاختبار لا يخصم أموالًا حقيقية أبدًا. المفاتيح وأسرار الـ webhook منفصلة لكل وضع."
+
+#: includes/gateway/class-xpay-gateway.php:129
+msgid "Test secret key"
+msgstr "المفتاح السري للاختبار"
+
+#: includes/gateway/class-xpay-gateway.php:131
+msgid "A restricted key (rk_test_…) with Checkout Sessions, Refunds and Webhook Endpoints access, from your XPay dashboard → Developers → API keys."
+msgstr "مفتاح مقيّد (rk_test_…) بصلاحية جلسات الدفع والمبالغ المستردة ونقاط اتصال الويب هوك، من لوحة تحكم XPay ← Developers ← API keys."
+
+#: includes/gateway/class-xpay-gateway.php:134
+msgid "Test publishable key"
+msgstr "المفتاح القابل للنشر للاختبار"
+
+#: includes/gateway/class-xpay-gateway.php:136
+msgid "pk_test_… key, used by the secure payment window in the browser."
+msgstr "مفتاح pk_test_…، تستخدمه نافذة الدفع الآمنة في المتصفح."
+
+#: includes/gateway/class-xpay-gateway.php:139
+msgid "Test webhook signing secret"
+msgstr "سر توقيع webhook للاختبار"
+
+#. translators: %s is this store's webhook URL.
+#: includes/gateway/class-xpay-gateway.php:142
+#, php-format
+msgid "whsec_… secret for a webhook endpoint pointing at %s (events: checkout.session.completed, checkout.session.expired, checkout.session.async_payment_succeeded, checkout.session.async_payment_failed, payment_intent.payment_failed, charge.refunded, refund.failed)."
+msgstr "سر whsec_… لنقطة webhook تشير إلى %s (الأحداث: checkout.session.completed وcheckout.session.expired وcheckout.session.async_payment_succeeded وcheckout.session.async_payment_failed وpayment_intent.payment_failed وcharge.refunded وrefund.failed)."
+
+#: includes/gateway/class-xpay-gateway.php:145
+msgid "Live secret key"
+msgstr "المفتاح السري المباشر"
+
+#: includes/gateway/class-xpay-gateway.php:147
+msgid "A restricted key (rk_live_…) with Checkout Sessions, Refunds and Webhook Endpoints access."
+msgstr "مفتاح مقيّد (rk_live_…) بصلاحية جلسات الدفع والمبالغ المستردة ونقاط اتصال الويب هوك."
+
+#: includes/gateway/class-xpay-gateway.php:150
+msgid "Live publishable key"
+msgstr "المفتاح القابل للنشر المباشر"
+
+#: includes/gateway/class-xpay-gateway.php:152
+msgid "pk_live_… key."
+msgstr "مفتاح pk_live_…."
+
+#: includes/gateway/class-xpay-gateway.php:155
+msgid "Live webhook signing secret"
+msgstr "سر توقيع webhook المباشر"
+
+#. translators: %s is this store's webhook URL.
+#: includes/gateway/class-xpay-gateway.php:158
+#, php-format
+msgid "whsec_… secret for a live-mode webhook endpoint pointing at %s."
+msgstr "سر whsec_… لنقطة استقبال webhook في الوضع المباشر تشير إلى %s."
+
+#: includes/gateway/class-xpay-gateway.php:161
+msgid "Checkout appearance"
+msgstr "مظهر إتمام الشراء"
+
+#: includes/gateway/class-xpay-gateway.php:163
+msgid "XPay's payment fields appear on your checkout page. Which methods a shopper sees is decided by your XPay account, not here."
+msgstr "تظهر حقول دفع XPay داخل صفحة الدفع في متجرك. طرق الدفع التي يراها المشتري تُحدَّد من حساب XPay الخاص بك، وليس من هنا."
+
+#: includes/gateway/class-xpay-gateway.php:168
+msgid "The payment fields are styled by your XPay dashboard branding. Automatic picks light or dark from your checkout page's own background. Choose Light or Dark to fix it."
+msgstr "تأخذ حقول الدفع تصميمها من إعدادات العلامة التجارية في لوحة تحكم XPay. الوضع التلقائي يختار الفاتح أو الداكن حسب خلفية صفحة إتمام الشراء نفسها. اختر فاتحًا أو داكنًا لتثبيته."
+
+#: includes/gateway/class-xpay-gateway.php:171
+msgid "Automatic (match the page)"
+msgstr "تلقائي (مطابق للصفحة)"
+
+#: includes/gateway/class-xpay-gateway.php:172
+msgid "Always light"
+msgstr "فاتح دائمًا"
+
+#: includes/gateway/class-xpay-gateway.php:173
+msgid "Always dark"
+msgstr "داكن دائمًا"
+
+#: includes/gateway/class-xpay-gateway.php:177
+msgid "WPFunnels compatibility"
+msgstr "توافق WPFunnels"
+
+#: includes/gateway/class-xpay-gateway.php:179
+msgid "Only relevant when the WPFunnels plugin is active."
+msgstr "لا يهم هذا الخيار إلا عندما تكون إضافة WPFunnels مفعّلة."
+
+#: includes/gateway/class-xpay-gateway.php:183
+msgid "Confirmation page"
+msgstr "صفحة التأكيد"
+
+#: includes/gateway/class-xpay-gateway.php:185
+msgid "Force the standard order-received page after payment"
+msgstr "فرض صفحة استلام الطلب القياسية بعد الدفع"
+
+#: includes/gateway/class-xpay-gateway.php:186
+msgid "WPFunnels reroutes the after-payment page into its funnel flow. Without a WPFunnels Pro upsell step, that bounces shoppers to the cart with no confirmation. Turn this on unless you run a working upsell flow. Applies to XPay orders only."
+msgstr "تعيد WPFunnels توجيه صفحة ما بعد الدفع إلى مسارها الخاص. وبدون خطوة بيع إضافي من WPFunnels Pro، يُعاد المتسوقون إلى السلة دون أي تأكيد. فعِّل هذا الخيار ما لم يكن لديك مسار بيع إضافي يعمل فعلًا. يسري على طلبات XPay فقط."
+
+#: includes/gateway/class-xpay-gateway.php:192
+msgid "Write redacted diagnostic logs (WooCommerce → Status → Logs, source \"xpay\")"
+msgstr "كتابة سجلات تشخيصية بعد إخفاء البيانات الحساسة (WooCommerce ← الحالة ← السجلات، المصدر \"xpay\")"
+
+#: includes/gateway/class-xpay-gateway.php:707
+msgid "XPay: no API key is saved for the selected mode, so XPay stays hidden at checkout until you connect it."
+msgstr "XPay: لا يوجد مفتاح API محفوظ للوضع المحدد، لذلك يبقى XPay مخفياً في صفحة الدفع حتى تربطه."
+
+#: includes/gateway/class-xpay-gateway.php:721
+msgid "XPay: the stored key for the selected mode is a LIVE key but the gateway is in Test mode. Connect the mode you selected from the connection dialog."
+msgstr "XPay: المفتاح المحفوظ للوضع المحدد مفتاح فعلي بينما البوابة في الوضع التجريبي. اربط الوضع الذي اخترته من نافذة الاتصال."
+
+#: includes/gateway/class-xpay-gateway.php:732
+msgid "XPay: the stored key for the selected mode is a TEST key but the gateway is in Live mode. Connect the mode you selected from the connection dialog."
+msgstr "XPay: المفتاح المحفوظ للوضع المحدد مفتاح تجريبي بينما البوابة في الوضع الفعلي. اربط الوضع الذي اخترته من نافذة الاتصال."
+
+#: includes/gateway/class-xpay-gateway.php:753
+msgid "XPay: no publishable key is saved for the selected mode. The payment fields cannot load without it."
+msgstr "XPay: لا يوجد مفتاح قابل للنشر محفوظ للوضع المحدد. لا يمكن تحميل حقول الدفع بدونه."
+
+#: includes/gateway/class-xpay-gateway.php:764
+msgid "XPay: the stored publishable key does not belong to the mode you selected. Connect this mode again to store a matching pair."
+msgstr "XPay: المفتاح القابل للنشر المحفوظ لا ينتمي إلى الوضع الذي اخترته. اربط هذا الوضع مرة أخرى لحفظ زوج متطابق."
+
+#: includes/gateway/class-xpay-gateway.php:845
+msgid "XPay: the stored secret key was refused. It may have been revoked in your XPay dashboard. Connect again to store a fresh key."
+msgstr "XPay: رُفض المفتاح السري المحفوظ. ربما أُلغي من لوحة تحكم XPay. اربط مرة أخرى لحفظ مفتاح جديد."
+
+#: includes/gateway/class-xpay-gateway.php:853
+msgid "XPay: the stored key cannot act for your account. It looks like a publishable key, which belongs in the browser, not on the server. Connect again to store the right keys."
+msgstr "XPay: المفتاح المحفوظ لا يستطيع التصرف باسم حسابك. يبدو أنه مفتاح قابل للنشر، ومكانه المتصفح لا الخادم. اربط مرة أخرى لحفظ المفاتيح الصحيحة."
+
+#: includes/gateway/class-xpay-gateway.php:865
+msgid "XPay: settings saved. XPay could not be reached just now, so the connection is unconfirmed. Reload this page in a moment to check it."
+msgstr "XPay: تم حفظ الإعدادات. تعذّر الوصول إلى XPay الآن، فالاتصال غير مؤكد. أعد تحميل هذه الصفحة بعد قليل للتحقق."
+
+#: includes/gateway/class-xpay-gateway.php:887
+msgid "Checkout Sessions (write)"
+msgstr "جلسات الدفع (كتابة)"
+
+#: includes/gateway/class-xpay-gateway.php:888
+msgid "Refunds (write)"
+msgstr "الاستردادات (كتابة)"
+
+#. translators: %s is a comma-separated list of permission names, for example "Checkout Sessions (write), Refunds (write)".
+#: includes/gateway/class-xpay-gateway.php:897
+#, php-format
+msgid "XPay: this key is missing: %s. Connect again from the settings screen to mint a key with everything the plugin needs."
+msgstr "XPay: هذا المفتاح ينقصه: %s. اربط مرة أخرى من شاشة الإعدادات لإصدار مفتاح يحمل كل ما تحتاجه الإضافة."
+
+#: includes/gateway/class-xpay-gateway.php:943
+msgid "XPay connected (live mode). Your account is not activated for live payments yet, so payments stay off until XPay activates it. Test mode works fully in the meantime."
+msgstr "تم توصيل XPay (الوضع الفعلي). حسابك غير مفعَّل للمدفوعات الفعلية بعد، فستظل المدفوعات متوقفة حتى يفعّله XPay. الوضع التجريبي يعمل بالكامل في الوقت الحالي."
+
+#: includes/gateway/class-xpay-gateway.php:949
+msgid "XPay connected (test mode)."
+msgstr "تم الاتصال بـ XPay (وضع الاختبار)."
+
+#: includes/gateway/class-xpay-gateway.php:950
+msgid "XPay connected (live mode)."
+msgstr "تم الاتصال بـ XPay (الوضع المباشر)."
+
+#: includes/gateway/class-xpay-gateway.php:992
+msgid "XPay: keep at least one payment method on. Your payment method changes were not saved. To take XPay off the checkout entirely, turn off Enable XPay instead."
+msgstr "XPay: أبقِ طريقة دفع واحدة على الأقل مفعّلة. لم تُحفظ تغييرات طرق الدفع. لإزالة XPay من صفحة إتمام الشراء بالكامل، أوقف تفعيل XPay بدلًا من ذلك."
+
+#: includes/gateway/class-xpay-gateway.php:1160
+msgid "XPay: this key cannot manage webhooks, so order confirmations are not connected. Use Connect with XPay on the settings screen to get a key that can, or allow Webhook Endpoints (write) on this key in your XPay dashboard and save again."
+msgstr "XPay: هذا المفتاح لا يستطيع إدارة الويب هوك، لذلك تأكيدات الطلبات غير متصلة. استخدم الاتصال بـ XPay من شاشة الإعدادات للحصول على مفتاح يستطيع ذلك، أو اسمح بنقاط الويب هوك (كتابة) لهذا المفتاح من لوحة تحكم XPay ثم احفظ مرة أخرى."
+
+#: includes/gateway/class-xpay-gateway.php:1166
+msgid "XPay: webhook set up automatically. Order confirmations are connected, with nothing to paste."
+msgstr "XPay: تم إعداد الويب هوك تلقائيًا. تأكيدات الطلبات متصلة الآن، دون الحاجة إلى لصق أي شيء."
+
+#: includes/gateway/class-xpay-gateway.php:1169
+msgid "XPay: the webhook could not be set up automatically just now. Use Reconfigure webhook in the connection dialog to retry."
+msgstr "XPay: تعذّر تجهيز الويب هوك تلقائياً الآن. استخدم زر إعادة تجهيز الويب هوك في نافذة الاتصال للمحاولة مرة أخرى."
+
+#: includes/gateway/class-xpay-gateway.php:1305
+#: includes/gateway/class-xpay-gateway.php:1339
+#: includes/gateway/class-xpay-gateway.php:1377
+msgid "The payment could not be started. Please try again. Your card has not been charged."
+msgstr "تعذّر بدء عملية الدفع. من فضلك حاول مرة أخرى — لم يتم الخصم من بطاقتك."
+
+#. translators: 1: XPay error code, 2: error message.
+#: includes/gateway/class-xpay-gateway.php:1309
+#, php-format
+msgid "XPay could not be reached [%1$s]: %2$s"
+msgstr "تعذّر الوصول إلى XPay [%1$s]: %2$s"
+
+#. translators: 1: XPay error code, 2: error message.
+#: includes/gateway/class-xpay-gateway.php:1343
+#, php-format
+msgid "XPay session creation failed [%1$s]: %2$s"
+msgstr "فشل إنشاء جلسة XPay ‏[%1$s]: %2$s"
+
+#: includes/gateway/class-xpay-gateway.php:1428
+msgid "This order has already been paid."
+msgstr "هذا الطلب مدفوع بالفعل."
+
+#: includes/gateway/class-xpay-gateway.php:1428
+msgid "View your order confirmation"
+msgstr "عرض تأكيد طلبك"
+
+#: includes/gateway/class-xpay-gateway.php:1493
+msgid "Refund amount is required."
+msgstr "مبلغ الاسترداد مطلوب."
+
+#. translators: %s is a human-readable duration, for example "2 hours".
+#: includes/gateway/class-xpay-order-sync.php:99
+#, php-format
+msgid "XPay: automatic cancellation held back. A payment session for this order is still open at XPay and its result has not arrived yet. WooCommerce will cancel the order after %s if it is still unpaid."
+msgstr "XPay: تم تأجيل الإلغاء التلقائي. لا تزال جلسة دفع لهذا الطلب مفتوحة لدى XPay ولم تصل نتيجتها بعد. سيلغي WooCommerce الطلب بعد %s إذا ظل غير مدفوع."
+
+#: includes/gateway/class-xpay-order-sync.php:302
+msgid "thank-you page check"
+msgstr "فحص صفحة الشكر"
+
+#: includes/gateway/class-xpay-order-sync.php:304
+msgid "webhook"
+msgstr "الـ webhook"
+
+#: includes/gateway/class-xpay-order-sync.php:306
+msgid "payment session check"
+msgstr "فحص جلسة الدفع"
+
+#. translators: 1: payment source ("webhook", "thank-you page check" or "payment session check"), 2: XPay payment intent id.
+#: includes/gateway/class-xpay-order-sync.php:311
+#, php-format
+msgid "XPay payment confirmed via %1$s. Payment intent: %2$s"
+msgstr "تم تأكيد دفعة XPay عبر %1$s. نية الدفع: %2$s"
+
+#. translators: 1: the amount XPay charged, 2: this order's total.
+#: includes/gateway/class-xpay-order-sync.php:361
+#, php-format
+msgid "XPay charged %1$s but this order totals %2$s. Review the payment in your XPay dashboard, adjust the order if needed, then complete or refund it manually."
+msgstr "خصم XPay مبلغ %1$s بينما إجمالي هذا الطلب %2$s. راجع الدفعة في لوحة تحكم XPay، وعدّل الطلب إذا لزم، ثم أكمله أو استرد المبلغ يدويًا."
+
+#: includes/gateway/class-xpay-order-sync.php:382
+msgid "XPay took a payment for this order after it had already been cancelled."
+msgstr "استقبل XPay دفعة لهذا الطلب بعد أن كان قد أُلغي بالفعل."
+
+#. translators: %s is the amount XPay charged.
+#: includes/gateway/class-xpay-order-sync.php:385
+#, php-format
+msgid "XPay took %s for this order after it had already been cancelled."
+msgstr "استقبل XPay مبلغ %s لهذا الطلب بعد أن كان قد أُلغي بالفعل."
+
+#: includes/gateway/class-xpay-order-sync.php:388
+msgid "The order is on hold so nothing ships automatically. Either complete it, or refund the payment from this order."
+msgstr "الطلب قيد الانتظار فلا يُشحن شيء تلقائيًا. إما أن تكمله، أو تسترد الدفعة من هذا الطلب."
+
+#. translators: 1: XPay checkout session id, 2: XPay payment intent id.
+#: includes/gateway/class-xpay-order-sync.php:522
+#, php-format
+msgid "XPay received a SECOND payment for this order, on an outdated payment session (%1$s, payment intent %2$s). Refund the duplicate payment from your XPay dashboard."
+msgstr "استلمت XPay دفعة ثانية لهذا الطلب على جلسة دفع قديمة (%1$s، نية الدفع %2$s). استرد الدفعة المكررة من لوحة تحكم XPay الخاصة بك."
+
+#. translators: %s is the XPay checkout session id the payment arrived on.
+#: includes/gateway/class-xpay-order-sync.php:547
+#, php-format
+msgid "XPay received a payment for this order on an outdated payment session (%s), so the amount may not match the current total. Review the payment in your XPay dashboard, then complete or refund the order manually."
+msgstr "استلمت XPay دفعة لهذا الطلب على جلسة دفع قديمة (%s)، لذا قد لا يطابق المبلغ الإجمالي الحالي. راجع عملية الدفع في لوحة تحكم XPay، ثم أكمل الطلب أو استرد المبلغ يدويًا."
+
+#: includes/gateway/class-xpay-order-sync.php:637
+msgid "XPay: the shopper completed checkout with a payment reference to pay later, for example a Fawry code. No money has been received yet. XPay confirms automatically when the reference is paid or fails, and this order will update on its own. Do not ship before that confirmation."
+msgstr "XPay: أكمل المتسوق الطلب بكود دفع يُسدَّد لاحقًا، مثل كود فوري. لم يُستلم أي مبلغ بعد. يؤكد XPay تلقائيًا عند سداد الكود أو فشله، وسيتحدّث هذا الطلب من تلقاء نفسه. لا تشحن قبل هذا التأكيد."
+
+#. translators: %s is XPay's reason, for example "The customer did not pay the reference before it expired".
+#: includes/gateway/class-xpay-order-sync.php:676
+#, php-format
+msgid "Reason: %s"
+msgstr "السبب: %s"
+
+#: includes/gateway/class-xpay-order-sync.php:683
+msgid "XPay: the payment reference for this order was not paid. No money was received. The order can still be paid through its payment link."
+msgstr "XPay: لم يُسدَّد كود الدفع الخاص بهذا الطلب. لم يُستلم أي مبلغ. لا يزال بالإمكان دفع الطلب عبر رابط الدفع الخاص به."
+
+#: includes/gateway/class-xpay-order-sync.php:731
+msgid "XPay checkout session expired without payment. The order can still be paid through its payment link."
+msgstr "انتهت صلاحية جلسة الدفع في XPay دون سداد. لا يزال بالإمكان دفع الطلب عبر رابط الدفع الخاص به."
+
+#. translators: %d is the number of declined payment attempts.
+#: includes/gateway/class-xpay-order-sync.php:764
+#, php-format
+msgid "The shopper made %d payment attempt that was declined."
+msgid_plural "The shopper made %d payment attempts that were declined."
+msgstr[0] "لم يقم المتسوق بأي محاولة دفع مرفوضة."
+msgstr[1] "قام المتسوق بمحاولة دفع واحدة ورُفضت."
+msgstr[2] "قام المتسوق بمحاولتي دفع ورُفضتا."
+msgstr[3] "قام المتسوق بـ %d محاولات دفع ورُفضت."
+msgstr[4] "قام المتسوق بـ %d محاولة دفع ورُفضت."
+msgstr[5] "قام المتسوق بـ %d محاولة دفع ورُفضت."
+
+#. translators: 1: XPay failure code, 2: failure message.
+#: includes/gateway/class-xpay-order-sync.php:774
+#, php-format
+msgid "Last decline: %1$s (%2$s)"
+msgstr "آخر رفض: %1$s (%2$s)"
+
+#. translators: 1: XPay failure code (for example "insufficient_funds"), 2: failure message.
+#: includes/gateway/class-xpay-order-sync.php:814
+#, php-format
+msgid "XPay payment attempt declined [%1$s]: %2$s The shopper can retry; the order is unchanged."
+msgstr "رُفضت محاولة دفع عبر XPay [%1$s]: %2$s يمكن للمتسوق إعادة المحاولة، والطلب لم يتغير."
+
+#: includes/gateway/class-xpay-thankyou-notice.php:63
+msgid "Your order is reserved and waiting for your payment reference to be paid, for example at a Fawry point or in the Fawry app. We confirm automatically the moment it is paid and email you then. Nothing ships before that confirmation."
+msgstr "طلبك محجوز في انتظار سداد مرجع الدفع الخاص بك، مثلًا لدى أي منفذ فوري أو في تطبيق فوري. نؤكد الدفع تلقائيًا فور سداده ونرسل لك بريدًا حينها. لن يُشحن شيء قبل هذا التأكيد."
+
+#: includes/gateway/class-xpay-thankyou-notice.php:71
+msgid "Your payment is still being confirmed. Usually under a minute. We will email you the moment it is confirmed."
+msgstr "ما زال دفعك قيد التأكيد. عادةً أقل من دقيقة. سنرسل لك بريدًا فور تأكيده."
+
+#: includes/gateway/class-xpay-thankyou-notice.php:83
+msgid "Pay for this order"
+msgstr "ادفع لهذا الطلب"
+
+#. translators: 1: amount requested, 2: amount refunded, 3: settlement amount.
+#: includes/refunds/class-xpay-refund-service.php:268
+#, php-format
+msgid "XPay refunded %3$s, which it reports to the customer as %2$s. You asked for %1$s. The difference is rounding between the two currencies; the settled amount is the one that moved."
+msgstr "استرد XPay مبلغ %3$s، ويعرضه للعميل كـ %2$s. أنت طلبت %1$s. الفرق تقريب بين العملتين، والمبلغ المُسوّى هو ما تحرك فعليًا."
+
+#. translators: 1: amount requested, 2: amount XPay reports to the customer.
+#: includes/refunds/class-xpay-refund-service.php:320
+#, php-format
+msgid "XPay refunded the remaining balance, which it reports to the customer as %2$s. You asked for %1$s. The difference is rounding between the two currencies."
+msgstr "استرد XPay الرصيد المتبقي، ويعرضه للعميل كـ %2$s. أنت طلبت %1$s. الفرق تقريب بين العملتين."
+
+#. translators: %s is the XPay refund id.
+#: includes/refunds/class-xpay-refund-service.php:351
+#, php-format
+msgid "XPay completed refund %s with a different amount or currency than requested. Nothing was recorded in WooCommerce. Verify the payment in your XPay dashboard."
+msgstr "أكملت XPay عملية الاسترداد %s بمبلغ أو عملة مختلفة عن المطلوب. لم يُسجَّل أي شيء في WooCommerce. تحقق من عملية الدفع في لوحة تحكم XPay الخاصة بك."
+
+#. translators: 1: refund amount with currency, 2: XPay refund id, 3: admin-entered reason.
+#: includes/refunds/class-xpay-refund-service.php:363
+#, php-format
+msgid "XPay refund of %1$s submitted (%2$s). Reason: %3$s"
+msgstr "تم إرسال استرداد XPay بمبلغ %1$s ‏(%2$s). السبب: %3$s"
+
+#. translators: %s is the XPay refund id.
+#: includes/refunds/class-xpay-refund-service.php:564
+#, php-format
+msgid "XPay dashboard refund %s"
+msgstr "استرداد من لوحة تحكم XPay %s"
+
+#. translators: 1: XPay refund id, 2: the error WooCommerce reported.
+#: includes/refunds/class-xpay-refund-service.php:573
+#, php-format
+msgid "XPay refunded this order from the dashboard (%1$s), but the refund could not be recorded here: %2$s. Record it manually."
+msgstr "استردت XPay مبلغ هذا الطلب من لوحة التحكم (%1$s)، لكن تعذّر تسجيل الاسترداد هنا: %2$s. سجّله يدويًا."
+
+#. translators: 1: refund amount with currency, 2: XPay refund id.
+#: includes/refunds/class-xpay-refund-service.php:582
+#, php-format
+msgid "XPay refund of %1$s issued from your XPay dashboard was recorded here (%2$s)."
+msgstr "تم هنا تسجيل استرداد XPay بمبلغ %1$s الصادر من لوحة تحكم XPay الخاصة بك (%2$s)."
+
+#. translators: %s is the XPay refund id.
+#: includes/refunds/class-xpay-refund-service.php:592
+#, php-format
+msgid "XPay refunded this order from the dashboard (%s), in a currency this order is not in. Check the amount in your XPay dashboard and record the refund here manually."
+msgstr "استردت XPay مبلغ هذا الطلب من لوحة التحكم (%s) بعملة تختلف عن عملة الطلب. تحقق من المبلغ في لوحة تحكم XPay وسجّل الاسترداد هنا يدويًا."
+
+#. translators: 1: XPay refund id, 2: XPay failure reason (for example "expired_or_canceled_card").
+#: includes/refunds/class-xpay-refund-service.php:654
+#, php-format
+msgid "XPay refund %1$s failed (%2$s). No money was returned to the customer. Check the refund in your XPay dashboard."
+msgstr "فشل استرداد XPay %1$s (%2$s). لم يُرَدّ أي مبلغ إلى العميل. تحقق من الاسترداد في لوحة تحكم XPay الخاصة بك."
+
+#: includes/refunds/class-xpay-refund-service.php:681
+msgid "XPay accepted the request but did not complete the refund. Check the payment in your XPay dashboard before retrying."
+msgstr "قبل XPay الطلب لكنه لم يُكمل الاسترداد. تحقق من الدفعة في لوحة تحكم XPay قبل إعادة المحاولة."
+
+#: includes/refunds/class-xpay-refund-service.php:683
+msgid "XPay accepted this refund and is still processing it. Do not submit it again. Check the payment in your XPay dashboard and record the refund here once it completes."
+msgstr "قبل XPay هذا الاسترداد وما زال يعالجه. لا ترسله مرة أخرى — تحقق من الدفعة في لوحة تحكم XPay وسجّل الاسترداد هنا بعد اكتماله."
+
+#: includes/refunds/class-xpay-refund-service.php:685
+msgid "This order is not in EGP, and XPay reads refund amounts as EGP, so a part-refund from here would move the wrong amount. Refund the full order instead, which works, or issue the part-refund from your XPay dashboard. A dashboard refund is recorded here automatically."
+msgstr "هذا الطلب ليس بالجنيه المصري، وXPay يقرأ مبالغ الاسترداد بالجنيه المصري، فالاسترداد الجزئي من هنا سيحرّك مبلغًا خاطئًا. استرد الطلب بالكامل من هنا، وهذا يعمل، أو نفّذ الاسترداد الجزئي من لوحة تحكم XPay. يُسجَّل استرداد اللوحة هنا تلقائيًا."
+
+#: includes/refunds/class-xpay-refund-service.php:687
+msgid "XPay completed this refund with a different amount or currency than requested, so it was not recorded in WooCommerce. Check the payment in your XPay dashboard before doing anything else."
+msgstr "أكملت XPay هذا الاسترداد بمبلغ أو عملة مختلفة عن المطلوب، لذلك لم يُسجَّل في WooCommerce. تحقق من عملية الدفع في لوحة تحكم XPay قبل أي خطوة أخرى."
+
+#: includes/refunds/class-xpay-refund-service.php:689
+msgid "Could not reach XPay to confirm this refund. It may still have gone through: check the payment in your XPay dashboard before retrying."
+msgstr "تعذّر الوصول إلى XPay لتأكيد هذا الاسترداد. قد يكون قد تم بالفعل: تحقق من عملية الدفع في لوحة تحكم XPay قبل إعادة المحاولة."
+
+#: includes/refunds/class-xpay-refund-service.php:691
+msgid "XPay cannot refund this payment in its current state. Check the payment in your XPay dashboard."
+msgstr "لا يمكن لـ XPay استرداد هذه الدفعة في حالتها الحالية. تحقق من الدفعة في لوحة تحكم XPay."
+
+#: includes/webhooks/class-xpay-webhook-state.php:135
+msgid "No signing secret is saved for this mode, so deliveries cannot be verified."
+msgstr "لا يوجد سر توقيع محفوظ لهذا الوضع، فلا يمكن التحقق من الإشعارات الواردة."
+
+#: includes/webhooks/class-xpay-webhook-state.php:137
+msgid "The signature did not match. The signing secret saved here is probably not the one XPay is signing with."
+msgstr "التوقيع غير مطابق. الغالب أن سر التوقيع المحفوظ هنا ليس هو الذي يوقّع به XPay."
+
+#: includes/webhooks/class-xpay-webhook-state.php:139
+msgid "Deliveries are arriving without a signature header. Check that the endpoint URL in your XPay dashboard points at this store."
+msgstr "الإشعارات تصل بدون ترويسة توقيع. تحقق من أن رابط النقطة في لوحة تحكم XPay يشير إلى هذا المتجر."
+
+#: includes/webhooks/class-xpay-webhook-state.php:141
+msgid "The delivery was too old to accept. Check that this server's clock is correct."
+msgstr "الإشعار أقدم من أن يُقبل. تحقق من صحة ساعة هذا الخادم."
+
+#: includes/webhooks/class-xpay-webhook-state.php:143
+msgid "The delivery was not in the shape this plugin expects."
+msgstr "الإشعار ليس بالشكل الذي تتوقعه هذه الإضافة."
+
+#: includes/webhooks/class-xpay-webhook-state.php:145
+msgid "The delivery was verified but could not be applied to an order. The log has the detail."
+msgstr "تم التحقق من الإشعار لكن تعذّر تطبيقه على طلب. التفاصيل في السجل."
+
+#. translators: %s is a date and time, for example "2026-08-28 10:30:50 UTC".
+#: includes/webhooks/class-xpay-webhook-state.php:163
+#, php-format
+msgid "The most recent event, received %s, was processed successfully."
+msgstr "أحدث حدث، المستلم في %s، تمت معالجته بنجاح."
+
+#: includes/webhooks/class-xpay-webhook-state.php:168
+msgid "No webhook events received yet."
+msgstr "لم تُستلم أحداث ويب هوك بعد."
+
+#. translators: 1: date and time of the failed delivery, 2: the reason it failed, 3: date and time of the last successful delivery.
+#: includes/webhooks/class-xpay-webhook-state.php:172
+#, php-format
+msgid "The most recent event, received %1$s, could not be processed. %2$s The last event to process successfully arrived %3$s."
+msgstr "أحدث حدث، المستلم في %1$s، تعذرت معالجته. %2$s آخر حدث تمت معالجته بنجاح وصل في %3$s."
+
+#. translators: 1: date and time of the failed delivery, 2: the reason it failed, 3: date and time monitoring began.
+#: includes/webhooks/class-xpay-webhook-state.php:180
+#, php-format
+msgid "The most recent event, received %1$s, could not be processed. %2$s No event has processed successfully since monitoring began at %3$s."
+msgstr "أحدث حدث، المستلم في %1$s، تعذرت معالجته. %2$s لم تتم معالجة أي حدث بنجاح منذ بدء المراقبة في %3$s."

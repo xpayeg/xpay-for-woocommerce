@@ -1,0 +1,74 @@
+# Files and directories EXCLUDED from the WP.org distribution ZIP.
+# Any pattern here is interpreted as an rsync --exclude rule (also
+# compatible with `wp dist-archive` from wp-cli/dist-archive-command).
+#
+# Anything NOT matched here is included in the ZIP. Adding a new dev-only
+# directory means adding it here in the same commit — the plugin-check CI
+# job scans the filtered build, so anything missed here is scanned as if a
+# wordpress.org reviewer were reading it.
+
+# --- Version control ---
+.git/
+.gitignore
+.gitattributes
+.svn/
+
+# --- Editor / IDE / OS ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+._*
+Thumbs.db
+
+# --- Dependencies and build output ---
+node_modules/
+vendor/
+composer.json
+composer.lock
+package.json
+package-lock.json
+yarn.lock
+Makefile
+dist/
+build/
+
+# --- Development tooling ---
+bin/
+tools/
+.github/
+.coderabbit.yaml
+phpcs.xml
+phpcs.xml.dist
+.phpcs.xml.dist
+
+# --- Test suites and their configuration ---
+# Three suites, three configs. tests-integration/ boots real WordPress and
+# is the largest of them; it has no business in a merchant's plugin folder.
+tests/
+tests-contracts/
+tests-integration/
+phpunit.xml
+phpunit.xml.dist
+phpunit-contracts.xml
+phpunit-integration.xml
+.phpunit.result.cache
+
+# --- Contributor documentation ---
+README.md
+CHANGELOG.md
+CONTRIBUTING.md
+SECURITY.md
+AGENTS.md
+internal-docs/
+
+# --- Transient ---
+*.log
+*.tmp
+*.bak
+
+# This file itself: it describes the build, and the build is over by the
+# time anyone unzips the result.
+.distignore

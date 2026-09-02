@@ -1,0 +1,34 @@
+{
+    "name": "xpay/xpay-for-woocommerce",
+    "description": "XPay payment gateway for WooCommerce (development tooling only \u2014 the plugin has no runtime Composer dependencies).",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "php": ">=7.4"
+    },
+    "require-dev": {
+        "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+        "wp-coding-standards/wpcs": "^3.1",
+        "phpcompatibility/phpcompatibility-wp": "^2.1",
+        "phpunit/phpunit": "^9.6",
+        "yoast/phpunit-polyfills": "^2.0"
+    },
+    "scripts": {
+        "lint": "phpcs",
+        "lint:fix": "phpcbf",
+        "test": [
+            "phpunit",
+            "phpunit -c phpunit-contracts.xml"
+        ],
+        "test:all": "bin/test.sh",
+        "test:integration": "phpunit -c phpunit-integration.xml"
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        },
+        "platform": {
+            "php": "7.4.33"
+        }
+    }
+}
