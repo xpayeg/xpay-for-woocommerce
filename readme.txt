@@ -1,10 +1,10 @@
 === XPay for WooCommerce ===
-Contributors: xpay
+Contributors: xpayeg
 Tags: woocommerce, payments, payment gateway, egypt, valu
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -55,7 +55,7 @@ This plugin connects to XPay's services and cannot process payments without them
 * **api.xpay.app**: the store creates payment sessions and refunds here. It sends the order amount, currency, order number, and the customer's name, email, and phone number. The connection flow also sends the store name, URL, and icon so the merchant can identify the store before approving access.
 * **checkout.xpay.app**: XPay's secure payment fields and script load from here in the customer's browser. The customer enters payment details directly into these fields. The customer's name, email, phone number, and payment information are sent to XPay to process the payment.
 
-XPay's [Terms of Service](https://xpay.app/terms) and [Privacy Policy](https://xpay.app/privacy) apply.
+XPay's [Terms of Service](https://xpay.app/legal-terms) and [Privacy Policy](https://xpay.app/legal-privacy) apply.
 
 == Frequently Asked Questions ==
 
@@ -92,6 +92,10 @@ Yes, when the payment method supports refunds. ValU refunds are not currently su
 Yes. If customers return to the cart after paying and you do not use a working WPFunnels Pro upsell step, turn on WPFunnels compatibility in the XPay settings.
 
 == Changelog ==
+
+= 1.0.2 =
+
+* Fix the Terms of Service and Privacy Policy links and the WordPress.org contributor name in the plugin listing, and stop bundling translation files: WordPress now installs the Arabic translation as a language pack from WordPress.org.
 
 = 1.0.1 =
 

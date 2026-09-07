@@ -5,7 +5,7 @@
  * Description: Accept payments on your WooCommerce store via XPay (Egypt): cards, ValU and more, in a secure on-site checkout.
  * Author: XPay
  * Author URI: https://xpay.app/
- * Version: 1.0.1
+ * Version: 1.0.2
  * Requires at least: 6.2
  * Requires PHP: 7.4
  * Requires Plugins: woocommerce
@@ -21,7 +21,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-defined( 'XPAY_WC_VERSION' ) || define( 'XPAY_WC_VERSION', '1.0.1' );
+defined( 'XPAY_WC_VERSION' ) || define( 'XPAY_WC_VERSION', '1.0.2' );
 defined( 'XPAY_WC_PLUGIN_FILE' ) || define( 'XPAY_WC_PLUGIN_FILE', __FILE__ );
 defined( 'XPAY_WC_PLUGIN_DIR' ) || define( 'XPAY_WC_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 defined( 'XPAY_WC_PLUGIN_URL' ) || define( 'XPAY_WC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -39,19 +39,6 @@ add_action(
 			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
 			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'cart_checkout_blocks', __FILE__, true );
 		}
-	}
-);
-
-/*
- * WP.org auto-loads translations for hosted plugins, but this plugin also
- * ships via direct download from XPay — load_plugin_textdomain keeps the
- * manual-install channel translated too.
- */
-add_action(
-	'init',
-	function () {
-		// phpcs:ignore PluginCheck.CodeAnalysis.DiscouragedFunctions.load_plugin_textdomainFound
-		load_plugin_textdomain( 'xpay-for-woocommerce', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 	}
 );
 

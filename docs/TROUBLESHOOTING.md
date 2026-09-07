@@ -62,7 +62,7 @@ If needed, issue the refund in the XPay dashboard. Dashboard refunds are synchro
 
 ## Arabic checkout shows English payment fields
 
-The plugin uses the WordPress locale. Confirm that the active site or page language is Arabic, then clear page and translation caches.
+The plugin uses the WordPress locale, and WordPress installs its Arabic translation as a language pack from WordPress.org. Confirm that the active site or page language is Arabic, then go to Dashboard → Updates and click Update Translations. Clear page and translation caches afterwards.
 
 ## What to send to support
 

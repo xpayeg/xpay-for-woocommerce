@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.2
+
+### Patch Changes
+
+- Fix the Terms of Service and Privacy Policy links and the WordPress.org contributor name in the plugin listing, and stop bundling translation files: WordPress now installs the Arabic translation as a language pack from WordPress.org.
+
 ## 1.0.1
 
 ### Patch Changes
