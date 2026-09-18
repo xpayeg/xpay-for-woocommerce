@@ -13,10 +13,10 @@
  * Exactly the defect that dad1a3c fixed for a cancelled order, one branch
  * over. That park got a durable marker; this one did not.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
-class SupersededParkTest extends XPay_Integration_Test_Case {
+class SupersededParkTest extends XPayEG_Integration_Test_Case {
 
 	private function session( string $id ): array {
 		return array(
@@ -31,7 +31,7 @@ class SupersededParkTest extends XPay_Integration_Test_Case {
 	}
 
 	private function order_on_its_second_session(): WC_Order {
-		$order = $this->make_xpay_order( array( XPay_Constants::META_SESSION_ID => 'cs_current' ) );
+		$order = $this->make_xpayeg_order( array( XPayEG_Constants::META_SESSION_ID => 'cs_current' ) );
 		$order->set_total( '123.00' );
 		$order->set_status( 'pending' );
 		$order->save();
@@ -42,11 +42,11 @@ class SupersededParkTest extends XPay_Integration_Test_Case {
 	public function test_money_on_an_old_session_parks_the_order(): void {
 		$order = $this->order_on_its_second_session();
 
-		XPay_Order_Sync::apply_superseded_paid( $order, $this->session( 'cs_superseded' ) );
+		XPayEG_Order_Sync::apply_superseded_paid( $order, $this->session( 'cs_superseded' ) );
 
 		$fresh = wc_get_order( $order->get_id() );
 		$this->assertTrue( $fresh->has_status( 'on-hold' ) );
-		$this->assertNotSame( '', (string) $fresh->get_meta( XPay_Constants::META_SUPERSEDED_PARKED ) );
+		$this->assertNotSame( '', (string) $fresh->get_meta( XPayEG_Constants::META_SUPERSEDED_PARKED ) );
 	}
 
 	/**
@@ -58,9 +58,9 @@ class SupersededParkTest extends XPay_Integration_Test_Case {
 	 */
 	public function test_paying_the_current_session_does_not_unpark_it(): void {
 		$order = $this->order_on_its_second_session();
-		XPay_Order_Sync::apply_superseded_paid( $order, $this->session( 'cs_superseded' ) );
+		XPayEG_Order_Sync::apply_superseded_paid( $order, $this->session( 'cs_superseded' ) );
 
-		XPay_Order_Sync::mark_paid(
+		XPayEG_Order_Sync::mark_paid(
 			wc_get_order( $order->get_id() ),
 			$this->session( 'cs_current' ),
 			'thankyou'

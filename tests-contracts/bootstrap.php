@@ -10,44 +10,44 @@
  * pin is decision logic, the concurrency-shaped rules a regression
  * would loosen silently.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
 define( 'ABSPATH', __DIR__ . '/' );
-define( 'XPAY_WC_VERSION', 'contract-tests' );
-define( 'XPAY_WC_PLUGIN_DIR', dirname( __DIR__ ) . '/' );
-define( 'XPAY_WC_PLUGIN_URL', 'https://store.test/wp-content/plugins/xpay-for-woocommerce/' );
+define( 'XPAYEG_VERSION', 'contract-tests' );
+define( 'XPAYEG_PLUGIN_DIR', dirname( __DIR__ ) . '/' );
+define( 'XPAYEG_PLUGIN_URL', 'https://store.test/wp-content/plugins/xpay-for-woocommerce/' );
 
 require_once __DIR__ . '/class-fake-wpdb.php';
 require_once __DIR__ . '/class-order-util-shim.php';
 require_once __DIR__ . '/wp-shims.php';
 require_once __DIR__ . '/class-wc-order-stub.php';
 
-xpay_tests_reset_world();
+xpayeg_tests_reset_world();
 
-$xpay_contract_files = array(
-	'includes/constants/class-xpay-constants.php',
-	'includes/constants/class-xpay-error-codes.php',
-	'includes/constants/class-xpay-event-names.php',
-	'includes/constants/class-xpay-payment-methods.php',
-	'includes/constants/class-xpay-session-status.php',
-	'includes/constants/class-xpay-refund-status.php',
-	'includes/api/class-xpay-api-exception.php',
-	'includes/api/class-xpay-money.php',
-	'includes/api/class-xpay-fx.php',
-	'includes/api/class-xpay-api-client.php',
-	'includes/logger/class-xpay-logger.php',
-	'includes/gateway/class-xpay-order-lock.php',
-	'includes/gateway/class-xpay-order-sync.php',
-	'includes/gateway/class-xpay-checkout-service.php',
-	'includes/constants/class-xpay-charge-status.php',
-	'includes/refunds/class-xpay-refundable.php',
-	'includes/refunds/class-xpay-refund-service.php',
-	'includes/webhooks/class-xpay-webhook-state.php',
-	'includes/webhooks/class-xpay-webhook-controller.php',
+$xpayeg_contract_files = array(
+	'includes/constants/class-xpayeg-constants.php',
+	'includes/constants/class-xpayeg-error-codes.php',
+	'includes/constants/class-xpayeg-event-names.php',
+	'includes/constants/class-xpayeg-payment-methods.php',
+	'includes/constants/class-xpayeg-session-status.php',
+	'includes/constants/class-xpayeg-refund-status.php',
+	'includes/api/class-xpayeg-api-exception.php',
+	'includes/api/class-xpayeg-money.php',
+	'includes/api/class-xpayeg-fx.php',
+	'includes/api/class-xpayeg-api-client.php',
+	'includes/logger/class-xpayeg-logger.php',
+	'includes/gateway/class-xpayeg-order-lock.php',
+	'includes/gateway/class-xpayeg-order-sync.php',
+	'includes/gateway/class-xpayeg-checkout-service.php',
+	'includes/constants/class-xpayeg-charge-status.php',
+	'includes/refunds/class-xpayeg-refundable.php',
+	'includes/refunds/class-xpayeg-refund-service.php',
+	'includes/webhooks/class-xpayeg-webhook-state.php',
+	'includes/webhooks/class-xpayeg-webhook-controller.php',
 );
-foreach ( $xpay_contract_files as $xpay_contract_file ) {
-	require_once dirname( __DIR__ ) . '/' . $xpay_contract_file;
+foreach ( $xpayeg_contract_files as $xpayeg_contract_file ) {
+	require_once dirname( __DIR__ ) . '/' . $xpayeg_contract_file;
 }
 
 require_once __DIR__ . '/class-capture-client.php';

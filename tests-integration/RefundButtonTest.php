@@ -13,10 +13,10 @@
  * that moves money at XPay — through can_refund_order(). These pin the three
  * cases where offering it can only produce an error.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
-class RefundButtonTest extends XPay_Integration_Test_Case {
+class RefundButtonTest extends XPayEG_Integration_Test_Case {
 
 	public function set_up(): void {
 		parent::set_up();
@@ -43,10 +43,10 @@ class RefundButtonTest extends XPay_Integration_Test_Case {
 	 */
 	private function paid_order( string $total = '100.00', string $currency = 'EGP' ): WC_Order {
 		$order = new WC_Order();
-		$order->set_payment_method( 'xpay' );
+		$order->set_payment_method( 'xpayeg' );
 		$order->set_currency( $currency );
 		$order->set_total( $total );
-		$order->update_meta_data( XPay_Constants::META_PAYMENT_INTENT, 'pi_test' );
+		$order->update_meta_data( XPayEG_Constants::META_PAYMENT_INTENT, 'pi_test' );
 		$order->set_status( 'processing' );
 		$order->save();
 		return $order;
@@ -71,7 +71,7 @@ class RefundButtonTest extends XPay_Integration_Test_Case {
 
 	/* ── The case that started this ──────────────────────────────────── */
 
-	public function test_a_fully_refunded_order_is_not_offered_to_xpay_again(): void {
+	public function test_a_fully_refunded_order_is_not_offered_to_xpayeg_again(): void {
 		$order = $this->paid_order( '100.00' );
 		$this->refund_amount( $order, '40.00' );
 		$this->refund_amount( $order, '60.00' );
@@ -128,8 +128,8 @@ class RefundButtonTest extends XPay_Integration_Test_Case {
 	/**
 	 * An order nobody ever paid.
 	 *
-	 * The whole refund gate rests on one invariant: `_xpay_payment_intent_id`
-	 * is written in exactly two places (class-xpay-order-sync.php:134 and
+	 * The whole refund gate rests on one invariant: `_xpayeg_payment_intent_id`
+	 * is written in exactly two places (class-xpayeg-order-sync.php:134 and
 	 * :599), both inside the handling of a session the platform has already
 	 * reported PAID. So the meta being present means money moved, and its
 	 * absence means none did. This pins the consequence.
@@ -141,7 +141,7 @@ class RefundButtonTest extends XPay_Integration_Test_Case {
 	 */
 	public function test_an_unpaid_order_is_never_offered_to_xpay(): void {
 		$order = new WC_Order();
-		$order->set_payment_method( 'xpay' );
+		$order->set_payment_method( 'xpayeg' );
 		$order->set_currency( 'EGP' );
 		$order->set_total( '100.00' );
 		$order->set_status( 'pending' );
@@ -154,9 +154,9 @@ class RefundButtonTest extends XPay_Integration_Test_Case {
 		);
 	}
 
-	public function test_refunding_an_unpaid_order_through_xpay_is_refused(): void {
+	public function test_refunding_an_unpaid_order_through_xpayeg_is_refused(): void {
 		$order = new WC_Order();
-		$order->set_payment_method( 'xpay' );
+		$order->set_payment_method( 'xpayeg' );
 		$order->set_currency( 'EGP' );
 		$order->set_total( '100.00' );
 		$order->set_status( 'pending' );
@@ -169,12 +169,12 @@ class RefundButtonTest extends XPay_Integration_Test_Case {
 
 	public function test_an_order_with_no_payment_intent_is_not_offered(): void {
 		$order = $this->paid_order();
-		$order->delete_meta_data( XPay_Constants::META_PAYMENT_INTENT );
+		$order->delete_meta_data( XPayEG_Constants::META_PAYMENT_INTENT );
 		$order->save();
 
 		$this->assertFalse(
 			$this->gateway()->can_refund_order( wc_get_order( $order->get_id() ) ),
-			'XPay_Refund_Service throws not_configured on this order, so the button can only error.'
+			'XPayEG_Refund_Service throws not_configured on this order, so the button can only error.'
 		);
 	}
 
@@ -217,7 +217,7 @@ class RefundButtonTest extends XPay_Integration_Test_Case {
 
 	private function currency_note( WC_Order $order ): string {
 		ob_start();
-		XPay_Order_Panel::render_refund_currency_note( $order->get_id() );
+		XPayEG_Order_Panel::render_refund_currency_note( $order->get_id() );
 		return (string) ob_get_clean();
 	}
 
@@ -239,7 +239,7 @@ class RefundButtonTest extends XPay_Integration_Test_Case {
 	 */
 	public function test_an_unpaid_non_egp_order_gets_no_note(): void {
 		$order = new WC_Order();
-		$order->set_payment_method( 'xpay' );
+		$order->set_payment_method( 'xpayeg' );
 		$order->set_currency( 'USD' );
 		$order->set_total( '100.00' );
 		$order->save();
@@ -251,7 +251,7 @@ class RefundButtonTest extends XPay_Integration_Test_Case {
 		$order = new WC_Order();
 		$order->set_payment_method( 'cod' );
 		$order->set_currency( 'USD' );
-		$order->update_meta_data( XPay_Constants::META_PAYMENT_INTENT, 'pi_x' );
+		$order->update_meta_data( XPayEG_Constants::META_PAYMENT_INTENT, 'pi_x' );
 		$order->save();
 
 		$this->assertSame( '', $this->currency_note( $order ) );

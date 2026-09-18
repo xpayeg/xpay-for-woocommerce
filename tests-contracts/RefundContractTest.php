@@ -1,6 +1,6 @@
 <?php
 /**
- * Pins XPay_Refund_Service's money contracts:
+ * Pins XPayEG_Refund_Service's money contracts:
  *
  *   1. Non-EGP orders are refused BEFORE any API call — the platform
  *      interprets refund amounts in the charge's processing currency
@@ -14,21 +14,21 @@
  *      that differs from the request fails closed (absent fields pass —
  *      fail open on shape, closed on value).
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
 class RefundContractTest extends ContractTestCase {
 
-	/** @var XPay_Capture_Client */
+	/** @var XPayEG_Capture_Client */
 	private $client;
 
-	/** @var XPay_Refund_Service */
+	/** @var XPayEG_Refund_Service */
 	private $service;
 
 	protected function setUp(): void {
 		parent::setUp();
-		$this->client  = new XPay_Capture_Client();
-		$this->service = new XPay_Refund_Service( $this->client );
+		$this->client  = new XPayEG_Capture_Client();
+		$this->service = new XPayEG_Refund_Service( $this->client );
 	}
 
 	/**
@@ -57,7 +57,7 @@ class RefundContractTest extends ContractTestCase {
 				array(
 					'total' => '290.00',
 					'paid'  => true,
-					'meta'  => array( XPay_Constants::META_PAYMENT_INTENT => 'pi_test_contract' ),
+					'meta'  => array( XPayEG_Constants::META_PAYMENT_INTENT => 'pi_test_contract' ),
 				),
 				$props
 			)
@@ -74,7 +74,7 @@ class RefundContractTest extends ContractTestCase {
 	 * @param array[]     $refunds             Refunds already taken.
 	 * @param string|null $rate                Locked rate, or null for a charge that carries none.
 	 */
-	private function xpay_holds( int $presentment_charged, array $refunds = array(), ?string $rate = '50' ) {
+	private function xpayeg_holds( int $presentment_charged, array $refunds = array(), ?string $rate = '50' ) {
 		$presentment = array(
 			'amount'   => $presentment_charged,
 			'currency' => 'USD',
@@ -116,12 +116,12 @@ class RefundContractTest extends ContractTestCase {
 				'currency' => 'USD',
 				'total'    => '300.00',
 				'meta'     => array(
-					XPay_Constants::META_PAYMENT_INTENT => 'pi_test_contract',
-					XPay_Constants::META_SESSION_ID     => 'cs_test_contract',
+					XPayEG_Constants::META_PAYMENT_INTENT => 'pi_test_contract',
+					XPayEG_Constants::META_SESSION_ID     => 'cs_test_contract',
 				),
 			)
 		);
-		$this->xpay_holds( 30000 );
+		$this->xpayeg_holds( 30000 );
 
 		$this->refund( $order, 100.0, 'damaged' );
 
@@ -150,12 +150,12 @@ class RefundContractTest extends ContractTestCase {
 				'currency' => 'USD',
 				'total'    => '290.00',
 				'meta'     => array(
-					XPay_Constants::META_PAYMENT_INTENT => 'pi_test_contract',
-					XPay_Constants::META_SESSION_ID     => 'cs_test_contract',
+					XPayEG_Constants::META_PAYMENT_INTENT => 'pi_test_contract',
+					XPayEG_Constants::META_SESSION_ID     => 'cs_test_contract',
 				),
 			)
 		);
-		$this->xpay_holds( 29000 );
+		$this->xpayeg_holds( 29000 );
 
 		$this->refund( $order, 145.0, 'half' );
 
@@ -180,13 +180,13 @@ class RefundContractTest extends ContractTestCase {
 				'currency' => 'USD',
 				'total'    => '300.00',
 				'meta'     => array(
-					XPay_Constants::META_PAYMENT_INTENT => 'pi_test_contract',
-					XPay_Constants::META_SESSION_ID     => 'cs_test_contract',
+					XPayEG_Constants::META_PAYMENT_INTENT => 'pi_test_contract',
+					XPayEG_Constants::META_SESSION_ID     => 'cs_test_contract',
 				),
 			)
 		);
 		// $300 charged, $100 already back, so $200 is what is left.
-		$this->xpay_holds(
+		$this->xpayeg_holds(
 			30000,
 			array(
 				array(
@@ -216,18 +216,18 @@ class RefundContractTest extends ContractTestCase {
 			array(
 				'currency' => 'USD',
 				'meta'     => array(
-					XPay_Constants::META_PAYMENT_INTENT => 'pi_test_contract',
-					XPay_Constants::META_SESSION_ID     => 'cs_test_contract',
+					XPayEG_Constants::META_PAYMENT_INTENT => 'pi_test_contract',
+					XPayEG_Constants::META_SESSION_ID     => 'cs_test_contract',
 				),
 			)
 		);
-		$this->xpay_holds( 30000, array(), null );
+		$this->xpayeg_holds( 30000, array(), null );
 
 		try {
 			$this->refund( $order, 100.0, 'damaged' );
 			$this->fail( 'A part refund with no rate to convert at must fail closed.' );
-		} catch ( XPay_Api_Exception $e ) {
-			$this->assertSame( XPay_Error_Codes::REFUND_CURRENCY_UNSUPPORTED, $e->get_error_code() );
+		} catch ( XPayEG_Api_Exception $e ) {
+			$this->assertSame( XPayEG_Error_Codes::REFUND_CURRENCY_UNSUPPORTED, $e->get_error_code() );
 		}
 
 		$this->assertSame( array(), $this->client->refunds, 'The refusal must happen before any money-moving call.' );
@@ -303,8 +303,8 @@ class RefundContractTest extends ContractTestCase {
 		try {
 			$this->refund( $order, 290.0, '' );
 			$this->fail( 'XPay refunded a different amount than this order is for and it was recorded anyway.' );
-		} catch ( XPay_Api_Exception $e ) {
-			$this->assertSame( XPay_Error_Codes::REFUND_RESULT_MISMATCH, $e->get_error_code() );
+		} catch ( XPayEG_Api_Exception $e ) {
+			$this->assertSame( XPayEG_Error_Codes::REFUND_RESULT_MISMATCH, $e->get_error_code() );
 		}
 	}
 
@@ -358,8 +358,8 @@ class RefundContractTest extends ContractTestCase {
 		try {
 			$this->refund( $order, 290.0, '' );
 			$this->fail( 'A dollar short is not a rounding artefact, and it was recorded anyway.' );
-		} catch ( XPay_Api_Exception $e ) {
-			$this->assertSame( XPay_Error_Codes::REFUND_RESULT_MISMATCH, $e->get_error_code() );
+		} catch ( XPayEG_Api_Exception $e ) {
+			$this->assertSame( XPayEG_Error_Codes::REFUND_RESULT_MISMATCH, $e->get_error_code() );
 		}
 	}
 
@@ -380,12 +380,12 @@ class RefundContractTest extends ContractTestCase {
 				'currency' => 'USD',
 				'total'    => '300.00',
 				'meta'     => array(
-					XPay_Constants::META_PAYMENT_INTENT => 'pi_test_contract',
-					XPay_Constants::META_SESSION_ID     => 'cs_test_contract',
+					XPayEG_Constants::META_PAYMENT_INTENT => 'pi_test_contract',
+					XPayEG_Constants::META_SESSION_ID     => 'cs_test_contract',
 				),
 			)
 		);
-		$this->xpay_holds( 30000 );
+		$this->xpayeg_holds( 30000 );
 		// Asked for $100.00, reported back to the customer as $2.50.
 		$this->client->refund = array(
 			'presentmentDetails' => array( 'amount' => 250, 'currency' => 'USD' ),
@@ -394,8 +394,8 @@ class RefundContractTest extends ContractTestCase {
 		try {
 			$this->refund( $order, 100.0, 'damaged' );
 			$this->fail( 'A refund reported ninety-seven dollars short is not rounding, and it was recorded anyway.' );
-		} catch ( XPay_Api_Exception $e ) {
-			$this->assertSame( XPay_Error_Codes::REFUND_RESULT_MISMATCH, $e->get_error_code() );
+		} catch ( XPayEG_Api_Exception $e ) {
+			$this->assertSame( XPayEG_Error_Codes::REFUND_RESULT_MISMATCH, $e->get_error_code() );
 		}
 	}
 
@@ -406,12 +406,12 @@ class RefundContractTest extends ContractTestCase {
 				'currency' => 'USD',
 				'total'    => '300.00',
 				'meta'     => array(
-					XPay_Constants::META_PAYMENT_INTENT => 'pi_test_contract',
-					XPay_Constants::META_SESSION_ID     => 'cs_test_contract',
+					XPayEG_Constants::META_PAYMENT_INTENT => 'pi_test_contract',
+					XPayEG_Constants::META_SESSION_ID     => 'cs_test_contract',
 				),
 			)
 		);
-		$this->xpay_holds( 30000 );
+		$this->xpayeg_holds( 30000 );
 		// Asked for $100.00, reported back as $99.99: two truncations.
 		$this->client->refund = array(
 			'presentmentDetails' => array( 'amount' => 9999, 'currency' => 'USD' ),
@@ -441,7 +441,7 @@ class RefundContractTest extends ContractTestCase {
 
 		$refund = $this->refund( $order, 290.0, '' );
 
-		$this->assertSame( XPay_Refund_Status::SUCCEEDED, $refund['status'] );
+		$this->assertSame( XPayEG_Refund_Status::SUCCEEDED, $refund['status'] );
 	}
 
 	/**
@@ -458,12 +458,12 @@ class RefundContractTest extends ContractTestCase {
 	public function test_retry_after_lost_response_replays_the_same_key() {
 		$order = $this->paidOrder();
 
-		$this->client->refund_failure = XPay_Api_Exception::transport( 'response lost' );
+		$this->client->refund_failure = XPayEG_Api_Exception::transport( 'response lost' );
 		try {
 			$this->refund( $order, 100.0, '' );
 			$this->fail( 'Transport failure must surface to the admin.' );
-		} catch ( XPay_Api_Exception $e ) {
-			$this->assertSame( XPay_Error_Codes::TRANSPORT_ERROR, $e->get_error_code() );
+		} catch ( XPayEG_Api_Exception $e ) {
+			$this->assertSame( XPayEG_Error_Codes::TRANSPORT_ERROR, $e->get_error_code() );
 		}
 
 		$this->refund( $order, 100.0, '' );
@@ -480,7 +480,7 @@ class RefundContractTest extends ContractTestCase {
 
 		$this->assertSame( 'wcref_14_n0_10000', $this->client->refund_keys[0] );
 		$this->assertSame( 'wcref_14_n1_10000', $this->client->refund_keys[1], 'A refund after a recorded success is a NEW refund and needs a fresh key.' );
-		$this->assertCount( 2, $order->get_meta( XPay_Constants::META_REFUND_IDS ) );
+		$this->assertCount( 2, $order->get_meta( XPayEG_Constants::META_REFUND_IDS ) );
 	}
 
 	public function test_succeeded_with_mismatched_amount_fails_closed() {
@@ -490,11 +490,11 @@ class RefundContractTest extends ContractTestCase {
 		try {
 			$this->refund( $order, 100.0, '' );
 			$this->fail( 'SUCCEEDED with a different amount must not be recorded as the requested refund.' );
-		} catch ( XPay_Api_Exception $e ) {
-			$this->assertSame( XPay_Error_Codes::REFUND_RESULT_MISMATCH, $e->get_error_code() );
+		} catch ( XPayEG_Api_Exception $e ) {
+			$this->assertSame( XPayEG_Error_Codes::REFUND_RESULT_MISMATCH, $e->get_error_code() );
 		}
 
-		$this->assertSame( '', $order->get_meta( XPay_Constants::META_REFUND_IDS ), 'A mismatched refund must not advance the idempotency ledger.' );
+		$this->assertSame( '', $order->get_meta( XPayEG_Constants::META_REFUND_IDS ), 'A mismatched refund must not advance the idempotency ledger.' );
 		$this->assertStageFired( 'refund.result_mismatch' );
 		$this->assertNotEmpty( $order->notes, 'Money moved: the trail must live on the order, not only in the log.' );
 	}
@@ -506,8 +506,8 @@ class RefundContractTest extends ContractTestCase {
 		try {
 			$this->refund( $order, 100.0, '' );
 			$this->fail( 'SUCCEEDED in a different currency must not be recorded as the requested refund.' );
-		} catch ( XPay_Api_Exception $e ) {
-			$this->assertSame( XPay_Error_Codes::REFUND_RESULT_MISMATCH, $e->get_error_code() );
+		} catch ( XPayEG_Api_Exception $e ) {
+			$this->assertSame( XPayEG_Error_Codes::REFUND_RESULT_MISMATCH, $e->get_error_code() );
 		}
 	}
 
@@ -520,8 +520,8 @@ class RefundContractTest extends ContractTestCase {
 
 		$refund = $this->refund( $order, 100.0, 'ok' );
 
-		$this->assertSame( XPay_Refund_Status::SUCCEEDED, $refund['status'] );
-		$this->assertCount( 1, $order->get_meta( XPay_Constants::META_REFUND_IDS ), 'Fail open on shape: only a present-but-different value blocks.' );
+		$this->assertSame( XPayEG_Refund_Status::SUCCEEDED, $refund['status'] );
+		$this->assertCount( 1, $order->get_meta( XPayEG_Constants::META_REFUND_IDS ), 'Fail open on shape: only a present-but-different value blocks.' );
 		$this->assertStageFired( 'refund.submitted' );
 	}
 }

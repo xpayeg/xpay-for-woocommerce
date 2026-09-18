@@ -18,10 +18,10 @@
  * move the row without going through the caches, and it is exactly what a
  * concurrent second process looks like from inside this one.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
-class OrderReloadTest extends XPay_Integration_Test_Case {
+class OrderReloadTest extends XPayEG_Integration_Test_Case {
 
 	public function storages(): array {
 		return array(
@@ -55,7 +55,7 @@ class OrderReloadTest extends XPay_Integration_Test_Case {
 	public function test_reload_sees_a_write_this_request_did_not_make( bool $hpos ): void {
 		$this->use_hpos( $hpos );
 
-		$order = $this->make_xpay_order();
+		$order = $this->make_xpayeg_order();
 		$order->set_status( 'pending' );
 		$order->save();
 
@@ -65,7 +65,7 @@ class OrderReloadTest extends XPay_Integration_Test_Case {
 
 		$this->write_status_directly( $order->get_id(), 'wc-processing' );
 
-		$fresh = XPay_Order_Sync::reload( $order->get_id() );
+		$fresh = XPayEG_Order_Sync::reload( $order->get_id() );
 
 		$this->assertInstanceOf( 'WC_Order', $fresh );
 		$this->assertSame(
@@ -84,7 +84,7 @@ class OrderReloadTest extends XPay_Integration_Test_Case {
 	public function test_an_order_paid_elsewhere_reads_back_as_paid( bool $hpos ): void {
 		$this->use_hpos( $hpos );
 
-		$order = $this->make_xpay_order();
+		$order = $this->make_xpayeg_order();
 		$order->set_status( 'pending' );
 		$order->save();
 		wc_get_order( $order->get_id() );
@@ -92,7 +92,7 @@ class OrderReloadTest extends XPay_Integration_Test_Case {
 		$this->write_status_directly( $order->get_id(), 'wc-processing' );
 
 		$this->assertTrue(
-			XPay_Order_Sync::reload( $order->get_id() )->is_paid(),
+			XPayEG_Order_Sync::reload( $order->get_id() )->is_paid(),
 			'This is the exact test guarding mark_paid(); false here means the payment is applied twice.'
 		);
 	}
@@ -108,13 +108,13 @@ class OrderReloadTest extends XPay_Integration_Test_Case {
 	public function test_the_shared_cache_agrees_after_a_reload( bool $hpos ): void {
 		$this->use_hpos( $hpos );
 
-		$order = $this->make_xpay_order();
+		$order = $this->make_xpayeg_order();
 		$order->set_status( 'pending' );
 		$order->save();
 		wc_get_order( $order->get_id() );
 
 		$this->write_status_directly( $order->get_id(), 'wc-processing' );
-		XPay_Order_Sync::reload( $order->get_id() );
+		XPayEG_Order_Sync::reload( $order->get_id() );
 
 		$this->assertSame( 'processing', wc_get_order( $order->get_id() )->get_status() );
 	}
@@ -140,6 +140,6 @@ class OrderReloadTest extends XPay_Integration_Test_Case {
 	 * early on it.
 	 */
 	public function test_reloading_an_order_that_does_not_exist_answers_null(): void {
-		$this->assertNull( XPay_Order_Sync::reload( 999999 ) );
+		$this->assertNull( XPayEG_Order_Sync::reload( 999999 ) );
 	}
 }

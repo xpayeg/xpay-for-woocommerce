@@ -10,10 +10,10 @@
  * Every path that cannot configure leaves the save intact and the manual
  * secret field as the working fallback.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
-class WebhookConfiguratorTest extends XPay_Integration_Test_Case {
+class WebhookConfiguratorTest extends XPayEG_Integration_Test_Case {
 
 	/** @var array[] Every API request the flow made: {method, url, headers, body}. */
 	private $requests = array();
@@ -28,13 +28,13 @@ class WebhookConfiguratorTest extends XPay_Integration_Test_Case {
 		parent::set_up();
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
 		update_option(
-			'woocommerce_xpay_settings',
+			'woocommerce_xpayeg_settings',
 			array(
 				'enabled' => 'yes',
 				'mode'    => 'test',
 			)
 		);
-		delete_option( XPay_Constants::OPTION_KEY_VALIDATED );
+		delete_option( XPayEG_Constants::OPTION_KEY_VALIDATED );
 
 		$this->requests   = array();
 		$this->answers    = array();
@@ -111,7 +111,7 @@ class WebhookConfiguratorTest extends XPay_Integration_Test_Case {
 				'object'        => 'webhook_endpoint',
 				'url'           => $url,
 				'status'        => 'enabled',
-				'enabledEvents' => XPay_Event_Names::SUBSCRIBED,
+				'enabledEvents' => XPayEG_Event_Names::SUBSCRIBED,
 				'livemode'      => false,
 			),
 			$extra
@@ -120,10 +120,10 @@ class WebhookConfiguratorTest extends XPay_Integration_Test_Case {
 
 	private function save_keys( string $secret = 'rk_test_wh1' ): void {
 		$_POST   = array(
-			'woocommerce_xpay_test_api_key'         => $secret,
-			'woocommerce_xpay_test_publishable_key' => 'pk_test_wh',
+			'woocommerce_xpayeg_test_api_key'         => $secret,
+			'woocommerce_xpayeg_test_publishable_key' => 'pk_test_wh',
 		);
-		$gateway = new XPay_Gateway();
+		$gateway = new XPayEG_Gateway();
 		$gateway->process_admin_options();
 		$_POST = array();
 	}
@@ -141,26 +141,26 @@ class WebhookConfiguratorTest extends XPay_Integration_Test_Case {
 
 	public function test_a_key_save_creates_the_endpoint_and_stores_the_secret(): void {
 		$this->answer( 'GET', '/account', 200, $this->account() );
-		$this->answer( 'POST', '/webhook-endpoints', 201, $this->endpoint_body( 'we_1', XPay_Webhook_Configurator::webhook_url(), array( 'secret' => 'whsec_auto_1' ) ) );
+		$this->answer( 'POST', '/webhook-endpoints', 201, $this->endpoint_body( 'we_1', XPayEG_Webhook_Configurator::webhook_url(), array( 'secret' => 'whsec_auto_1' ) ) );
 		$this->answer( 'GET', '/webhook-endpoints', 200, array( 'object' => 'list', 'data' => array() ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
 
 		$this->save_keys();
 
 		$this->assertCount( 1, $this->sent( 'POST', '/webhook-endpoints' ), 'One save, one endpoint.' );
 
-		$settings = get_option( 'woocommerce_xpay_settings' );
+		$settings = get_option( 'woocommerce_xpayeg_settings' );
 		$this->assertSame( 'whsec_auto_1', $settings['test_webhook_secret'], 'The signing secret must be stored where the receiver reads it, with nothing to paste.' );
 		$this->assertSame( 'we_1', $settings['test_webhook_data']['id'] );
 		$this->assertSame( 'rk_test_wh1', $settings['test_webhook_data']['secret'], 'The CREATING key is the record: decommissioning later must authenticate as the account that owns the endpoint.' );
 
 		$body = json_decode( $this->sent( 'POST', '/webhook-endpoints' )[0]['body'], true );
-		$this->assertSame( XPay_Webhook_Configurator::webhook_url(), $body['url'] );
-		$this->assertSame( XPay_Event_Names::SUBSCRIBED, $body['enabledEvents'], 'Every subscribed event, exactly.' );
+		$this->assertSame( XPayEG_Webhook_Configurator::webhook_url(), $body['url'] );
+		$this->assertSame( XPayEG_Event_Names::SUBSCRIBED, $body['enabledEvents'], 'Every subscribed event, exactly.' );
 	}
 
 	public function test_a_reinstall_deletes_the_endpoint_the_old_install_left_behind(): void {
-		$ours    = XPay_Webhook_Configurator::webhook_url();
-		$foreign = 'https://someone-elses-store.test/?wc-api=xpay_webhook';
+		$ours    = XPayEG_Webhook_Configurator::webhook_url();
+		$foreign = 'https://someone-elses-store.test/?wc-api=xpayeg_webhook';
 		$this->answer( 'GET', '/account', 200, $this->account() );
 		$this->answer( 'POST', '/webhook-endpoints', 201, $this->endpoint_body( 'we_new', $ours, array( 'secret' => 'whsec_new' ) ) );
 		$this->answer(
@@ -187,19 +187,19 @@ class WebhookConfiguratorTest extends XPay_Integration_Test_Case {
 
 	public function test_a_key_change_retires_the_old_endpoint_with_the_old_key(): void {
 		// A store that already configured under the OLD key.
-		XPay_Webhook_Configurator::merge_settings(
+		XPayEG_Webhook_Configurator::merge_settings(
 			array(
 				'test_webhook_secret' => 'whsec_old',
 				'test_webhook_data'   => array(
 					'id'     => 'we_old',
-					'url'    => XPay_Webhook_Configurator::webhook_url(),
+					'url'    => XPayEG_Webhook_Configurator::webhook_url(),
 					'secret' => 'rk_test_OLD',
 				),
 			)
 		);
 		$this->answer( 'GET', '/account', 200, $this->account() );
 		$this->answer( 'DELETE', '/webhook-endpoints/we_old', 204, array() );
-		$this->answer( 'POST', '/webhook-endpoints', 201, $this->endpoint_body( 'we_new', XPay_Webhook_Configurator::webhook_url(), array( 'secret' => 'whsec_new' ) ) );
+		$this->answer( 'POST', '/webhook-endpoints', 201, $this->endpoint_body( 'we_new', XPayEG_Webhook_Configurator::webhook_url(), array( 'secret' => 'whsec_new' ) ) );
 		$this->answer( 'GET', '/webhook-endpoints', 200, array( 'object' => 'list', 'data' => array() ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
 
 		$this->save_keys( 'rk_test_NEW' );
@@ -212,27 +212,27 @@ class WebhookConfiguratorTest extends XPay_Integration_Test_Case {
 			'The new key may belong to a different account entirely; only the creating key can retire the endpoint.'
 		);
 
-		$settings = get_option( 'woocommerce_xpay_settings' );
+		$settings = get_option( 'woocommerce_xpayeg_settings' );
 		$this->assertSame( 'whsec_new', $settings['test_webhook_secret'] );
 		$this->assertSame( 'we_new', $settings['test_webhook_data']['id'] );
 	}
 
 	public function test_saving_the_same_key_again_leaves_the_endpoint_alone(): void {
 		update_option(
-			XPay_Constants::OPTION_KEY_VALIDATED,
+			XPayEG_Constants::OPTION_KEY_VALIDATED,
 			array(
 				'mode'         => 'test',
 				'validated_at' => time(),
-				'fingerprint'  => XPay_Constants::key_fingerprint( 'rk_test_wh1', 'pk_test_wh' ),
+				'fingerprint'  => XPayEG_Constants::key_fingerprint( 'rk_test_wh1', 'pk_test_wh' ),
 			),
 			false
 		);
-		XPay_Webhook_Configurator::merge_settings(
+		XPayEG_Webhook_Configurator::merge_settings(
 			array(
 				'test_webhook_secret' => 'whsec_standing',
 				'test_webhook_data'   => array(
 					'id'     => 'we_standing',
-					'url'    => XPay_Webhook_Configurator::webhook_url(),
+					'url'    => XPayEG_Webhook_Configurator::webhook_url(),
 					'secret' => 'rk_test_wh1',
 				),
 			)
@@ -243,7 +243,7 @@ class WebhookConfiguratorTest extends XPay_Integration_Test_Case {
 
 		$this->assertCount( 0, $this->sent( 'POST', '/webhook-endpoints' ), 'This key\'s endpoint already stands; a save that changes nothing creates nothing.' );
 		$this->assertCount( 0, $this->sent( 'DELETE', '/webhook-endpoints' ) );
-		$settings = get_option( 'woocommerce_xpay_settings' );
+		$settings = get_option( 'woocommerce_xpayeg_settings' );
 		$this->assertSame( 'whsec_standing', $settings['test_webhook_secret'] );
 	}
 
@@ -253,7 +253,7 @@ class WebhookConfiguratorTest extends XPay_Integration_Test_Case {
 		$this->save_keys();
 
 		$this->assertCount( 0, $this->sent( 'POST', '/webhook-endpoints' ) );
-		$this->assertIsArray( get_option( XPay_Constants::OPTION_KEY_VALIDATED ), 'The keys still validate; only the webhook automation is unavailable.' );
+		$this->assertIsArray( get_option( XPayEG_Constants::OPTION_KEY_VALIDATED ), 'The keys still validate; only the webhook automation is unavailable.' );
 
 		$property = new ReflectionProperty( 'WC_Admin_Settings', 'messages' );
 		$property->setAccessible( true );
@@ -269,19 +269,19 @@ class WebhookConfiguratorTest extends XPay_Integration_Test_Case {
 
 		$this->save_keys();
 
-		$this->assertIsArray( get_option( XPay_Constants::OPTION_KEY_VALIDATED ), 'A webhook hiccup must never cost the merchant their validated keys.' );
-		$settings = get_option( 'woocommerce_xpay_settings' );
+		$this->assertIsArray( get_option( XPayEG_Constants::OPTION_KEY_VALIDATED ), 'A webhook hiccup must never cost the merchant their validated keys.' );
+		$settings = get_option( 'woocommerce_xpayeg_settings' );
 		$this->assertArrayNotHasKey( 'id', (array) ( $settings['test_webhook_data'] ?? array() ) );
 	}
 
 	public function test_a_plugin_update_reconfigures_only_when_the_event_list_changed(): void {
-		XPay_Webhook_Configurator::merge_settings(
+		XPayEG_Webhook_Configurator::merge_settings(
 			array(
 				'test_api_key'        => 'rk_test_wh1',
 				'test_webhook_secret' => 'whsec_v1',
 				'test_webhook_data'   => array(
 					'id'     => 'we_v1',
-					'url'    => XPay_Webhook_Configurator::webhook_url(),
+					'url'    => XPayEG_Webhook_Configurator::webhook_url(),
 					'secret' => 'rk_test_wh1',
 				),
 			)
@@ -294,16 +294,16 @@ class WebhookConfiguratorTest extends XPay_Integration_Test_Case {
 			200,
 			array(
 				'object' => 'list',
-				'data'   => array( $this->endpoint_body( 'we_v1', XPay_Webhook_Configurator::webhook_url() ) ),
+				'data'   => array( $this->endpoint_body( 'we_v1', XPayEG_Webhook_Configurator::webhook_url() ) ),
 			)
 		);
-		XPay_Webhook_Configurator::maybe_reconfigure_on_update();
+		XPayEG_Webhook_Configurator::maybe_reconfigure_on_update();
 		$this->assertCount( 0, $this->sent( 'POST', '/webhook-endpoints' ) );
 
 		// Platform copy is missing an event (an older plugin created it):
 		// silently re-create.
-		$stale = $this->endpoint_body( 'we_v1', XPay_Webhook_Configurator::webhook_url() );
-		$stale['enabledEvents'] = array( XPay_Event_Names::CHECKOUT_SESSION_COMPLETED );
+		$stale = $this->endpoint_body( 'we_v1', XPayEG_Webhook_Configurator::webhook_url() );
+		$stale['enabledEvents'] = array( XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED );
 		$this->answer(
 			'GET',
 			'/webhook-endpoints',
@@ -313,12 +313,12 @@ class WebhookConfiguratorTest extends XPay_Integration_Test_Case {
 				'data'   => array( $stale ),
 			)
 		);
-		$this->answer( 'POST', '/webhook-endpoints', 201, $this->endpoint_body( 'we_replacement', XPay_Webhook_Configurator::webhook_url(), array( 'secret' => 'whsec_replacement' ) ) );
+		$this->answer( 'POST', '/webhook-endpoints', 201, $this->endpoint_body( 'we_replacement', XPayEG_Webhook_Configurator::webhook_url(), array( 'secret' => 'whsec_replacement' ) ) );
 		$this->answer( 'DELETE', '/webhook-endpoints/we_v1', 204, array() );
 
-		XPay_Webhook_Configurator::maybe_reconfigure_on_update();
+		XPayEG_Webhook_Configurator::maybe_reconfigure_on_update();
 
 		$this->assertCount( 1, $this->sent( 'POST', '/webhook-endpoints' ) );
-		$this->assertSame( 'whsec_replacement', get_option( 'woocommerce_xpay_settings' )['test_webhook_secret'] );
+		$this->assertSame( 'whsec_replacement', get_option( 'woocommerce_xpayeg_settings' )['test_webhook_secret'] );
 	}
 }

@@ -5,7 +5,7 @@
  * Description: Accept payments on your WooCommerce store via XPay (Egypt): cards, ValU and more, in a secure on-site checkout.
  * Author: XPay
  * Author URI: https://xpay.app/
- * Version: 1.0.2
+ * Version: 1.0.3
  * Requires at least: 6.2
  * Requires PHP: 7.4
  * Requires Plugins: woocommerce
@@ -16,15 +16,15 @@
  * Text Domain: xpay-for-woocommerce
  * Domain Path: /languages
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
 defined( 'ABSPATH' ) || exit;
 
-defined( 'XPAY_WC_VERSION' ) || define( 'XPAY_WC_VERSION', '1.0.2' );
-defined( 'XPAY_WC_PLUGIN_FILE' ) || define( 'XPAY_WC_PLUGIN_FILE', __FILE__ );
-defined( 'XPAY_WC_PLUGIN_DIR' ) || define( 'XPAY_WC_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
-defined( 'XPAY_WC_PLUGIN_URL' ) || define( 'XPAY_WC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+defined( 'XPAYEG_VERSION' ) || define( 'XPAYEG_VERSION', '1.0.3' );
+defined( 'XPAYEG_PLUGIN_FILE' ) || define( 'XPAYEG_PLUGIN_FILE', __FILE__ );
+defined( 'XPAYEG_PLUGIN_DIR' ) || define( 'XPAYEG_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+defined( 'XPAYEG_PLUGIN_URL' ) || define( 'XPAYEG_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 /*
  * HPOS (custom order tables) and Cart/Checkout Blocks compatibility must be
@@ -53,23 +53,23 @@ add_action(
 register_activation_hook(
 	__FILE__,
 	function ( $network_wide ) {
-		require_once XPAY_WC_PLUGIN_DIR . 'includes/constants/class-xpay-constants.php';
-		require_once XPAY_WC_PLUGIN_DIR . 'includes/gateway/class-xpay-gateway-order.php';
+		require_once XPAYEG_PLUGIN_DIR . 'includes/constants/class-xpayeg-constants.php';
+		require_once XPAYEG_PLUGIN_DIR . 'includes/gateway/class-xpayeg-gateway-order.php';
 		if ( is_multisite() && $network_wide ) {
 			foreach ( get_sites(
 				array(
 					'fields' => 'ids',
 					'number' => 0,
 				)
-			) as $xpay_wc_site_id ) {
-				switch_to_blog( (int) $xpay_wc_site_id );
-				XPay_Gateway_Order::apply_default();
+			) as $xpayeg_site_id ) {
+				switch_to_blog( (int) $xpayeg_site_id );
+				XPayEG_Gateway_Order::apply_default();
 				restore_current_blog();
 			}
 			return;
 		}
-		// Once, ever. See XPay_Gateway_Order for why this is not re-applied.
-		XPay_Gateway_Order::apply_default();
+		// Once, ever. See XPayEG_Gateway_Order for why this is not re-applied.
+		XPayEG_Gateway_Order::apply_default();
 	}
 );
 
@@ -82,8 +82,8 @@ add_action(
 			// missing-dependency states to the merchant.
 			return;
 		}
-		require_once XPAY_WC_PLUGIN_DIR . 'includes/class-xpay-plugin.php';
-		XPay_Plugin::instance()->init();
+		require_once XPAYEG_PLUGIN_DIR . 'includes/class-xpayeg-plugin.php';
+		XPayEG_Plugin::instance()->init();
 	},
 	11
 );

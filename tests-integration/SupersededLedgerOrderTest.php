@@ -2,18 +2,18 @@
 /**
  * The ledger names the old session BEFORE the order moves off it.
  *
- * XPay_Checkout_Service::get_or_create_session() supersedes a session that
+ * XPayEG_Checkout_Service::get_or_create_session() supersedes a session that
  * can no longer be reused. The old one stays OPEN and payable on the
  * platform until the expire call lands, so a shopper finishing it in another
  * tab or from an emailed pay link still produces a checkout.session.completed
  * for it. The superseded ledger is the only thing that makes that money
  * recognizable: the webhook reads META_SESSION_ID first and falls back to the
- * ledger (class-xpay-webhook-controller.php:727-738), and an id in neither is
+ * ledger (class-xpayeg-webhook-controller.php:727-738), and an id in neither is
  * 'foreign'.
  *
  * 'foreign' is TERMINAL, not retried. The controller answers it 200
  * received/applied:false so XPay's retry engine is not alarmed
- * (class-xpay-webhook-controller.php:100-113). So an event judged foreign is
+ * (class-xpayeg-webhook-controller.php:100-113). So an event judged foreign is
  * dropped once and never redelivered: money taken, order never marked paid,
  * never even parked on-hold for a human.
  *
@@ -25,10 +25,10 @@
  * (the check sits above the acquire, at :425), so nothing serializes a
  * delivery against that gap.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
-class SupersededLedgerOrderTest extends XPay_Integration_Test_Case {
+class SupersededLedgerOrderTest extends XPayEG_Integration_Test_Case {
 
 	/** @var array|null What a fresh read of the order saw inside the window. */
 	private $seen = null;
@@ -106,7 +106,7 @@ class SupersededLedgerOrderTest extends XPay_Integration_Test_Case {
 	 *
 	 * The probe hangs off the order note create_session() writes immediately
 	 * after its own save, so it fires between the two commits without any
-	 * timing assumption. XPay_Order_Sync::reload() is the accessor the
+	 * timing assumption. XPayEG_Order_Sync::reload() is the accessor the
 	 * webhook itself uses inside its lock, so what this sees is what that
 	 * worker would see.
 	 *
@@ -118,22 +118,22 @@ class SupersededLedgerOrderTest extends XPay_Integration_Test_Case {
 		if ( null !== $this->seen ) {
 			return;
 		}
-		$fresh      = XPay_Order_Sync::reload( $noted->get_id() );
-		$superseded = $fresh->get_meta( XPay_Constants::META_SUPERSEDED_SESSIONS );
+		$fresh      = XPayEG_Order_Sync::reload( $noted->get_id() );
+		$superseded = $fresh->get_meta( XPayEG_Constants::META_SUPERSEDED_SESSIONS );
 		$this->seen = array(
-			'session_id' => (string) $fresh->get_meta( XPay_Constants::META_SESSION_ID ),
+			'session_id' => (string) $fresh->get_meta( XPayEG_Constants::META_SESSION_ID ),
 			'superseded' => is_array( $superseded ) ? $superseded : array(),
 		);
 	}
 
 	/** An order already on a session, whose total has since moved. */
 	private function order_being_superseded(): WC_Order {
-		$order = $this->make_xpay_order();
+		$order = $this->make_xpayeg_order();
 		$order->set_total( '123.00' );
 		$order->set_status( 'pending' );
 		$order->save();
 
-		$service = new XPay_Checkout_Service( $this->gateway()->api_client() );
+		$service = new XPayEG_Checkout_Service( $this->gateway()->api_client() );
 		$service->get_or_create_session( $order );
 
 		return $order;
@@ -141,12 +141,12 @@ class SupersededLedgerOrderTest extends XPay_Integration_Test_Case {
 
 	public function test_the_old_session_is_in_the_ledger_before_the_new_one_is_committed(): void {
 		$order = $this->order_being_superseded();
-		$old   = (string) $order->get_meta( XPay_Constants::META_SESSION_ID );
+		$old   = (string) $order->get_meta( XPayEG_Constants::META_SESSION_ID );
 		$this->assertSame( 'cs_ledger_1', $old );
 
 		add_action( 'woocommerce_order_note_added', array( $this, 'probe' ), 10, 2 );
 		$this->seen = null;
-		( new XPay_Checkout_Service( $this->gateway()->api_client() ) )->get_or_create_session( $order );
+		( new XPayEG_Checkout_Service( $this->gateway()->api_client() ) )->get_or_create_session( $order );
 		remove_action( 'woocommerce_order_note_added', array( $this, 'probe' ), 10 );
 
 		$this->assertNotNull( $this->seen, 'The probe never ran, so the assertions below would pass vacuously.' );
@@ -165,12 +165,12 @@ class SupersededLedgerOrderTest extends XPay_Integration_Test_Case {
 	/** The ledger still ends up correct once the call returns. */
 	public function test_the_ledger_names_the_old_session_when_the_call_is_done(): void {
 		$order = $this->order_being_superseded();
-		$old   = (string) $order->get_meta( XPay_Constants::META_SESSION_ID );
+		$old   = (string) $order->get_meta( XPayEG_Constants::META_SESSION_ID );
 
-		( new XPay_Checkout_Service( $this->gateway()->api_client() ) )->get_or_create_session( $order );
+		( new XPayEG_Checkout_Service( $this->gateway()->api_client() ) )->get_or_create_session( $order );
 
-		$fresh = XPay_Order_Sync::reload( $order->get_id() );
-		$this->assertSame( 'cs_ledger_2', (string) $fresh->get_meta( XPay_Constants::META_SESSION_ID ) );
-		$this->assertContains( $old, (array) $fresh->get_meta( XPay_Constants::META_SUPERSEDED_SESSIONS ) );
+		$fresh = XPayEG_Order_Sync::reload( $order->get_id() );
+		$this->assertSame( 'cs_ledger_2', (string) $fresh->get_meta( XPayEG_Constants::META_SESSION_ID ) );
+		$this->assertContains( $old, (array) $fresh->get_meta( XPayEG_Constants::META_SUPERSEDED_SESSIONS ) );
 	}
 }

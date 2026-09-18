@@ -36,14 +36,14 @@
  * reuses the same secret, and the whole transaction stays on one Payment
  * Intent.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 ( function ( window, document ) {
 	'use strict';
 
-	var params = window.xpayElementsParams;
+	var params = window.xpayegElementsParams;
 
-	if ( ! params || ! window.XPayElements ) {
+	if ( ! params || ! window.XPayEGElements ) {
 		return;
 	}
 
@@ -70,7 +70,7 @@
 	 */
 	function ask( action, body ) {
 		var form = new window.FormData();
-		form.append( 'action', 'xpay_elements_' + action );
+		form.append( 'action', 'xpayeg_elements_' + action );
 		form.append( 'nonce', params.nonce );
 		Object.keys( body || {} ).forEach( function ( key ) {
 			form.append( key, body[ key ] );
@@ -95,8 +95,8 @@
 		return input ? String( input.value || '' ) : '';
 	}
 
-	/** Whether the selected row is one of ours (xpay, xpay_valu, ...). */
-	function xpaySelected() {
+	/** Whether the selected row is one of ours (xpay, xpayeg_valu, ...). */
+	function xpayegSelected() {
 		var id = selectedId();
 		return id === params.gatewayId || 0 === id.indexOf( params.gatewayId + '_' );
 	}
@@ -109,8 +109,8 @@
 	 */
 	function container() {
 		var id = selectedId();
-		var scoped = id ? document.querySelector( '.payment_method_' + id + ' [data-xpay-elements]' ) : null;
-		return scoped || document.querySelector( '[data-xpay-elements]' );
+		var scoped = id ? document.querySelector( '.payment_method_' + id + ' [data-xpayeg-elements]' ) : null;
+		return scoped || document.querySelector( '[data-xpayeg-elements]' );
 	}
 
 	function showError( message ) {
@@ -118,8 +118,8 @@
 		// under the card fields. Falls back to the first notice on markup
 		// without row wrappers.
 		var row = container();
-		var node = ( row && row.querySelector && row.querySelector( '[data-xpay-elements-error]' ) )
-			|| document.querySelector( '[data-xpay-elements-error]' );
+		var node = ( row && row.querySelector && row.querySelector( '[data-xpayeg-elements-error]' ) )
+			|| document.querySelector( '[data-xpayeg-elements-error]' );
 		if ( ! node ) {
 			return;
 		}
@@ -140,11 +140,11 @@
 	 */
 	function mount() {
 		var node = container();
-		if ( ! node || ! xpaySelected() ) {
+		if ( ! node || ! xpayegSelected() ) {
 			return false;
 		}
 
-		var method = ( node.getAttribute && node.getAttribute( 'data-xpay-method' ) ) || '';
+		var method = ( node.getAttribute && node.getAttribute( 'data-xpayeg-method' ) ) || '';
 		var entry = rows[ method ];
 
 		if ( entry && entry.node === node ) {
@@ -175,8 +175,8 @@
 		// restricted to it, so this row renders exactly one method and
 		// the page's radio list is the selector. '' (the single-row
 		// fallback) mounts unfiltered, exactly as before.
-		return window.XPayElements.mount( {
-			node: ( node.querySelector && node.querySelector( '.xpay-el__mount' ) ) || node,
+		return window.XPayEGElements.mount( {
+			node: ( node.querySelector && node.querySelector( '.xpayeg-el__mount' ) ) || node,
 			paymentMethodTypes: method ? [ method ] : undefined,
 			// This row already draws the method's logo and title, so the
 			// fields render the form alone. The fallback single row keeps
@@ -235,7 +235,7 @@
 	 */
 	function cartAmount() {
 		var node = container();
-		var shown = node ? node.getAttribute( 'data-xpay-amount' ) : null;
+		var shown = node ? node.getAttribute( 'data-xpayeg-amount' ) : null;
 		var amount = shown ? parseInt( shown, 10 ) : NaN;
 		if ( ! isNaN( amount ) && amount > 0 ) {
 			return amount;
@@ -347,12 +347,12 @@
 				// not hand this page a session to confirm against (already
 				// paid, or a fallback it owns). It named where to go; go
 				// there.
-				if ( 'yes' !== result.xpay_confirm || ! result.xpay_secret ) {
+				if ( 'yes' !== result.xpayeg_confirm || ! result.xpayeg_secret ) {
 					navigate( result.redirect );
 					return;
 				}
 
-				return handle.confirm( result.xpay_secret, customerDetails() ).then( function ( outcome ) {
+				return handle.confirm( result.xpayeg_secret, customerDetails() ).then( function ( outcome ) {
 					/*
 					 * Charge = display, refused. The session the server made
 					 * does not total what these fields showed, so NOTHING
@@ -364,7 +364,7 @@
 					if ( outcome && 'amount_reconfirmation_required' === outcome.code ) {
 						sync();
 						release( wcForm );
-						showError( window.XPayElements.refusalMessage( strings, outcome.code ) );
+						showError( window.XPayEGElements.refusalMessage( strings, outcome.code ) );
 						return;
 					}
 
@@ -372,7 +372,7 @@
 					// "Not ok" from the SDK is a decline and a payment the
 					// platform could not decide on in the same shape, so the
 					// server is asked which.
-					if ( window.XPayElements.confirmed( outcome ) ) {
+					if ( window.XPayEGElements.confirmed( outcome ) ) {
 						navigate( result.redirect );
 						return;
 					}
@@ -381,17 +381,17 @@
 					// unreachable API is usually a blip, and the fallback is
 					// deliberately the cautious one, so it is worth one more
 					// question.
-					return window.XPayElements.settleVerdict( function () {
+					return window.XPayEGElements.settleVerdict( function () {
 						return ask( 'outcome', {
-							order: result.xpay_order_id || '',
-							key: result.xpay_order_key || '',
+							order: result.xpayeg_order_id || '',
+							key: result.xpayeg_order_key || '',
 						} ).then( function ( answer ) {
 							return answer.ok && answer.json && answer.json.success
 								? answer.json.data.verdict
 								: 'unknown';
 						} );
 					} )
-						.then( window.XPayElements.outcomeKind )
+						.then( window.XPayEGElements.outcomeKind )
 						.then( function ( kind ) {
 							if ( 'paid' === kind ) {
 								navigate( result.redirect );

@@ -22,14 +22,14 @@
  * POST navigates, and a navigation destroys the iframe holding the card
  * mid-payment.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 ( function ( window, document ) {
 	'use strict';
 
-	var params = window.xpayPayPageParams;
+	var params = window.xpayegPayPageParams;
 
-	if ( ! params || ! window.XPayElements ) {
+	if ( ! params || ! window.XPayEGElements ) {
 		return;
 	}
 
@@ -53,7 +53,7 @@
 	 */
 	function ask( action, body ) {
 		var form = new window.FormData();
-		form.append( 'action', 'xpay_elements_' + action );
+		form.append( 'action', 'xpayeg_elements_' + action );
 		form.append( 'nonce', params.nonce );
 		Object.keys( body || {} ).forEach( function ( key ) {
 			form.append( key, body[ key ] );
@@ -69,8 +69,8 @@
 
 	function showError( message ) {
 		var row = container();
-		var node = ( row && row.querySelector && row.querySelector( '[data-xpay-elements-error]' ) )
-			|| document.querySelector( '[data-xpay-elements-error]' );
+		var node = ( row && row.querySelector && row.querySelector( '[data-xpayeg-elements-error]' ) )
+			|| document.querySelector( '[data-xpayeg-elements-error]' );
 		if ( node ) {
 			node.textContent = message || '';
 			node.hidden = ! message;
@@ -78,7 +78,7 @@
 	}
 
 	/** Whether the shopper has the XPay row selected (or it is the only one). */
-	function xpaySelected() {
+	function xpayegSelected() {
 		var input = document.querySelector( 'input[name="payment_method"]:checked' );
 		return ! input || input.value === params.gatewayId || 0 === input.value.indexOf( params.gatewayId + '_' );
 	}
@@ -87,8 +87,8 @@
 	function container() {
 		var input = document.querySelector( 'input[name="payment_method"]:checked' );
 		var id = input ? String( input.value || '' ) : '';
-		var scoped = id ? document.querySelector( '.payment_method_' + id + ' [data-xpay-elements]' ) : null;
-		return scoped || document.querySelector( '[data-xpay-elements]' );
+		var scoped = id ? document.querySelector( '.payment_method_' + id + ' [data-xpayeg-elements]' ) : null;
+		return scoped || document.querySelector( '[data-xpayeg-elements]' );
 	}
 
 	var mountedNode = null;
@@ -108,9 +108,9 @@
 			handle = null;
 		}
 		mountedNode = node;
-		var method = ( node.getAttribute && node.getAttribute( 'data-xpay-method' ) ) || '';
-		handle = window.XPayElements.mount( {
-			node: ( node.querySelector && node.querySelector( '.xpay-el__mount' ) ) || node,
+		var method = ( node.getAttribute && node.getAttribute( 'data-xpayeg-method' ) ) || '';
+		handle = window.XPayEGElements.mount( {
+			node: ( node.querySelector && node.querySelector( '.xpayeg-el__mount' ) ) || node,
 			// One method per row, from the row's own container; '' (the
 			// single-row fallback) mounts unfiltered.
 			paymentMethodTypes: method ? [ method ] : undefined,
@@ -151,12 +151,12 @@
 	function settle( outcome ) {
 		var strings = params.i18n || {};
 
-		return window.XPayElements.settleVerdict( function () {
+		return window.XPayEGElements.settleVerdict( function () {
 			return ask( 'outcome', { order: params.orderId, key: params.orderKey } ).then( function ( answer ) {
 				return answer.ok && answer.json && answer.json.success ? answer.json.data.verdict : 'unknown';
 			} );
 		} )
-			.then( window.XPayElements.outcomeKind )
+			.then( window.XPayEGElements.outcomeKind )
 			.then( function ( kind ) {
 				if ( 'paid' === kind ) {
 					navigate();
@@ -176,7 +176,7 @@
 
 	/** The Pay controls, wherever this page drew them. */
 	function payButtons() {
-		var buttons = document.querySelectorAll( '#order_review button[type="submit"], #order_review #place_order, [data-xpay-pay]' );
+		var buttons = document.querySelectorAll( '#order_review button[type="submit"], #order_review #place_order, [data-xpayeg-pay]' );
 		return Array.prototype.slice.call( buttons );
 	}
 
@@ -256,7 +256,7 @@
 						window.location.reload();
 						return;
 					}
-					if ( window.XPayElements.confirmed( outcome ) ) {
+					if ( window.XPayEGElements.confirmed( outcome ) ) {
 						navigate();
 						return;
 					}
@@ -302,7 +302,7 @@
 		var form = document.getElementById( 'order_review' );
 		if ( form ) {
 			form.addEventListener( 'submit', function ( event ) {
-				if ( ! xpaySelected() ) {
+				if ( ! xpayegSelected() ) {
 					return;
 				}
 				event.preventDefault();
@@ -312,12 +312,12 @@
 			// mounts the newly selected one. Delegated on the form because
 			// the radios are core's markup, not ours.
 			form.addEventListener( 'change', function ( event ) {
-				if ( event.target && 'payment_method' === event.target.name && xpaySelected() && ! paying ) {
+				if ( event.target && 'payment_method' === event.target.name && xpayegSelected() && ! paying ) {
 					mount();
 				}
 			} );
 		}
-		var button = document.querySelector( '[data-xpay-pay]' );
+		var button = document.querySelector( '[data-xpayeg-pay]' );
 		if ( button ) {
 			button.addEventListener( 'click', function ( event ) {
 				event.preventDefault();

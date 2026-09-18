@@ -6,7 +6,7 @@
  *
  * @see https://docs.xpay.app/en/api-reference/objects/refund
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
 use PHPUnit\Framework\TestCase;
@@ -14,15 +14,15 @@ use PHPUnit\Framework\TestCase;
 final class RefundRegistryTest extends TestCase {
 
 	public function test_refund_statuses_are_uppercase_wire_strings(): void {
-		$this->assertSame( 'PENDING', XPay_Refund_Status::PENDING );
-		$this->assertSame( 'REQUIRES_ACTION', XPay_Refund_Status::REQUIRES_ACTION );
-		$this->assertSame( 'SUCCEEDED', XPay_Refund_Status::SUCCEEDED );
-		$this->assertSame( 'FAILED', XPay_Refund_Status::FAILED );
-		$this->assertSame( 'CANCELED', XPay_Refund_Status::CANCELED );
-		$this->assertSame( array( 'PENDING', 'REQUIRES_ACTION' ), XPay_Refund_Status::IN_FLIGHT );
+		$this->assertSame( 'PENDING', XPayEG_Refund_Status::PENDING );
+		$this->assertSame( 'REQUIRES_ACTION', XPayEG_Refund_Status::REQUIRES_ACTION );
+		$this->assertSame( 'SUCCEEDED', XPayEG_Refund_Status::SUCCEEDED );
+		$this->assertSame( 'FAILED', XPayEG_Refund_Status::FAILED );
+		$this->assertSame( 'CANCELED', XPayEG_Refund_Status::CANCELED );
+		$this->assertSame( array( 'PENDING', 'REQUIRES_ACTION' ), XPayEG_Refund_Status::IN_FLIGHT );
 	}
 
 	public function test_refund_reason_is_the_uppercase_wire_string(): void {
-		$this->assertSame( 'REQUESTED_BY_CUSTOMER', XPay_Refund_Reason::REQUESTED_BY_CUSTOMER );
+		$this->assertSame( 'REQUESTED_BY_CUSTOMER', XPayEG_Refund_Reason::REQUESTED_BY_CUSTOMER );
 	}
 }

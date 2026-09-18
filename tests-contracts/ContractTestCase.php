@@ -3,7 +3,7 @@
  * Shared base for the contract suite: a fresh in-memory world per test,
  * plus builders and assertion helpers shared by every contract.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
 use PHPUnit\Framework\TestCase;
@@ -12,7 +12,7 @@ abstract class ContractTestCase extends TestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		xpay_tests_reset_world();
+		xpayeg_tests_reset_world();
 	}
 
 	/**
@@ -26,15 +26,15 @@ abstract class ContractTestCase extends TestCase {
 		foreach ( $props as $key => $value ) {
 			$order->{$key} = $value;
 		}
-		$GLOBALS['xpay_test_orders'][ $id ] = $order;
+		$GLOBALS['xpayeg_test_orders'][ $id ] = $order;
 		return $order;
 	}
 
-	/** Stage names of every xpay_logger_event fired so far. */
+	/** Stage names of every xpayeg_logger_event fired so far. */
 	protected function firedStages(): array {
 		$stages = array();
-		foreach ( $GLOBALS['xpay_test_actions'] as $action ) {
-			if ( 'xpay_logger_event' === $action[0] ) {
+		foreach ( $GLOBALS['xpayeg_test_actions'] as $action ) {
+			if ( 'xpayeg_logger_event' === $action[0] ) {
 				$stages[] = $action[1];
 			}
 		}
@@ -54,8 +54,8 @@ abstract class ContractTestCase extends TestCase {
 		return array_merge(
 			array(
 				'id'            => 'cs_test_contract',
-				'status'        => XPay_Session_Status::COMPLETE,
-				'paymentStatus' => XPay_Payment_Status::PAID,
+				'status'        => XPayEG_Session_Status::COMPLETE,
+				'paymentStatus' => XPayEG_Payment_Status::PAID,
 					// This plugin's single line item is compared with amountSubtotal.
 				'amountSubtotal' => 29000,
 				'amountTotal'    => 29000,
@@ -70,7 +70,7 @@ abstract class ContractTestCase extends TestCase {
 
 	/** Invoke the webhook controller's private apply_event for a scenario. */
 	protected function applyEvent( string $type, string $event_id, array $session_object ): void {
-		$method = new ReflectionMethod( XPay_Webhook_Controller::class, 'apply_event' );
+		$method = new ReflectionMethod( XPayEG_Webhook_Controller::class, 'apply_event' );
 		$method->setAccessible( true );
 		$method->invoke( null, $type, $event_id, $session_object );
 	}

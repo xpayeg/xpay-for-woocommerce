@@ -12,13 +12,13 @@
  * failure leaves nothing behind and
  * and a redelivery after mark_paid() mirrors the refund.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
-class RefundEventNoOrderTest extends XPay_Integration_Test_Case {
+class RefundEventNoOrderTest extends XPayEG_Integration_Test_Case {
 
 	private function apply( string $type, array $payload, string $event_id ): void {
-		$method = new ReflectionMethod( 'XPay_Webhook_Controller', 'apply_event' );
+		$method = new ReflectionMethod( 'XPayEG_Webhook_Controller', 'apply_event' );
 		$method->setAccessible( true );
 		$method->invoke( null, $type, $event_id, $payload );
 	}
@@ -30,7 +30,7 @@ class RefundEventNoOrderTest extends XPay_Integration_Test_Case {
 			'refunds'         => array(
 				array(
 					'id'       => 're_test_1',
-					'status'   => XPay_Refund_Status::SUCCEEDED,
+					'status'   => XPayEG_Refund_Status::SUCCEEDED,
 					'amount'   => 1000,
 					'currency' => 'EGP',
 				),
@@ -40,14 +40,14 @@ class RefundEventNoOrderTest extends XPay_Integration_Test_Case {
 
 	public function test_a_refund_event_with_no_order_fails_for_redelivery(): void {
 		try {
-			$this->apply( XPay_Event_Names::CHARGE_REFUNDED, $this->charge_refunded_payload(), 'evt_race_1' );
+			$this->apply( XPayEG_Event_Names::CHARGE_REFUNDED, $this->charge_refunded_payload(), 'evt_race_1' );
 			$this->fail( 'Expected the order-not-found refusal to throw.' );
-		} catch ( XPay_Api_Exception $e ) {
-			$this->assertSame( XPay_Error_Codes::WEBHOOK_ORDER_NOT_FOUND, $e->get_error_code() );
+		} catch ( XPayEG_Api_Exception $e ) {
+			$this->assertSame( XPayEG_Error_Codes::WEBHOOK_ORDER_NOT_FOUND, $e->get_error_code() );
 		}
 
 		$this->assertFalse(
-			function_exists( 'as_has_scheduled_action' ) && as_has_scheduled_action( 'xpay_retry_webhook_event' ),
+			function_exists( 'as_has_scheduled_action' ) && as_has_scheduled_action( 'xpayeg_retry_webhook_event' ),
 			'Nothing may queue locally; the platform retries.'
 		);
 	}
@@ -55,21 +55,21 @@ class RefundEventNoOrderTest extends XPay_Integration_Test_Case {
 	/** The redelivery is what resolves the race, so it has to actually work. */
 	public function test_a_redelivery_after_the_payment_applies_the_refund(): void {
 		try {
-			$this->apply( XPay_Event_Names::CHARGE_REFUNDED, $this->charge_refunded_payload(), 'evt_race_1' );
-		} catch ( XPay_Api_Exception $e ) {
+			$this->apply( XPayEG_Event_Names::CHARGE_REFUNDED, $this->charge_refunded_payload(), 'evt_race_1' );
+		} catch ( XPayEG_Api_Exception $e ) {
 			unset( $e ); // The first delivery failing is the premise, pinned above.
 		}
 
 		// The payment lands: the order now carries the intent.
-		$order = $this->make_xpay_order( array( XPay_Constants::META_SESSION_ID => 'cs_test_race' ) );
+		$order = $this->make_xpayeg_order( array( XPayEG_Constants::META_SESSION_ID => 'cs_test_race' ) );
 		$order->set_total( '290.00' );
 		$order->save();
-		XPay_Order_Sync::mark_paid(
+		XPayEG_Order_Sync::mark_paid(
 			$order,
 			array(
 				'id'             => 'cs_test_race',
-				'status'         => XPay_Session_Status::COMPLETE,
-				'paymentStatus'  => XPay_Payment_Status::PAID,
+				'status'         => XPayEG_Session_Status::COMPLETE,
+				'paymentStatus'  => XPayEG_Payment_Status::PAID,
 				'amountSubtotal' => 29000,
 				'currency'       => 'EGP',
 				'paymentIntent'  => array( 'id' => 'pi_test_race' ),
@@ -78,7 +78,7 @@ class RefundEventNoOrderTest extends XPay_Integration_Test_Case {
 		);
 
 		// XPay redelivers the same event under a fresh delivery id.
-		$this->apply( XPay_Event_Names::CHARGE_REFUNDED, $this->charge_refunded_payload(), 'evt_race_2' );
+		$this->apply( XPayEG_Event_Names::CHARGE_REFUNDED, $this->charge_refunded_payload(), 'evt_race_2' );
 
 		$fresh   = wc_get_order( $order->get_id() );
 		$refunds = $fresh->get_refunds();

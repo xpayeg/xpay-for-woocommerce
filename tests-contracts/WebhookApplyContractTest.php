@@ -4,7 +4,7 @@
  * dedupe, lock behavior, and forward compatibility. The claimable set
  * IS the contract — a new code path must not loosen any of these.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
 class WebhookApplyContractTest extends ContractTestCase {
@@ -12,7 +12,7 @@ class WebhookApplyContractTest extends ContractTestCase {
 	/** An order wired the way process_payment leaves it. */
 	private function wiredOrder( int $id = 14 ): WC_Order {
 		$order = $this->makeOrder( $id, array( 'total' => '290.00' ) );
-		$order->update_meta_data( XPay_Constants::META_SESSION_ID, 'cs_test_contract' );
+		$order->update_meta_data( XPayEG_Constants::META_SESSION_ID, 'cs_test_contract' );
 		return $order;
 	}
 
@@ -20,41 +20,41 @@ class WebhookApplyContractTest extends ContractTestCase {
 		// Name-pinning on purpose: uninstall.php hardcodes these strings
 		// (it runs standalone by WordPress convention), so a rename here
 		// must fail a test until the uninstall list moves in step.
-		XPay_Webhook_State::record_success( false );
-		$this->assertGreaterThan( 0, (int) get_option( 'xpay_wc_wh_test_last_success_at', 0 ) );
+		XPayEG_Webhook_State::record_success( false );
+		$this->assertGreaterThan( 0, (int) get_option( 'xpayeg_wh_test_last_success_at', 0 ) );
 		$this->assertSame(
 			0,
-			(int) get_option( 'xpay_wc_wh_live_last_success_at', 0 ),
+			(int) get_option( 'xpayeg_wh_live_last_success_at', 0 ),
 			'One shared stamp is how a test event paints the live health row green.'
 		);
 
-		XPay_Webhook_State::record_failure( true, XPay_Error_Codes::WEBHOOK_SIGNATURE_INVALID );
-		$this->assertSame( XPay_Error_Codes::WEBHOOK_SIGNATURE_INVALID, get_option( 'xpay_wc_wh_live_last_error' ) );
-		$this->assertGreaterThan( 0, (int) get_option( 'xpay_wc_wh_live_monitor_began_at', 0 ) );
+		XPayEG_Webhook_State::record_failure( true, XPayEG_Error_Codes::WEBHOOK_SIGNATURE_INVALID );
+		$this->assertSame( XPayEG_Error_Codes::WEBHOOK_SIGNATURE_INVALID, get_option( 'xpayeg_wh_live_last_error' ) );
+		$this->assertGreaterThan( 0, (int) get_option( 'xpayeg_wh_live_monitor_began_at', 0 ) );
 
 		// The verdict is the ORDER of the two stamps: test succeeded last
 		// (healthy), live failed with no success ever (never worked).
-		$this->assertSame( 1, XPay_Webhook_State::status_code( false ) );
-		$this->assertSame( 4, XPay_Webhook_State::status_code( true ) );
+		$this->assertSame( 1, XPayEG_Webhook_State::status_code( false ) );
+		$this->assertSame( 4, XPayEG_Webhook_State::status_code( true ) );
 	}
 
 	public function test_completed_event_marks_paid_and_records_event_id() {
 		$order = $this->wiredOrder();
 
-		$this->applyEvent( XPay_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_1', $this->paidSession() );
+		$this->applyEvent( XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_1', $this->paidSession() );
 
 		$this->assertTrue( $order->paid );
-		$this->assertContains( 'evt_1', $order->get_meta( XPay_Constants::META_PROCESSED_EVENTS ) );
+		$this->assertContains( 'evt_1', $order->get_meta( XPayEG_Constants::META_PROCESSED_EVENTS ) );
 	}
 
 	public function test_duplicate_event_id_is_ignored() {
 		$order = $this->wiredOrder();
 
-		$this->applyEvent( XPay_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_1', $this->paidSession() );
+		$this->applyEvent( XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_1', $this->paidSession() );
 		$notes = count( $order->notes );
 		$order->paid = false; // Even if state regressed, the dedupe alone must block a replay.
 
-		$this->applyEvent( XPay_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_1', $this->paidSession() );
+		$this->applyEvent( XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_1', $this->paidSession() );
 
 		$this->assertFalse( $order->paid, 'A replayed event id must be a no-op.' );
 		$this->assertCount( $notes, $order->notes );
@@ -62,24 +62,24 @@ class WebhookApplyContractTest extends ContractTestCase {
 
 	public function test_ownership_mismatch_throws_and_applies_nothing() {
 		$order = $this->wiredOrder();
-		$order->update_meta_data( XPay_Constants::META_SESSION_ID, 'cs_test_DIFFERENT' );
+		$order->update_meta_data( XPayEG_Constants::META_SESSION_ID, 'cs_test_DIFFERENT' );
 
 		try {
-			$this->applyEvent( XPay_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_1', $this->paidSession() );
+			$this->applyEvent( XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_1', $this->paidSession() );
 			$this->fail( 'Expected the IDOR guard to throw.' );
-		} catch ( XPay_Api_Exception $e ) {
-			$this->assertSame( XPay_Error_Codes::ORDER_MISMATCH, $e->get_error_code() );
+		} catch ( XPayEG_Api_Exception $e ) {
+			$this->assertSame( XPayEG_Error_Codes::ORDER_MISMATCH, $e->get_error_code() );
 		}
 
 		$this->assertFalse( $order->paid );
-		$this->assertSame( '', $order->get_meta( XPay_Constants::META_PROCESSED_EVENTS ) );
+		$this->assertSame( '', $order->get_meta( XPayEG_Constants::META_PROCESSED_EVENTS ) );
 	}
 
 	public function test_order_without_stored_session_id_fails_ownership() {
 		$this->makeOrder( 14, array( 'total' => '290.00' ) ); // No META_SESSION_ID at all.
 
-		$this->expectException( XPay_Api_Exception::class );
-		$this->applyEvent( XPay_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_1', $this->paidSession() );
+		$this->expectException( XPayEG_Api_Exception::class );
+		$this->applyEvent( XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_1', $this->paidSession() );
 	}
 
 	public function test_unknown_event_types_are_acknowledged_untouched() {
@@ -97,14 +97,14 @@ class WebhookApplyContractTest extends ContractTestCase {
 	 */
 	public function test_missing_order_fails_the_delivery_for_redelivery() {
 		try {
-			$this->applyEvent( XPay_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_1', $this->paidSession() );
+			$this->applyEvent( XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_1', $this->paidSession() );
 			$this->fail( 'Expected the order-not-found refusal to throw.' );
-		} catch ( XPay_Api_Exception $e ) {
-			$this->assertSame( XPay_Error_Codes::WEBHOOK_ORDER_NOT_FOUND, $e->get_error_code() );
+		} catch ( XPayEG_Api_Exception $e ) {
+			$this->assertSame( XPayEG_Error_Codes::WEBHOOK_ORDER_NOT_FOUND, $e->get_error_code() );
 		}
 
 		$this->assertStageFired( 'webhook.order_not_found' );
-		$this->assertCount( 0, $GLOBALS['xpay_test_scheduled'], 'Nothing may queue locally; the platform retries.' );
+		$this->assertCount( 0, $GLOBALS['xpayeg_test_scheduled'], 'Nothing may queue locally; the platform retries.' );
 	}
 
 	/**
@@ -115,9 +115,9 @@ class WebhookApplyContractTest extends ContractTestCase {
 	 */
 	public function test_abandoned_cart_expiry_is_acknowledged_quietly() {
 		$this->applyEvent(
-			XPay_Event_Names::CHECKOUT_SESSION_EXPIRED,
+			XPayEG_Event_Names::CHECKOUT_SESSION_EXPIRED,
 			'evt_1',
-			$this->paidSession( array( 'paymentStatus' => XPay_Payment_Status::UNPAID ) )
+			$this->paidSession( array( 'paymentStatus' => XPayEG_Payment_Status::UNPAID ) )
 		);
 
 		$this->assertStageFired( 'webhook.abandoned_cart_expired' );
@@ -130,10 +130,10 @@ class WebhookApplyContractTest extends ContractTestCase {
 	 */
 	public function test_paid_expiry_with_no_order_is_never_quiet() {
 		try {
-			$this->applyEvent( XPay_Event_Names::CHECKOUT_SESSION_EXPIRED, 'evt_1', $this->paidSession() );
+			$this->applyEvent( XPayEG_Event_Names::CHECKOUT_SESSION_EXPIRED, 'evt_1', $this->paidSession() );
 			$this->fail( 'Expected the order-not-found refusal to throw.' );
-		} catch ( XPay_Api_Exception $e ) {
-			$this->assertSame( XPay_Error_Codes::WEBHOOK_ORDER_NOT_FOUND, $e->get_error_code() );
+		} catch ( XPayEG_Api_Exception $e ) {
+			$this->assertSame( XPayEG_Error_Codes::WEBHOOK_ORDER_NOT_FOUND, $e->get_error_code() );
 		}
 		$this->assertStageNotFired( 'webhook.abandoned_cart_expired' );
 	}
@@ -141,23 +141,23 @@ class WebhookApplyContractTest extends ContractTestCase {
 	public function test_foreign_gateway_order_is_never_touched() {
 		$foreign = $this->makeOrder( 14, array( 'payment_method' => 'cod' ) );
 		try {
-			$this->applyEvent( XPay_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_2', $this->paidSession() );
+			$this->applyEvent( XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_2', $this->paidSession() );
 			$this->fail( 'Expected the order-not-found refusal to throw.' );
-		} catch ( XPay_Api_Exception $e ) {
-			$this->assertSame( XPay_Error_Codes::WEBHOOK_ORDER_NOT_FOUND, $e->get_error_code() );
+		} catch ( XPayEG_Api_Exception $e ) {
+			$this->assertSame( XPayEG_Error_Codes::WEBHOOK_ORDER_NOT_FOUND, $e->get_error_code() );
 		}
 		$this->assertFalse( $foreign->paid, 'An order paid by another gateway is never ours to touch.' );
 	}
 
-	public function test_busy_lock_throws_so_xpay_retries() {
+	public function test_busy_lock_throws_so_xpayeg_retries() {
 		$this->wiredOrder();
 		$GLOBALS['wpdb']->lock_results = array( '0' );
 
 		try {
-			$this->applyEvent( XPay_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_1', $this->paidSession() );
+			$this->applyEvent( XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_1', $this->paidSession() );
 			$this->fail( 'A busy lock must surface as an error (500 to the retry engine).' );
-		} catch ( XPay_Api_Exception $e ) {
-			$this->assertNotSame( XPay_Error_Codes::ORDER_MISMATCH, $e->get_error_code() );
+		} catch ( XPayEG_Api_Exception $e ) {
+			$this->assertNotSame( XPayEG_Error_Codes::ORDER_MISMATCH, $e->get_error_code() );
 		}
 	}
 
@@ -165,7 +165,7 @@ class WebhookApplyContractTest extends ContractTestCase {
 		$order = $this->wiredOrder();
 		$GLOBALS['wpdb']->lock_results = array( null );
 
-		$this->applyEvent( XPay_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_1', $this->paidSession() );
+		$this->applyEvent( XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_1', $this->paidSession() );
 
 		$this->assertTrue( $order->paid, 'A host without GET_LOCK must degrade, not dead-end payment confirmation.' );
 		$this->assertStageFired( 'order_lock.unavailable' );
@@ -174,7 +174,7 @@ class WebhookApplyContractTest extends ContractTestCase {
 	public function test_expired_event_fails_pending_order() {
 		$order = $this->wiredOrder();
 
-		$this->applyEvent( XPay_Event_Names::CHECKOUT_SESSION_EXPIRED, 'evt_1', $this->paidSession() );
+		$this->applyEvent( XPayEG_Event_Names::CHECKOUT_SESSION_EXPIRED, 'evt_1', $this->paidSession() );
 
 		$this->assertSame( 'failed', $order->status, 'FAILED keeps the pay link alive for the returning shopper.' );
 	}
@@ -183,14 +183,14 @@ class WebhookApplyContractTest extends ContractTestCase {
 
 	public function test_superseded_paid_event_parks_on_hold_instead_of_dropping() {
 		$order = $this->wiredOrder();
-		$order->update_meta_data( XPay_Constants::META_SESSION_ID, 'cs_test_NEW' );
-		$order->update_meta_data( XPay_Constants::META_SUPERSEDED_SESSIONS, array( 'cs_test_contract' ) );
+		$order->update_meta_data( XPayEG_Constants::META_SESSION_ID, 'cs_test_NEW' );
+		$order->update_meta_data( XPayEG_Constants::META_SUPERSEDED_SESSIONS, array( 'cs_test_contract' ) );
 
-		$this->applyEvent( XPay_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_1', $this->paidSession() );
+		$this->applyEvent( XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_1', $this->paidSession() );
 
 		$this->assertFalse( $order->paid, 'A superseded payment may be for an outdated total; it never auto-completes.' );
 		$this->assertSame( 'on-hold', $order->status );
-		$this->assertSame( 'pi_contract_1', $order->get_meta( XPay_Constants::META_PAYMENT_INTENT ), 'The intent is recorded so refunds and the expiry guard see real money.' );
+		$this->assertSame( 'pi_contract_1', $order->get_meta( XPayEG_Constants::META_PAYMENT_INTENT ), 'The intent is recorded so refunds and the expiry guard see real money.' );
 		$this->assertStageFired( 'order.superseded_paid' );
 	}
 
@@ -198,24 +198,24 @@ class WebhookApplyContractTest extends ContractTestCase {
 		$order = $this->wiredOrder();
 		$order->paid   = true;
 		$order->status = 'processing';
-		$order->update_meta_data( XPay_Constants::META_SESSION_ID, 'cs_test_NEW' );
-		$order->update_meta_data( XPay_Constants::META_PAYMENT_INTENT, 'pi_the_real_one' );
-		$order->update_meta_data( XPay_Constants::META_SUPERSEDED_SESSIONS, array( 'cs_test_contract' ) );
+		$order->update_meta_data( XPayEG_Constants::META_SESSION_ID, 'cs_test_NEW' );
+		$order->update_meta_data( XPayEG_Constants::META_PAYMENT_INTENT, 'pi_the_real_one' );
+		$order->update_meta_data( XPayEG_Constants::META_SUPERSEDED_SESSIONS, array( 'cs_test_contract' ) );
 
-		$this->applyEvent( XPay_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_1', $this->paidSession() );
+		$this->applyEvent( XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_1', $this->paidSession() );
 
 		$this->assertSame( 'processing', $order->status, 'The real payment stands; the duplicate is a note, not a state change.' );
-		$this->assertSame( 'pi_the_real_one', $order->get_meta( XPay_Constants::META_PAYMENT_INTENT ), 'The duplicate must not overwrite the real payment intent.' );
+		$this->assertSame( 'pi_the_real_one', $order->get_meta( XPayEG_Constants::META_PAYMENT_INTENT ), 'The duplicate must not overwrite the real payment intent.' );
 		$this->assertStageFired( 'order.superseded_double_paid' );
 		$this->assertStringContainsString( 'SECOND payment', end( $order->notes ) );
 	}
 
 	public function test_superseded_expired_event_is_ignored() {
 		$order         = $this->wiredOrder();
-		$order->update_meta_data( XPay_Constants::META_SESSION_ID, 'cs_test_NEW' );
-		$order->update_meta_data( XPay_Constants::META_SUPERSEDED_SESSIONS, array( 'cs_test_contract' ) );
+		$order->update_meta_data( XPayEG_Constants::META_SESSION_ID, 'cs_test_NEW' );
+		$order->update_meta_data( XPayEG_Constants::META_SUPERSEDED_SESSIONS, array( 'cs_test_contract' ) );
 
-		$this->applyEvent( XPay_Event_Names::CHECKOUT_SESSION_EXPIRED, 'evt_1', $this->paidSession() );
+		$this->applyEvent( XPayEG_Event_Names::CHECKOUT_SESSION_EXPIRED, 'evt_1', $this->paidSession() );
 
 		$this->assertSame( 'pending', $order->status, 'The old session dying is expected; the order\'s current state is untouchable.' );
 		$this->assertStageFired( 'webhook.superseded_expired_ignored' );
@@ -246,7 +246,7 @@ class WebhookApplyContractTest extends ContractTestCase {
 	public function test_failed_attempt_leaves_a_note_and_no_status_change() {
 		$order = $this->wiredOrder();
 
-		$this->applyEvent( XPay_Event_Names::PAYMENT_INTENT_FAILED, 'evt_1', $this->failedIntent() );
+		$this->applyEvent( XPayEG_Event_Names::PAYMENT_INTENT_FAILED, 'evt_1', $this->failedIntent() );
 
 		$this->assertSame( 'pending', $order->status, 'The shopper may still succeed; declines never move order state.' );
 		$this->assertFalse( $order->paid );
@@ -258,7 +258,7 @@ class WebhookApplyContractTest extends ContractTestCase {
 		$order       = $this->wiredOrder();
 		$order->paid = true;
 
-		$this->applyEvent( XPay_Event_Names::PAYMENT_INTENT_FAILED, 'evt_1', $this->failedIntent() );
+		$this->applyEvent( XPayEG_Event_Names::PAYMENT_INTENT_FAILED, 'evt_1', $this->failedIntent() );
 
 		$this->assertCount( 0, $order->notes, 'A straggler decline after success is noise.' );
 	}
@@ -266,15 +266,15 @@ class WebhookApplyContractTest extends ContractTestCase {
 	public function test_failed_attempt_for_a_foreign_session_fails_ownership() {
 		$this->wiredOrder();
 
-		$this->expectException( XPay_Api_Exception::class );
-		$this->applyEvent( XPay_Event_Names::PAYMENT_INTENT_FAILED, 'evt_1', $this->failedIntent( array( 'checkoutSessionId' => 'cs_test_SOMEONE_ELSES' ) ) );
+		$this->expectException( XPayEG_Api_Exception::class );
+		$this->applyEvent( XPayEG_Event_Names::PAYMENT_INTENT_FAILED, 'evt_1', $this->failedIntent( array( 'checkoutSessionId' => 'cs_test_SOMEONE_ELSES' ) ) );
 	}
 
 	public function test_expiry_note_carries_the_decline_history() {
 		$order = $this->wiredOrder();
 
 		$this->applyEvent(
-			XPay_Event_Names::CHECKOUT_SESSION_EXPIRED,
+			XPayEG_Event_Names::CHECKOUT_SESSION_EXPIRED,
 			'evt_1',
 			$this->paidSession(
 				array(
@@ -304,7 +304,7 @@ class WebhookApplyContractTest extends ContractTestCase {
 	public function test_expiry_note_stays_plain_when_nothing_was_attempted() {
 		$order = $this->wiredOrder();
 
-		$this->applyEvent( XPay_Event_Names::CHECKOUT_SESSION_EXPIRED, 'evt_1', $this->paidSession( array( 'paymentIntent' => null ) ) );
+		$this->applyEvent( XPayEG_Event_Names::CHECKOUT_SESSION_EXPIRED, 'evt_1', $this->paidSession( array( 'paymentIntent' => null ) ) );
 
 		$this->assertSame( 'failed', $order->status );
 		$this->assertStringNotContainsString( 'declined', end( $order->notes ), 'No attempts means no decline story to tell.' );
@@ -317,7 +317,7 @@ class WebhookApplyContractTest extends ContractTestCase {
 		$order         = $this->wiredOrder();
 		$order->paid   = true;
 		$order->status = 'processing';
-		$order->update_meta_data( XPay_Constants::META_PAYMENT_INTENT, 'pi_contract_1' );
+		$order->update_meta_data( XPayEG_Constants::META_PAYMENT_INTENT, 'pi_contract_1' );
 		return $order;
 	}
 
@@ -340,38 +340,38 @@ class WebhookApplyContractTest extends ContractTestCase {
 			array(
 				array(
 					'id'       => 're_dash_1',
-					'status'   => XPay_Refund_Status::SUCCEEDED,
+					'status'   => XPayEG_Refund_Status::SUCCEEDED,
 					'amount'   => 5000,
 					'currency' => 'EGP',
 				),
 			)
 		);
-		$this->applyEvent( XPay_Event_Names::CHARGE_REFUNDED, 'evt_1', $event );
+		$this->applyEvent( XPayEG_Event_Names::CHARGE_REFUNDED, 'evt_1', $event );
 
-		$this->assertCount( 1, $GLOBALS['xpay_test_wc_refunds'] );
-		$this->assertSame( '50.00', $GLOBALS['xpay_test_wc_refunds'][0]['amount'] );
-		$this->assertFalse( $GLOBALS['xpay_test_wc_refunds'][0]['refund_payment'], 'Mirroring records money the platform already moved; it must never move it again.' );
-		$this->assertContains( 're_dash_1', $order->get_meta( XPay_Constants::META_REFUND_IDS ) );
+		$this->assertCount( 1, $GLOBALS['xpayeg_test_wc_refunds'] );
+		$this->assertSame( '50.00', $GLOBALS['xpayeg_test_wc_refunds'][0]['amount'] );
+		$this->assertFalse( $GLOBALS['xpayeg_test_wc_refunds'][0]['refund_payment'], 'Mirroring records money the platform already moved; it must never move it again.' );
+		$this->assertContains( 're_dash_1', $order->get_meta( XPayEG_Constants::META_REFUND_IDS ) );
 		$this->assertStageFired( 'refund.mirrored' );
 
 		// A later charge.refunded re-carries the whole refunds list; the
 		// ledger keeps the already-mirrored one from double-recording.
-		$this->applyEvent( XPay_Event_Names::CHARGE_REFUNDED, 'evt_2', $event );
-		$this->assertCount( 1, $GLOBALS['xpay_test_wc_refunds'] );
+		$this->applyEvent( XPayEG_Event_Names::CHARGE_REFUNDED, 'evt_2', $event );
+		$this->assertCount( 1, $GLOBALS['xpayeg_test_wc_refunds'] );
 	}
 
 	public function test_plugin_issued_refunds_are_not_mirrored_back() {
 		$order = $this->paidOrderWithIntent();
-		$order->update_meta_data( XPay_Constants::META_REFUND_IDS, array( 're_plugin_1' ) );
+		$order->update_meta_data( XPayEG_Constants::META_REFUND_IDS, array( 're_plugin_1' ) );
 
 		$this->applyEvent(
-			XPay_Event_Names::CHARGE_REFUNDED,
+			XPayEG_Event_Names::CHARGE_REFUNDED,
 			'evt_1',
 			$this->refundedCharge(
 				array(
 					array(
 						'id'       => 're_plugin_1',
-						'status'   => XPay_Refund_Status::SUCCEEDED,
+						'status'   => XPayEG_Refund_Status::SUCCEEDED,
 						'amount'   => 5000,
 						'currency' => 'EGP',
 					),
@@ -379,7 +379,7 @@ class WebhookApplyContractTest extends ContractTestCase {
 			)
 		);
 
-		$this->assertCount( 0, $GLOBALS['xpay_test_wc_refunds'], 'The plugin\'s own refund echoing back is not a new refund.' );
+		$this->assertCount( 0, $GLOBALS['xpayeg_test_wc_refunds'], 'The plugin\'s own refund echoing back is not a new refund.' );
 	}
 
 	public function test_non_egp_mirror_uses_the_presentment_amount() {
@@ -387,13 +387,13 @@ class WebhookApplyContractTest extends ContractTestCase {
 		$order->currency = 'USD';
 
 		$this->applyEvent(
-			XPay_Event_Names::CHARGE_REFUNDED,
+			XPayEG_Event_Names::CHARGE_REFUNDED,
 			'evt_1',
 			$this->refundedCharge(
 				array(
 					array(
 						'id'                 => 're_dash_1',
-						'status'             => XPay_Refund_Status::SUCCEEDED,
+						'status'             => XPayEG_Refund_Status::SUCCEEDED,
 						'amount'             => 5000,
 						'currency'           => 'EGP',
 						'presentmentDetails' => array(
@@ -405,7 +405,7 @@ class WebhookApplyContractTest extends ContractTestCase {
 			)
 		);
 
-		$this->assertSame( '1.00', $GLOBALS['xpay_test_wc_refunds'][0]['amount'], 'The per-refund presentment mirror is the only honest USD number.' );
+		$this->assertSame( '1.00', $GLOBALS['xpayeg_test_wc_refunds'][0]['amount'], 'The per-refund presentment mirror is the only honest USD number.' );
 	}
 
 	public function test_unmatchable_currency_mirrors_as_a_note_only() {
@@ -413,13 +413,13 @@ class WebhookApplyContractTest extends ContractTestCase {
 		$order->currency = 'USD';
 
 		$this->applyEvent(
-			XPay_Event_Names::CHARGE_REFUNDED,
+			XPayEG_Event_Names::CHARGE_REFUNDED,
 			'evt_1',
 			$this->refundedCharge(
 				array(
 					array(
 						'id'       => 're_dash_1',
-						'status'   => XPay_Refund_Status::SUCCEEDED,
+						'status'   => XPayEG_Refund_Status::SUCCEEDED,
 						'amount'   => 5000,
 						'currency' => 'EGP',
 					),
@@ -427,22 +427,22 @@ class WebhookApplyContractTest extends ContractTestCase {
 			)
 		);
 
-		$this->assertCount( 0, $GLOBALS['xpay_test_wc_refunds'], 'A guessed conversion is worse than no record.' );
+		$this->assertCount( 0, $GLOBALS['xpayeg_test_wc_refunds'], 'A guessed conversion is worse than no record.' );
 		$this->assertStringContainsString( 're_dash_1', end( $order->notes ) );
-		$this->assertContains( 're_dash_1', $order->get_meta( XPay_Constants::META_REFUND_IDS ), 'The note still claims the ledger slot, or every redelivery re-notes it.' );
+		$this->assertContains( 're_dash_1', $order->get_meta( XPayEG_Constants::META_REFUND_IDS ), 'The note still claims the ledger slot, or every redelivery re-notes it.' );
 	}
 
 	public function test_pending_refunds_are_not_mirrored() {
 		$this->paidOrderWithIntent();
 
 		$this->applyEvent(
-			XPay_Event_Names::CHARGE_REFUNDED,
+			XPayEG_Event_Names::CHARGE_REFUNDED,
 			'evt_1',
 			$this->refundedCharge(
 				array(
 					array(
 						'id'       => 're_pending_1',
-						'status'   => XPay_Refund_Status::PENDING,
+						'status'   => XPayEG_Refund_Status::PENDING,
 						'amount'   => 5000,
 						'currency' => 'EGP',
 					),
@@ -450,20 +450,20 @@ class WebhookApplyContractTest extends ContractTestCase {
 			)
 		);
 
-		$this->assertCount( 0, $GLOBALS['xpay_test_wc_refunds'], 'Only settled money mirrors.' );
+		$this->assertCount( 0, $GLOBALS['xpayeg_test_wc_refunds'], 'Only settled money mirrors.' );
 	}
 
 	public function test_refund_failed_event_leaves_a_note() {
 		$order = $this->paidOrderWithIntent();
 
 		$this->applyEvent(
-			XPay_Event_Names::REFUND_FAILED,
+			XPayEG_Event_Names::REFUND_FAILED,
 			'evt_1',
 			array(
 				'id'              => 're_dash_1',
 				'object'          => 'refund',
 				'paymentIntentId' => 'pi_contract_1',
-				'status'          => XPay_Refund_Status::FAILED,
+				'status'          => XPayEG_Refund_Status::FAILED,
 				'failureReason'   => 'expired_or_canceled_card',
 			)
 		);
@@ -485,7 +485,7 @@ class WebhookApplyContractTest extends ContractTestCase {
 
 		try {
 			$this->applyEvent(
-				XPay_Event_Names::CHARGE_REFUNDED,
+				XPayEG_Event_Names::CHARGE_REFUNDED,
 				'evt_1',
 				array(
 					'id'              => 'ch_foreign',
@@ -493,7 +493,7 @@ class WebhookApplyContractTest extends ContractTestCase {
 					'refunds'         => array(
 						array(
 							'id'       => 're_x',
-							'status'   => XPay_Refund_Status::SUCCEEDED,
+							'status'   => XPayEG_Refund_Status::SUCCEEDED,
 							'amount'   => 5000,
 							'currency' => 'EGP',
 						),
@@ -501,24 +501,24 @@ class WebhookApplyContractTest extends ContractTestCase {
 				)
 			);
 			$this->fail( 'Expected the order-not-found refusal to throw.' );
-		} catch ( XPay_Api_Exception $e ) {
-			$this->assertSame( XPay_Error_Codes::WEBHOOK_ORDER_NOT_FOUND, $e->get_error_code() );
+		} catch ( XPayEG_Api_Exception $e ) {
+			$this->assertSame( XPayEG_Error_Codes::WEBHOOK_ORDER_NOT_FOUND, $e->get_error_code() );
 		}
 
-		$this->assertCount( 0, $GLOBALS['xpay_test_wc_refunds'], 'A refund landed on an order that does not carry the intent.' );
-		$this->assertCount( 0, $GLOBALS['xpay_test_scheduled'], 'Nothing may queue locally; the platform retries.' );
+		$this->assertCount( 0, $GLOBALS['xpayeg_test_wc_refunds'], 'A refund landed on an order that does not carry the intent.' );
+		$this->assertCount( 0, $GLOBALS['xpayeg_test_scheduled'], 'Nothing may queue locally; the platform retries.' );
 	}
 
 	public function test_processed_event_list_is_capped() {
 		$order = $this->wiredOrder();
 
-		$total = XPay_Webhook_Controller::PROCESSED_EVENTS_KEPT + 3;
+		$total = XPayEG_Webhook_Controller::PROCESSED_EVENTS_KEPT + 3;
 		for ( $i = 1; $i <= $total; $i++ ) {
-			$this->applyEvent( XPay_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_' . $i, $this->paidSession() );
+			$this->applyEvent( XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_' . $i, $this->paidSession() );
 		}
 
-		$processed = $order->get_meta( XPay_Constants::META_PROCESSED_EVENTS );
-		$this->assertCount( XPay_Webhook_Controller::PROCESSED_EVENTS_KEPT, $processed );
+		$processed = $order->get_meta( XPayEG_Constants::META_PROCESSED_EVENTS );
+		$this->assertCount( XPayEG_Webhook_Controller::PROCESSED_EVENTS_KEPT, $processed );
 		$this->assertContains( 'evt_' . $total, $processed, 'Newest ids survive the cap.' );
 		$this->assertNotContains( 'evt_1', $processed, 'Oldest ids age out.' );
 	}
@@ -532,15 +532,15 @@ class WebhookApplyContractTest extends ContractTestCase {
 		$order = $this->wiredOrder();
 
 		$this->applyEvent(
-			XPay_Event_Names::CHECKOUT_SESSION_COMPLETED,
+			XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED,
 			'evt_f1',
-			$this->paidSession( array( 'paymentStatus' => XPay_Payment_Status::UNPAID ) )
+			$this->paidSession( array( 'paymentStatus' => XPayEG_Payment_Status::UNPAID ) )
 		);
 
 		$this->assertFalse( $order->paid, 'A completed-but-unpaid session must never complete the order.' );
 		$this->assertSame( 'on-hold', $order->status );
-		$this->assertNotSame( '', (string) $order->get_meta( XPay_Constants::META_AWAITING_PAYMENT ) );
-		$this->assertSame( '', (string) $order->get_meta( XPay_Constants::META_PAYMENT_INTENT ), 'No money moved, so nothing may claim it did.' );
+		$this->assertNotSame( '', (string) $order->get_meta( XPayEG_Constants::META_AWAITING_PAYMENT ) );
+		$this->assertSame( '', (string) $order->get_meta( XPayEG_Constants::META_PAYMENT_INTENT ), 'No money moved, so nothing may claim it did.' );
 		$this->assertStageFired( 'order.awaiting_payment' );
 		$this->assertStageNotFired( 'order.paid' );
 	}
@@ -548,12 +548,12 @@ class WebhookApplyContractTest extends ContractTestCase {
 	public function test_redelivered_completed_unpaid_does_not_renote() {
 		$order = $this->wiredOrder();
 
-		$this->applyEvent( XPay_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_f1', $this->paidSession( array( 'paymentStatus' => XPay_Payment_Status::UNPAID ) ) );
+		$this->applyEvent( XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_f1', $this->paidSession( array( 'paymentStatus' => XPayEG_Payment_Status::UNPAID ) ) );
 		$notes = count( $order->notes );
 
 		// A fresh event id passes the id-keyed dedupe; the awaiting marker
 		// is what must hold.
-		$this->applyEvent( XPay_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_f2', $this->paidSession( array( 'paymentStatus' => XPay_Payment_Status::UNPAID ) ) );
+		$this->applyEvent( XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_f2', $this->paidSession( array( 'paymentStatus' => XPayEG_Payment_Status::UNPAID ) ) );
 
 		$this->assertCount( $notes, $order->notes );
 		$this->assertFalse( $order->paid );
@@ -561,26 +561,26 @@ class WebhookApplyContractTest extends ContractTestCase {
 
 	public function test_async_success_completes_the_awaiting_order() {
 		$order = $this->wiredOrder();
-		$this->applyEvent( XPay_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_f1', $this->paidSession( array( 'paymentStatus' => XPay_Payment_Status::UNPAID ) ) );
+		$this->applyEvent( XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_f1', $this->paidSession( array( 'paymentStatus' => XPayEG_Payment_Status::UNPAID ) ) );
 
-		$this->applyEvent( XPay_Event_Names::CHECKOUT_SESSION_ASYNC_PAYMENT_SUCCEEDED, 'evt_f2', $this->paidSession() );
+		$this->applyEvent( XPayEG_Event_Names::CHECKOUT_SESSION_ASYNC_PAYMENT_SUCCEEDED, 'evt_f2', $this->paidSession() );
 
 		$this->assertTrue( $order->paid );
 		$this->assertSame( 'processing', $order->status );
-		$this->assertSame( 'pi_contract_1', $order->get_meta( XPay_Constants::META_PAYMENT_INTENT ) );
+		$this->assertSame( 'pi_contract_1', $order->get_meta( XPayEG_Constants::META_PAYMENT_INTENT ) );
 		$this->assertStageFired( 'order.paid' );
 	}
 
 	public function test_async_failure_fails_the_awaiting_order_with_the_reason() {
 		$order = $this->wiredOrder();
-		$this->applyEvent( XPay_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_f1', $this->paidSession( array( 'paymentStatus' => XPay_Payment_Status::UNPAID ) ) );
+		$this->applyEvent( XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_f1', $this->paidSession( array( 'paymentStatus' => XPayEG_Payment_Status::UNPAID ) ) );
 
 		$this->applyEvent(
-			XPay_Event_Names::CHECKOUT_SESSION_ASYNC_PAYMENT_FAILED,
+			XPayEG_Event_Names::CHECKOUT_SESSION_ASYNC_PAYMENT_FAILED,
 			'evt_f2',
 			$this->paidSession(
 				array(
-					'paymentStatus' => XPay_Payment_Status::UNPAID,
+					'paymentStatus' => XPayEG_Payment_Status::UNPAID,
 					'paymentIntent' => array(
 						'id'               => 'pi_contract_1',
 						'lastPaymentError' => array( 'merchantMessage' => 'The customer did not pay the reference before it expired' ),
@@ -597,19 +597,19 @@ class WebhookApplyContractTest extends ContractTestCase {
 
 	public function test_expired_never_touches_an_awaiting_order() {
 		$order = $this->wiredOrder();
-		$this->applyEvent( XPay_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_f1', $this->paidSession( array( 'paymentStatus' => XPay_Payment_Status::UNPAID ) ) );
+		$this->applyEvent( XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED, 'evt_f1', $this->paidSession( array( 'paymentStatus' => XPayEG_Payment_Status::UNPAID ) ) );
 
-		$this->applyEvent( XPay_Event_Names::CHECKOUT_SESSION_EXPIRED, 'evt_f2', $this->paidSession( array( 'paymentStatus' => XPay_Payment_Status::UNPAID ) ) );
+		$this->applyEvent( XPayEG_Event_Names::CHECKOUT_SESSION_EXPIRED, 'evt_f2', $this->paidSession( array( 'paymentStatus' => XPayEG_Payment_Status::UNPAID ) ) );
 
 		$this->assertSame( 'on-hold', $order->status, 'The async_payment events own an awaiting order; expiry must not fail it.' );
 	}
 
 	public function test_async_success_on_a_superseded_session_parks_for_review() {
 		$order = $this->wiredOrder();
-		$order->update_meta_data( XPay_Constants::META_SESSION_ID, 'cs_test_NEWER' );
-		$order->update_meta_data( XPay_Constants::META_SUPERSEDED_SESSIONS, array( 'cs_test_contract' ) );
+		$order->update_meta_data( XPayEG_Constants::META_SESSION_ID, 'cs_test_NEWER' );
+		$order->update_meta_data( XPayEG_Constants::META_SUPERSEDED_SESSIONS, array( 'cs_test_contract' ) );
 
-		$this->applyEvent( XPay_Event_Names::CHECKOUT_SESSION_ASYNC_PAYMENT_SUCCEEDED, 'evt_f2', $this->paidSession() );
+		$this->applyEvent( XPayEG_Event_Names::CHECKOUT_SESSION_ASYNC_PAYMENT_SUCCEEDED, 'evt_f2', $this->paidSession() );
 
 		$this->assertFalse( $order->paid );
 		$this->assertSame( 'on-hold', $order->status );
@@ -618,10 +618,10 @@ class WebhookApplyContractTest extends ContractTestCase {
 
 	public function test_async_failure_on_a_superseded_session_is_ignored() {
 		$order = $this->wiredOrder();
-		$order->update_meta_data( XPay_Constants::META_SESSION_ID, 'cs_test_NEWER' );
-		$order->update_meta_data( XPay_Constants::META_SUPERSEDED_SESSIONS, array( 'cs_test_contract' ) );
+		$order->update_meta_data( XPayEG_Constants::META_SESSION_ID, 'cs_test_NEWER' );
+		$order->update_meta_data( XPayEG_Constants::META_SUPERSEDED_SESSIONS, array( 'cs_test_contract' ) );
 
-		$this->applyEvent( XPay_Event_Names::CHECKOUT_SESSION_ASYNC_PAYMENT_FAILED, 'evt_f2', $this->paidSession( array( 'paymentStatus' => XPay_Payment_Status::UNPAID ) ) );
+		$this->applyEvent( XPayEG_Event_Names::CHECKOUT_SESSION_ASYNC_PAYMENT_FAILED, 'evt_f2', $this->paidSession( array( 'paymentStatus' => XPayEG_Payment_Status::UNPAID ) ) );
 
 		$this->assertSame( 'pending', $order->status );
 		$this->assertStageFired( 'webhook.superseded_async_failed_ignored' );

@@ -8,10 +8,10 @@
  * contract suite could not see this because it never ran against the legacy
  * post store, where the lookup silently matched everything.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
-class WebhookOrderLookupTest extends XPay_Integration_Test_Case {
+class WebhookOrderLookupTest extends XPayEG_Integration_Test_Case {
 
 	/**
 	 * Call the private lookup on the real controller. Reflection rather than
@@ -22,7 +22,7 @@ class WebhookOrderLookupTest extends XPay_Integration_Test_Case {
 	 * @param array  $payload data.object payload.
 	 */
 	private function locate( string $type, array $payload ): ?WC_Order {
-		$method = new ReflectionMethod( 'XPay_Webhook_Controller', 'locate_order' );
+		$method = new ReflectionMethod( 'XPayEG_Webhook_Controller', 'locate_order' );
 		$method->setAccessible( true );
 		return $method->invoke( null, $type, $payload );
 	}
@@ -48,12 +48,12 @@ class WebhookOrderLookupTest extends XPay_Integration_Test_Case {
 
 		// A shop with history. The newest of these is what a dropped
 		// meta condition would hand back.
-		$this->make_xpay_order( array( '_xpay_payment_intent_id' => 'pi_first' ) );
-		$this->make_xpay_order( array( '_xpay_payment_intent_id' => 'pi_second' ) );
-		$newest = $this->make_xpay_order( array( '_xpay_payment_intent_id' => 'pi_newest' ) );
+		$this->make_xpayeg_order( array( '_xpayeg_payment_intent_id' => 'pi_first' ) );
+		$this->make_xpayeg_order( array( '_xpayeg_payment_intent_id' => 'pi_second' ) );
+		$newest = $this->make_xpayeg_order( array( '_xpayeg_payment_intent_id' => 'pi_newest' ) );
 
 		$found = $this->locate(
-			XPay_Event_Names::CHARGE_REFUNDED,
+			XPayEG_Event_Names::CHARGE_REFUNDED,
 			array( 'paymentIntentId' => 'pi_never_seen_here' )
 		);
 
@@ -72,11 +72,11 @@ class WebhookOrderLookupTest extends XPay_Integration_Test_Case {
 	public function test_a_refund_finds_exactly_the_order_that_holds_the_intent( bool $hpos ): void {
 		$this->use_hpos( $hpos );
 
-		$wanted = $this->make_xpay_order( array( '_xpay_payment_intent_id' => 'pi_wanted' ) );
-		$this->make_xpay_order( array( '_xpay_payment_intent_id' => 'pi_decoy_newer' ) );
+		$wanted = $this->make_xpayeg_order( array( '_xpayeg_payment_intent_id' => 'pi_wanted' ) );
+		$this->make_xpayeg_order( array( '_xpayeg_payment_intent_id' => 'pi_decoy_newer' ) );
 
 		$found = $this->locate(
-			XPay_Event_Names::CHARGE_REFUNDED,
+			XPayEG_Event_Names::CHARGE_REFUNDED,
 			array( 'paymentIntentId' => 'pi_wanted' )
 		);
 
@@ -94,9 +94,9 @@ class WebhookOrderLookupTest extends XPay_Integration_Test_Case {
 	public function test_a_partial_intent_id_does_not_match( bool $hpos ): void {
 		$this->use_hpos( $hpos );
 
-		$this->make_xpay_order( array( '_xpay_payment_intent_id' => 'pi_abcdef123456' ) );
+		$this->make_xpayeg_order( array( '_xpayeg_payment_intent_id' => 'pi_abcdef123456' ) );
 
-		$this->assertNull( $this->locate( XPay_Event_Names::CHARGE_REFUNDED, array( 'paymentIntentId' => 'pi_abcdef' ) ) );
+		$this->assertNull( $this->locate( XPayEG_Event_Names::CHARGE_REFUNDED, array( 'paymentIntentId' => 'pi_abcdef' ) ) );
 	}
 
 	/**
@@ -106,15 +106,15 @@ class WebhookOrderLookupTest extends XPay_Integration_Test_Case {
 	 * @dataProvider storages
 	 * @param bool $hpos Storage under test.
 	 */
-	public function test_a_non_xpay_order_is_never_returned( bool $hpos ): void {
+	public function test_a_non_xpayeg_order_is_never_returned( bool $hpos ): void {
 		$this->use_hpos( $hpos );
 
 		$order = new WC_Order();
 		$order->set_payment_method( 'cod' );
-		$order->update_meta_data( '_xpay_payment_intent_id', 'pi_on_a_cod_order' );
+		$order->update_meta_data( '_xpayeg_payment_intent_id', 'pi_on_a_cod_order' );
 		$order->save();
 
-		$this->assertNull( $this->locate( XPay_Event_Names::CHARGE_REFUNDED, array( 'paymentIntentId' => 'pi_on_a_cod_order' ) ) );
+		$this->assertNull( $this->locate( XPayEG_Event_Names::CHARGE_REFUNDED, array( 'paymentIntentId' => 'pi_on_a_cod_order' ) ) );
 	}
 
 	/**
@@ -128,10 +128,10 @@ class WebhookOrderLookupTest extends XPay_Integration_Test_Case {
 	public function test_two_orders_claiming_one_intent_are_refused( bool $hpos ): void {
 		$this->use_hpos( $hpos );
 
-		$first  = $this->make_xpay_order( array( '_xpay_payment_intent_id' => 'pi_contested' ) );
-		$second = $this->make_xpay_order( array( '_xpay_payment_intent_id' => 'pi_contested' ) );
+		$first  = $this->make_xpayeg_order( array( '_xpayeg_payment_intent_id' => 'pi_contested' ) );
+		$second = $this->make_xpayeg_order( array( '_xpayeg_payment_intent_id' => 'pi_contested' ) );
 
-		$found = $this->locate( XPay_Event_Names::CHARGE_REFUNDED, array( 'paymentIntentId' => 'pi_contested' ) );
+		$found = $this->locate( XPayEG_Event_Names::CHARGE_REFUNDED, array( 'paymentIntentId' => 'pi_contested' ) );
 
 		$this->assertNull(
 			$found,
@@ -140,7 +140,7 @@ class WebhookOrderLookupTest extends XPay_Integration_Test_Case {
 				: 'The lookup guessed.'
 		);
 		$this->assertNotEmpty(
-			XPay_Spy_Log_Handler::query( array( 'stage' => 'webhook.ambiguous_order_lookup' ) ),
+			XPayEG_Spy_Log_Handler::query( array( 'stage' => 'webhook.ambiguous_order_lookup' ) ),
 			'Nothing was synced and nothing said so, which leaves a refund missing with no trace.'
 		);
 		unset( $first, $second );
@@ -165,15 +165,15 @@ class WebhookOrderLookupTest extends XPay_Integration_Test_Case {
 		// Older, so a read ordered newest-first reaches it only after the
 		// two rows below, and only if those two did not fill the limit
 		// between them.
-		$this->make_xpay_order( array( '_xpay_payment_intent_id' => 'pi_contested_twice' ) );
+		$this->make_xpayeg_order( array( '_xpayeg_payment_intent_id' => 'pi_contested_twice' ) );
 
-		$doubled = $this->make_xpay_order();
-		$doubled->add_meta_data( '_xpay_payment_intent_id', 'pi_contested_twice', false );
-		$doubled->add_meta_data( '_xpay_payment_intent_id', 'pi_contested_twice', false );
+		$doubled = $this->make_xpayeg_order();
+		$doubled->add_meta_data( '_xpayeg_payment_intent_id', 'pi_contested_twice', false );
+		$doubled->add_meta_data( '_xpayeg_payment_intent_id', 'pi_contested_twice', false );
 		$doubled->save();
 
 		$this->assertNull(
-			$this->locate( XPay_Event_Names::CHARGE_REFUNDED, array( 'paymentIntentId' => 'pi_contested_twice' ) ),
+			$this->locate( XPayEG_Event_Names::CHARGE_REFUNDED, array( 'paymentIntentId' => 'pi_contested_twice' ) ),
 			'Two rows for one order hid a second order that claims the same payment.'
 		);
 	}
@@ -193,11 +193,11 @@ class WebhookOrderLookupTest extends XPay_Integration_Test_Case {
 		global $wpdb;
 		$this->use_hpos( false );
 
-		$this->make_xpay_order( array( '_xpay_payment_intent_id' => 'pi_belongs_to_someone_else' ) );
-		$newest = $this->make_xpay_order( array( '_xpay_payment_intent_id' => 'pi_newest' ) );
+		$this->make_xpayeg_order( array( '_xpayeg_payment_intent_id' => 'pi_belongs_to_someone_else' ) );
+		$newest = $this->make_xpayeg_order( array( '_xpayeg_payment_intent_id' => 'pi_newest' ) );
 
 		$degrade = static function ( $sql ) use ( $wpdb ) {
-			if ( false === strpos( (string) $sql, '_xpay_payment_intent_id' ) ) {
+			if ( false === strpos( (string) $sql, '_xpayeg_payment_intent_id' ) ) {
 				return $sql;
 			}
 			// One row, so the ambiguity refusal above is not what answers
@@ -207,7 +207,7 @@ class WebhookOrderLookupTest extends XPay_Integration_Test_Case {
 		};
 		add_filter( 'query', $degrade );
 		$found = $this->locate(
-			XPay_Event_Names::CHARGE_REFUNDED,
+			XPayEG_Event_Names::CHARGE_REFUNDED,
 			array( 'paymentIntentId' => 'pi_belongs_to_someone_else' )
 		);
 		remove_filter( 'query', $degrade );
@@ -219,7 +219,7 @@ class WebhookOrderLookupTest extends XPay_Integration_Test_Case {
 				: 'An order that does not carry this intent was handed back.'
 		);
 		$this->assertNotEmpty(
-			XPay_Spy_Log_Handler::query( array( 'stage' => 'webhook.intent_lookup_mismatch' ) ),
+			XPayEG_Spy_Log_Handler::query( array( 'stage' => 'webhook.intent_lookup_mismatch' ) ),
 			'The lookup and the order disagreed and nothing recorded it.'
 		);
 	}
@@ -233,10 +233,10 @@ class WebhookOrderLookupTest extends XPay_Integration_Test_Case {
 	public function test_an_empty_intent_id_matches_nothing( bool $hpos ): void {
 		$this->use_hpos( $hpos );
 
-		$this->make_xpay_order( array( '_xpay_payment_intent_id' => 'pi_real' ) );
+		$this->make_xpayeg_order( array( '_xpayeg_payment_intent_id' => 'pi_real' ) );
 
-		$this->assertNull( $this->locate( XPay_Event_Names::CHARGE_REFUNDED, array( 'paymentIntentId' => '' ) ) );
-		$this->assertNull( $this->locate( XPay_Event_Names::CHARGE_REFUNDED, array() ) );
+		$this->assertNull( $this->locate( XPayEG_Event_Names::CHARGE_REFUNDED, array( 'paymentIntentId' => '' ) ) );
+		$this->assertNull( $this->locate( XPayEG_Event_Names::CHARGE_REFUNDED, array() ) );
 	}
 
 	/**
@@ -254,12 +254,12 @@ class WebhookOrderLookupTest extends XPay_Integration_Test_Case {
 	public function test_a_session_event_with_no_metadata_still_finds_its_order( bool $hpos ): void {
 		$this->use_hpos( $hpos );
 
-		$this->make_xpay_order( array( XPay_Constants::META_SESSION_ID => 'cs_decoy' ) );
-		$order = $this->make_xpay_order( array( XPay_Constants::META_SESSION_ID => 'cs_wanted' ) );
-		$this->make_xpay_order( array( XPay_Constants::META_SESSION_ID => 'cs_newer_decoy' ) );
+		$this->make_xpayeg_order( array( XPayEG_Constants::META_SESSION_ID => 'cs_decoy' ) );
+		$order = $this->make_xpayeg_order( array( XPayEG_Constants::META_SESSION_ID => 'cs_wanted' ) );
+		$this->make_xpayeg_order( array( XPayEG_Constants::META_SESSION_ID => 'cs_newer_decoy' ) );
 
 		$found = $this->locate(
-			XPay_Event_Names::CHECKOUT_SESSION_COMPLETED,
+			XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED,
 			array( 'id' => 'cs_wanted' )
 		);
 
@@ -274,10 +274,10 @@ class WebhookOrderLookupTest extends XPay_Integration_Test_Case {
 	public function test_a_failed_intent_resolves_through_its_nested_session_id( bool $hpos ): void {
 		$this->use_hpos( $hpos );
 
-		$order = $this->make_xpay_order( array( XPay_Constants::META_SESSION_ID => 'cs_from_intent' ) );
+		$order = $this->make_xpayeg_order( array( XPayEG_Constants::META_SESSION_ID => 'cs_from_intent' ) );
 
 		$found = $this->locate(
-			XPay_Event_Names::PAYMENT_INTENT_FAILED,
+			XPayEG_Event_Names::PAYMENT_INTENT_FAILED,
 			array( 'checkoutSessionId' => 'cs_from_intent' )
 		);
 
@@ -295,10 +295,10 @@ class WebhookOrderLookupTest extends XPay_Integration_Test_Case {
 	public function test_an_unknown_session_id_still_finds_nothing( bool $hpos ): void {
 		$this->use_hpos( $hpos );
 
-		$this->make_xpay_order( array( XPay_Constants::META_SESSION_ID => 'cs_ours' ) );
+		$this->make_xpayeg_order( array( XPayEG_Constants::META_SESSION_ID => 'cs_ours' ) );
 
 		$this->assertNull(
-			$this->locate( XPay_Event_Names::CHECKOUT_SESSION_COMPLETED, array( 'id' => 'cs_someone_elses' ) )
+			$this->locate( XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED, array( 'id' => 'cs_someone_elses' ) )
 		);
 	}
 
@@ -312,11 +312,11 @@ class WebhookOrderLookupTest extends XPay_Integration_Test_Case {
 	public function test_metadata_outranks_the_session_id_fallback( bool $hpos ): void {
 		$this->use_hpos( $hpos );
 
-		$by_metadata = $this->make_xpay_order();
-		$by_session  = $this->make_xpay_order( array( XPay_Constants::META_SESSION_ID => 'cs_shared' ) );
+		$by_metadata = $this->make_xpayeg_order();
+		$by_session  = $this->make_xpayeg_order( array( XPayEG_Constants::META_SESSION_ID => 'cs_shared' ) );
 
 		$found = $this->locate(
-			XPay_Event_Names::CHECKOUT_SESSION_COMPLETED,
+			XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED,
 			array(
 				'id'       => 'cs_shared',
 				'metadata' => array( 'wc_order_id' => (string) $by_metadata->get_id() ),
@@ -338,10 +338,10 @@ class WebhookOrderLookupTest extends XPay_Integration_Test_Case {
 	public function test_session_events_resolve_by_order_id_metadata( bool $hpos ): void {
 		$this->use_hpos( $hpos );
 
-		$order = $this->make_xpay_order();
+		$order = $this->make_xpayeg_order();
 
 		$found = $this->locate(
-			XPay_Event_Names::CHECKOUT_SESSION_COMPLETED,
+			XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED,
 			array(
 				'id'       => 'cs_1',
 				'metadata' => array( 'wc_order_id' => (string) $order->get_id() ),

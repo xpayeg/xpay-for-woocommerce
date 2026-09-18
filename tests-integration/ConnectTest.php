@@ -14,10 +14,10 @@
  * shipped unregistered here with green tests, because they called the
  * handler directly.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
-class ConnectTest extends XPay_Integration_Test_Case {
+class ConnectTest extends XPayEG_Integration_Test_Case {
 
 	/** @var int */
 	private $admin_id;
@@ -27,31 +27,31 @@ class ConnectTest extends XPay_Integration_Test_Case {
 		$this->admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $this->admin_id );
 		update_option(
-			'woocommerce_xpay_settings',
+			'woocommerce_xpayeg_settings',
 			array(
 				'enabled' => 'no',
 				'mode'    => 'test',
 			)
 		);
-		delete_option( XPay_Constants::OPTION_CONNECT_CLIENT );
-		delete_option( XPay_Constants::OPTION_CONNECT_FLOW );
-		delete_option( XPay_Constants::OPTION_KEY_VALIDATED );
-		$GLOBALS['xpay_test_http']          = array();
-		$GLOBALS['xpay_test_http_requests'] = array();
+		delete_option( XPayEG_Constants::OPTION_CONNECT_CLIENT );
+		delete_option( XPayEG_Constants::OPTION_CONNECT_FLOW );
+		delete_option( XPayEG_Constants::OPTION_KEY_VALIDATED );
+		$GLOBALS['xpayeg_test_http']          = array();
+		$GLOBALS['xpayeg_test_http_requests'] = array();
 	}
 
 	public function tear_down(): void {
-		$GLOBALS['xpay_test_http']          = array();
-		$GLOBALS['xpay_test_http_requests'] = array();
+		$GLOBALS['xpayeg_test_http']          = array();
+		$GLOBALS['xpayeg_test_http_requests'] = array();
 		$_GET                               = array();
-		XPay_Connect::take_notices();
+		XPayEG_Connect::take_notices();
 		parent::tear_down();
 	}
 
 	/* ── Harness ─────────────────────────────────────────────────────── */
 
 	private function script_registration(): void {
-		$GLOBALS['xpay_test_http']['oauth2/register'] = array(
+		$GLOBALS['xpayeg_test_http']['oauth2/register'] = array(
 			'response' => array( 'code' => 201 ),
 			'body'     => wp_json_encode( array( 'client_id' => 'cid_test_1' ) ),
 		);
@@ -62,7 +62,7 @@ class ConnectTest extends XPay_Integration_Test_Case {
 	 * webhook creation.
 	 */
 	private function script_success_exchange(): void {
-		$GLOBALS['xpay_test_http']['oauth2/token'] = array(
+		$GLOBALS['xpayeg_test_http']['oauth2/token'] = array(
 			'response' => array( 'code' => 200 ),
 			'body'     => wp_json_encode(
 				array(
@@ -77,17 +77,17 @@ class ConnectTest extends XPay_Integration_Test_Case {
 				)
 			),
 		);
-		$GLOBALS['xpay_test_http']['/webhook-endpoints'] = array(
+		$GLOBALS['xpayeg_test_http']['/webhook-endpoints'] = array(
 			'response' => array( 'code' => 200 ),
 			'body'     => wp_json_encode(
 				array(
 					'id'     => 'we_conn_1',
-					'url'    => XPay_Webhook_Configurator::webhook_url(),
+					'url'    => XPayEG_Webhook_Configurator::webhook_url(),
 					'secret' => 'whsec_conn_1',
 				)
 			),
 		);
-		$GLOBALS['xpay_test_http']['/account'] = array(
+		$GLOBALS['xpayeg_test_http']['/account'] = array(
 			'response' => array( 'code' => 200 ),
 			'body'     => wp_json_encode(
 				array(
@@ -118,7 +118,7 @@ class ConnectTest extends XPay_Integration_Test_Case {
 	 */
 	private function requests_to( string $needle ): array {
 		$hits = array();
-		foreach ( $GLOBALS['xpay_test_http_requests'] as $request ) {
+		foreach ( $GLOBALS['xpayeg_test_http_requests'] as $request ) {
 			if ( false !== strpos( $request['url'], $needle ) ) {
 				$hits[] = $request;
 			}
@@ -129,8 +129,8 @@ class ConnectTest extends XPay_Integration_Test_Case {
 	/** Begin a test-mode flow and hand back its stored record. */
 	private function begin_flow(): array {
 		$this->script_registration();
-		$url  = XPay_Connect::begin( false );
-		$flow = get_option( XPay_Constants::OPTION_CONNECT_FLOW );
+		$url  = XPayEG_Connect::begin( false );
+		$flow = get_option( XPayEG_Constants::OPTION_CONNECT_FLOW );
 		$this->assertIsArray( $flow );
 		return array(
 			'url'  => $url,
@@ -141,28 +141,28 @@ class ConnectTest extends XPay_Integration_Test_Case {
 	/** Arrive back from XPay with the given query. */
 	private function arrive( array $query ): string {
 		$_GET = $query;
-		return XPay_Connect::handle_callback();
+		return XPayEG_Connect::handle_callback();
 	}
 
 	/* ── Wiring ──────────────────────────────────────────────────────── */
 
 	public function test_the_callback_endpoint_is_registered_with_wc_api(): void {
 		$this->assertNotFalse(
-			has_action( 'woocommerce_api_' . XPay_Connect::CALLBACK_ENDPOINT ),
+			has_action( 'woocommerce_api_' . XPayEG_Connect::CALLBACK_ENDPOINT ),
 			'The OAuth callback is not registered; every connect would 404 at the return leg.'
 		);
 		// The wp_ajax hooks only exist under is_admin(), which this
 		// bootstrap is not; the verb's wiring IS its row in AJAX_VERBS
 		// (register() loops it), so that row plus a real handler is what
 		// can break.
-		$this->assertContains( 'connect', XPay_Admin_Screen::AJAX_VERBS, 'The connect verb is not registered; the button has nothing to call.' );
-		$this->assertTrue( is_callable( array( 'XPay_Admin_Screen', 'handle_connect' ) ) );
+		$this->assertContains( 'connect', XPayEG_Admin_Screen::AJAX_VERBS, 'The connect verb is not registered; the button has nothing to call.' );
+		$this->assertTrue( is_callable( array( 'XPayEG_Admin_Screen', 'handle_connect' ) ) );
 	}
 
 	public function test_a_plain_http_store_is_told_before_it_starts(): void {
 		// The test environment's home_url is http and not loopback: the
 		// exact state the server would refuse at registration.
-		$this->assertFalse( XPay_Connect::https_ready() );
+		$this->assertFalse( XPayEG_Connect::https_ready() );
 	}
 
 	/* ── begin() ─────────────────────────────────────────────────────── */
@@ -173,29 +173,29 @@ class ConnectTest extends XPay_Integration_Test_Case {
 		$registrations = $this->requests_to( 'oauth2/register' );
 		$this->assertCount( 1, $registrations );
 		$sent = json_decode( $registrations[0]['body'], true );
-		$this->assertSame( array( XPay_Connect::callback_url() ), $sent['redirect_uris'] );
+		$this->assertSame( array( XPayEG_Connect::callback_url() ), $sent['redirect_uris'] );
 		$this->assertSame( 'none', $sent['token_endpoint_auth_method'] );
 		$this->assertStringContainsString( 'example.org', $sent['client_name'], 'The consent screen and the minted key are named after this; a nameless client identifies nothing.' );
 
-		$client = get_option( XPay_Constants::OPTION_CONNECT_CLIENT );
+		$client = get_option( XPayEG_Constants::OPTION_CONNECT_CLIENT );
 		$this->assertSame( 'cid_test_1', $client['client_id'] );
-		$this->assertSame( XPay_Connect::callback_url(), $client['redirect_uri'] );
+		$this->assertSame( XPayEG_Connect::callback_url(), $client['redirect_uri'] );
 
 		$url = $started['url'];
 		parse_str( (string) wp_parse_url( $url, PHP_URL_QUERY ), $params );
-		$this->assertStringStartsWith( XPay_Constants::oauth_base() . '/oauth2/authorize', $url );
+		$this->assertStringStartsWith( XPayEG_Constants::oauth_base() . '/oauth2/authorize', $url );
 		$this->assertSame( 'code', $params['response_type'] );
 		$this->assertSame( 'cid_test_1', $params['client_id'] );
-		$this->assertSame( XPay_Connect::callback_url(), $params['redirect_uri'] );
+		$this->assertSame( XPayEG_Connect::callback_url(), $params['redirect_uri'] );
 		$this->assertSame( 'merchant.connect.test', $params['scope'] );
 		$this->assertSame( $started['flow']['state'], $params['state'] );
 		$this->assertSame( 'S256', $params['code_challenge_method'] );
-		$this->assertSame( XPay_Connect::challenge( $started['flow']['verifier'] ), $params['code_challenge'] );
+		$this->assertSame( XPayEG_Connect::challenge( $started['flow']['verifier'] ), $params['code_challenge'] );
 	}
 
 	public function test_begin_reuses_the_registration_and_live_asks_the_live_scope(): void {
 		$this->begin_flow();
-		$url = XPay_Connect::begin( true );
+		$url = XPayEG_Connect::begin( true );
 
 		$this->assertCount( 1, $this->requests_to( 'oauth2/register' ), 'Registration is once per install, not per click.' );
 		parse_str( (string) wp_parse_url( $url, PHP_URL_QUERY ), $params );
@@ -215,7 +215,7 @@ class ConnectTest extends XPay_Integration_Test_Case {
 		);
 
 		$this->assertStringContainsString( 'wp-login.php', $destination );
-		$this->assertStringContainsString( 'xpay_connect', $destination );
+		$this->assertStringContainsString( 'xpayeg_connect', $destination );
 	}
 
 	public function test_a_user_who_cannot_manage_the_store_is_refused(): void {
@@ -243,11 +243,11 @@ class ConnectTest extends XPay_Integration_Test_Case {
 		);
 
 		$this->assertSame( array(), $this->requests_to( 'oauth2/token' ) );
-		$this->assertFalse( get_option( XPay_Constants::OPTION_CONNECT_FLOW ), 'A refused flow must be consumed, not left redeemable.' );
-		$settings = get_option( 'woocommerce_xpay_settings' );
+		$this->assertFalse( get_option( XPayEG_Constants::OPTION_CONNECT_FLOW ), 'A refused flow must be consumed, not left redeemable.' );
+		$settings = get_option( 'woocommerce_xpayeg_settings' );
 		$this->assertArrayNotHasKey( 'test_api_key', $settings, 'A refused callback wrote settings.' );
 
-		$notices = XPay_Connect::take_notices();
+		$notices = XPayEG_Connect::take_notices();
 		$this->assertSame( 'error', $notices[0]['type'] );
 	}
 
@@ -265,7 +265,7 @@ class ConnectTest extends XPay_Integration_Test_Case {
 		$this->assertSame( array(), $this->requests_to( 'oauth2/token' ), 'A foreign issuer must never receive our exchange.' );
 	}
 
-	public function test_a_refusal_from_xpay_shows_its_own_explanation(): void {
+	public function test_a_refusal_from_xpayeg_shows_its_own_explanation(): void {
 		$this->begin_flow();
 
 		$this->arrive(
@@ -276,15 +276,15 @@ class ConnectTest extends XPay_Integration_Test_Case {
 		);
 
 		$this->assertSame( array(), $this->requests_to( 'oauth2/token' ) );
-		$this->assertFalse( get_option( XPay_Constants::OPTION_CONNECT_FLOW ) );
-		$notices = XPay_Connect::take_notices();
+		$this->assertFalse( get_option( XPayEG_Constants::OPTION_CONNECT_FLOW ) );
+		$notices = XPayEG_Connect::take_notices();
 		$this->assertStringContainsString( 'not approved for live', $notices[0]['text'], "XPay's own explanation is more precise than anything composed here." );
 	}
 
 	public function test_a_wrong_mode_response_writes_nothing(): void {
 		$started = $this->begin_flow(); // A TEST flow.
 		$this->script_success_exchange();
-		$GLOBALS['xpay_test_http']['oauth2/token'] = array(
+		$GLOBALS['xpayeg_test_http']['oauth2/token'] = array(
 			'response' => array( 'code' => 200 ),
 			'body'     => wp_json_encode(
 				array(
@@ -302,7 +302,7 @@ class ConnectTest extends XPay_Integration_Test_Case {
 			)
 		);
 
-		$settings = get_option( 'woocommerce_xpay_settings' );
+		$settings = get_option( 'woocommerce_xpayeg_settings' );
 		$this->assertArrayNotHasKey( 'test_api_key', $settings );
 		$this->assertArrayNotHasKey( 'live_api_key', $settings, 'A live answer to a test flow must not land in EITHER plane.' );
 	}
@@ -327,12 +327,12 @@ class ConnectTest extends XPay_Integration_Test_Case {
 		$this->assertCount( 1, $this->requests_to( 'oauth2/token' ), 'The duplicate redeemed the code a second time.' );
 		$this->assertSame( $first, $second, 'Both deliveries land the merchant on the settings screen.' );
 
-		$texts = implode( ' ', wp_list_pluck( XPay_Connect::take_notices(), 'text' ) );
+		$texts = implode( ' ', wp_list_pluck( XPayEG_Connect::take_notices(), 'text' ) );
 		$this->assertStringContainsString( 'XPay connected (test mode).', $texts );
 		$this->assertStringNotContainsString( 'stale', $texts, 'The duplicate overwrote the success notice with a failure.' );
 
 		// And the connection itself is untouched by the second arrival.
-		$settings = get_option( 'woocommerce_xpay_settings' );
+		$settings = get_option( 'woocommerce_xpayeg_settings' );
 		$this->assertSame( 'rk_test_connected', $settings['test_api_key'] );
 	}
 
@@ -356,36 +356,36 @@ class ConnectTest extends XPay_Integration_Test_Case {
 		$this->assertSame( 'authorization_code', $sent['grant_type'] );
 		$this->assertSame( 'ac_verified', $sent['code'] );
 		$this->assertSame( 'cid_test_1', $sent['client_id'] );
-		$this->assertSame( XPay_Connect::callback_url(), $sent['redirect_uri'] );
+		$this->assertSame( XPayEG_Connect::callback_url(), $sent['redirect_uri'] );
 		$this->assertSame( $started['flow']['verifier'], $sent['code_verifier'] );
 
 		// The keys landed as a MERGE, mode and enabled follow the click.
-		$settings = get_option( 'woocommerce_xpay_settings' );
+		$settings = get_option( 'woocommerce_xpayeg_settings' );
 		$this->assertSame( 'rk_test_connected', $settings['test_api_key'] );
 		$this->assertSame( 'pk_test_connected', $settings['test_publishable_key'] );
 		$this->assertSame( 'test', $settings['mode'] );
 		$this->assertSame( 'yes', $settings['enabled'] );
 
 		// Provisioning ran the shared path: proof, caches, webhook.
-		$proof = get_option( XPay_Constants::OPTION_KEY_VALIDATED );
+		$proof = get_option( XPayEG_Constants::OPTION_KEY_VALIDATED );
 		$this->assertSame( 'test', $proof['mode'] );
 		$salt                 = defined( 'AUTH_SALT' ) ? (string) AUTH_SALT : '';
 		$expected_fingerprint = substr( hash( 'sha256', $salt . '|rk_test_connected|pk_test_connected' ), 0, 32 );
 		$this->assertSame( $expected_fingerprint, $proof['fingerprint'] );
 		$this->assertNotSame(
 			$proof['fingerprint'],
-			XPay_Constants::key_fingerprint( 'rk_test_other', 'pk_test_other' )
+			XPayEG_Constants::key_fingerprint( 'rk_test_other', 'pk_test_other' )
 		);
 		$this->assertSame( 'whsec_conn_1', $settings['test_webhook_secret'] );
-		$this->assertSame( 'acct_1', get_option( XPay_Constants::merchant_id_option( false ) ) );
+		$this->assertSame( 'acct_1', get_option( XPayEG_Constants::merchant_id_option( false ) ) );
 
 		// The outcome reaches the merchant, and the flow cannot replay.
 		$this->assertStringContainsString( 'section=xpay', $destination );
-		$notices = XPay_Connect::take_notices();
+		$notices = XPayEG_Connect::take_notices();
 		$texts   = wp_list_pluck( $notices, 'text' );
 		$this->assertStringContainsString( 'XPay connected (test mode).', implode( ' ', $texts ) );
 
-		$client = get_option( XPay_Constants::OPTION_CONNECT_CLIENT );
+		$client = get_option( XPayEG_Constants::OPTION_CONNECT_CLIENT );
 		$this->assertGreaterThan( 0, $client['completed_at'], 'A completed connect must stop the staleness rule from re-registering this client.' );
 
 		$this->arrive(

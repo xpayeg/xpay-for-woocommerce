@@ -1,24 +1,24 @@
 <?php
 /**
- * Pins XPay_Checkout_Service's session lifecycle: what the create body
+ * Pins XPayEG_Checkout_Service's session lifecycle: what the create body
  * must carry, when an existing session may be reused, when it must be
  * superseded AND expired, and the customer-linking exclusivity rules.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
 class CheckoutServiceContractTest extends ContractTestCase {
 
-	/** @var XPay_Capture_Client */
+	/** @var XPayEG_Capture_Client */
 	private $client;
 
-	/** @var XPay_Checkout_Service */
+	/** @var XPayEG_Checkout_Service */
 	private $service;
 
 	protected function setUp(): void {
 		parent::setUp();
-		$this->client  = new XPay_Capture_Client();
-		$this->service = new XPay_Checkout_Service( $this->client );
+		$this->client  = new XPayEG_Capture_Client();
+		$this->service = new XPayEG_Checkout_Service( $this->client );
 	}
 
 	private function order( array $props = array() ): WC_Order {
@@ -39,7 +39,7 @@ class CheckoutServiceContractTest extends ContractTestCase {
 		$this->assertSame( 'EGP', $body['currency'] );
 		$this->assertSame( 29000, (int) $body['lineItems'][0]['priceData']['unitAmount'] );
 		$this->assertSame( 'en', $body['locale'] );
-		$this->assertStringContainsString( 'xpay_session_id={CHECKOUT_SESSION_ID}', $body['afterCompletion']['redirect']['url'], 'The support breadcrumb placeholder must survive URL building.' );
+		$this->assertStringContainsString( 'xpayeg_session_id={CHECKOUT_SESSION_ID}', $body['afterCompletion']['redirect']['url'], 'The support breadcrumb placeholder must survive URL building.' );
 		$this->assertSame( '14', $body['metadata']['wc_order_id'] );
 		$this->assertSame( $order->get_order_key(), $body['metadata']['wc_order_key'] );
 		$this->assertSame( 'woocommerce', $body['metadata']['integration'], 'The integration marker is a support/dashboard contract, not decoration.' );
@@ -54,8 +54,8 @@ class CheckoutServiceContractTest extends ContractTestCase {
 	/* ── The Payment Methods tab's enforcement half ──────────────────── */
 
 	/** A service built the way the gateway builds it when a list applies. */
-	private function pinned_service( array $types, ?callable $refresh = null ): XPay_Checkout_Service {
-		return new XPay_Checkout_Service( $this->client, $types, $refresh );
+	private function pinned_service( array $types, ?callable $refresh = null ): XPayEG_Checkout_Service {
+		return new XPayEG_Checkout_Service( $this->client, $types, $refresh );
 	}
 
 	public function test_the_accepted_method_list_rides_the_create_body() {
@@ -72,7 +72,7 @@ class CheckoutServiceContractTest extends ContractTestCase {
 		$service = $this->pinned_service( array( 'card' ) );
 		$order   = $this->order();
 		$service->get_or_create_session( $order );
-		$old_id = $order->get_meta( XPay_Constants::META_SESSION_ID );
+		$old_id = $order->get_meta( XPayEG_Constants::META_SESSION_ID );
 
 		// The stored session reads back accepting card AND valu: the
 		// merchant's checked list has since narrowed to card alone.
@@ -120,9 +120,9 @@ class CheckoutServiceContractTest extends ContractTestCase {
 
 	public function test_a_rejected_method_list_refreshes_and_retries_with_the_current_intersection() {
 		$this->client->create_failures = array(
-			XPay_Api_Exception::from_api_response(
+			XPayEG_Api_Exception::from_api_response(
 				array(
-					'code'    => XPay_Error_Codes::API_PARAMETER_INVALID,
+					'code'    => XPayEG_Error_Codes::API_PARAMETER_INVALID,
 					'message' => 'Payment method types [valu] are not enabled for this merchant.',
 					'param'   => 'paymentMethodTypes',
 				),
@@ -145,8 +145,8 @@ class CheckoutServiceContractTest extends ContractTestCase {
 
 	public function test_a_rejected_method_list_never_retries_unpinned_when_none_remain() {
 		$this->client->create_failures = array(
-			XPay_Api_Exception::from_api_response(
-				array( 'code' => XPay_Error_Codes::API_PARAMETER_INVALID, 'message' => 'Rejected', 'param' => 'paymentMethodTypes' ),
+			XPayEG_Api_Exception::from_api_response(
+				array( 'code' => XPayEG_Error_Codes::API_PARAMETER_INVALID, 'message' => 'Rejected', 'param' => 'paymentMethodTypes' ),
 				400
 			),
 		);
@@ -154,8 +154,8 @@ class CheckoutServiceContractTest extends ContractTestCase {
 		try {
 			$this->pinned_service( array( 'valu' ), static function (): array { return array(); } )->get_or_create_session( $this->order() );
 			$this->fail( 'An empty current intersection must stop checkout.' );
-		} catch ( XPay_Api_Exception $e ) {
-			$this->assertSame( XPay_Error_Codes::PAYMENT_METHODS_UNAVAILABLE, $e->get_error_code() );
+		} catch ( XPayEG_Api_Exception $e ) {
+			$this->assertSame( XPayEG_Error_Codes::PAYMENT_METHODS_UNAVAILABLE, $e->get_error_code() );
 			$this->assertCount( 0, $this->client->created );
 		}
 	}
@@ -164,14 +164,14 @@ class CheckoutServiceContractTest extends ContractTestCase {
 		try {
 			$this->pinned_service( array() )->get_or_create_session( $this->order() );
 			$this->fail( 'An empty accepted list must stop checkout.' );
-		} catch ( XPay_Api_Exception $e ) {
-			$this->assertSame( XPay_Error_Codes::PAYMENT_METHODS_UNAVAILABLE, $e->get_error_code() );
+		} catch ( XPayEG_Api_Exception $e ) {
+			$this->assertSame( XPayEG_Error_Codes::PAYMENT_METHODS_UNAVAILABLE, $e->get_error_code() );
 			$this->assertCount( 0, $this->client->created );
 		}
 	}
 
 	public function test_arabic_storefront_sends_arabic_locale() {
-		$GLOBALS['xpay_test_locale'] = 'ar';
+		$GLOBALS['xpayeg_test_locale'] = 'ar';
 		$this->service->get_or_create_session( $this->order() );
 		$this->assertSame( 'ar', $this->client->created[0]['locale'] );
 	}
@@ -183,7 +183,7 @@ class CheckoutServiceContractTest extends ContractTestCase {
 		$session = $this->service->get_or_create_session( $order );
 
 		$this->assertCount( 1, $this->client->created, 'Same order, same terms: reuse, never re-mint.' );
-		$this->assertSame( $order->get_meta( XPay_Constants::META_SESSION_ID ), $session['id'] );
+		$this->assertSame( $order->get_meta( XPayEG_Constants::META_SESSION_ID ), $session['id'] );
 	}
 
 	/**
@@ -196,7 +196,7 @@ class CheckoutServiceContractTest extends ContractTestCase {
 	public function test_a_session_that_lost_its_line_items_is_not_reused() {
 		$order = $this->order();
 		$this->service->get_or_create_session( $order );
-		$old_id = $order->get_meta( XPay_Constants::META_SESSION_ID );
+		$old_id = $order->get_meta( XPayEG_Constants::META_SESSION_ID );
 
 		$this->client->session = array( 'lineItems' => array() );
 		$this->service->get_or_create_session( $order );
@@ -222,7 +222,7 @@ class CheckoutServiceContractTest extends ContractTestCase {
 	public function test_currency_change_supersedes_and_expires_old_session() {
 		$order = $this->order();
 		$this->service->get_or_create_session( $order );
-		$old_id = $order->get_meta( XPay_Constants::META_SESSION_ID );
+		$old_id = $order->get_meta( XPayEG_Constants::META_SESSION_ID );
 
 		$this->client->session = array( 'currency' => 'USD' ); // The stored session now reads back in another currency.
 		$this->service->get_or_create_session( $order );
@@ -300,9 +300,9 @@ class CheckoutServiceContractTest extends ContractTestCase {
 	public function test_a_refused_reprice_falls_back_to_superseding() {
 		$order = $this->order();
 		$this->service->get_or_create_session( $order );
-		$old_id = $order->get_meta( XPay_Constants::META_SESSION_ID );
+		$old_id = $order->get_meta( XPayEG_Constants::META_SESSION_ID );
 
-		$this->client->update_failure = XPay_Api_Exception::from_api_response( array( 'code' => 'resource_invalid_state' ), 400 );
+		$this->client->update_failure = XPayEG_Api_Exception::from_api_response( array( 'code' => 'resource_invalid_state' ), 400 );
 		$order->total                 = '999.00';
 		$this->service->get_or_create_session( $order );
 
@@ -322,8 +322,8 @@ class CheckoutServiceContractTest extends ContractTestCase {
 		try {
 			$this->service->get_or_create_session( $order );
 			$this->fail( 'A total above int4 reached the platform.' );
-		} catch ( XPay_Api_Exception $e ) {
-			$this->assertSame( XPay_Error_Codes::AMOUNT_ABOVE_LINE_CEILING, $e->get_error_code() );
+		} catch ( XPayEG_Api_Exception $e ) {
+			$this->assertSame( XPayEG_Error_Codes::AMOUNT_ABOVE_LINE_CEILING, $e->get_error_code() );
 		}
 		$this->assertCount( 0, $this->client->created, 'The refusal must happen before any request.' );
 	}
@@ -331,14 +331,14 @@ class CheckoutServiceContractTest extends ContractTestCase {
 	public function test_supersede_records_the_old_session_id() {
 		$order = $this->order();
 		$this->service->get_or_create_session( $order );
-		$old_id = $order->get_meta( XPay_Constants::META_SESSION_ID );
+		$old_id = $order->get_meta( XPayEG_Constants::META_SESSION_ID );
 
 		// Currency is immutable on a session, so this is a genuine
 		// supersede rather than a reprice.
 		$this->client->session = array( 'currency' => 'USD' );
 		$this->service->get_or_create_session( $order );
 
-		$this->assertContains( $old_id, (array) $order->get_meta( XPay_Constants::META_SUPERSEDED_SESSIONS ), 'A paid event on the old id must stay recognizable as this order\'s money.' );
+		$this->assertContains( $old_id, (array) $order->get_meta( XPayEG_Constants::META_SUPERSEDED_SESSIONS ), 'A paid event on the old id must stay recognizable as this order\'s money.' );
 	}
 
 	public function test_complete_paid_session_marks_order_paid_instead_of_reminting() {
@@ -348,13 +348,13 @@ class CheckoutServiceContractTest extends ContractTestCase {
 		// The stored session now reads back COMPLETE and PAID: a stale
 		// emailed pay link whose webhook was lost or is still in flight.
 		$this->client->session = array(
-			'status'        => XPay_Session_Status::COMPLETE,
-			'paymentStatus' => XPay_Payment_Status::PAID,
+			'status'        => XPayEG_Session_Status::COMPLETE,
+			'paymentStatus' => XPayEG_Payment_Status::PAID,
 		);
 		$session = $this->service->get_or_create_session( $order );
 
 		$this->assertCount( 1, $this->client->created, 'Minting a fresh payable session over a paid one is how a shopper gets charged twice.' );
-		$this->assertSame( XPay_Session_Status::COMPLETE, $session['status'] );
+		$this->assertSame( XPayEG_Session_Status::COMPLETE, $session['status'] );
 		$this->assertTrue( $order->is_paid(), 'The already-paid truth is applied, not just observed.' );
 		$this->assertStageFired( 'session.already_complete' );
 		$this->assertStageFired( 'order.paid' );
@@ -365,15 +365,15 @@ class CheckoutServiceContractTest extends ContractTestCase {
 		$this->service->get_or_create_session( $order );
 
 		$this->client->session          = array(
-			'status'        => XPay_Session_Status::COMPLETE,
-			'paymentStatus' => XPay_Payment_Status::PAID,
+			'status'        => XPayEG_Session_Status::COMPLETE,
+			'paymentStatus' => XPayEG_Payment_Status::PAID,
 		);
 		$GLOBALS['wpdb']->lock_results = array( '0' ); // The webhook holds the order lock right now.
 
 		$session = $this->service->get_or_create_session( $order );
 
 		$this->assertCount( 1, $this->client->created, 'Still no re-mint: the busy holder is applying this same truth.' );
-		$this->assertSame( XPay_Session_Status::COMPLETE, $session['status'] );
+		$this->assertSame( XPayEG_Session_Status::COMPLETE, $session['status'] );
 		$this->assertFalse( $order->is_paid(), 'Deferring to the lock holder means writing nothing ourselves.' );
 	}
 
@@ -382,8 +382,8 @@ class CheckoutServiceContractTest extends ContractTestCase {
 		$this->service->get_or_create_session( $order );
 
 		$this->client->session = array(
-			'status'        => XPay_Session_Status::COMPLETE,
-			'paymentStatus' => XPay_Payment_Status::UNPAID,
+			'status'        => XPayEG_Session_Status::COMPLETE,
+			'paymentStatus' => XPayEG_Payment_Status::UNPAID,
 		);
 		$this->service->get_or_create_session( $order );
 
@@ -395,12 +395,12 @@ class CheckoutServiceContractTest extends ContractTestCase {
 		$order = $this->order();
 		$this->service->get_or_create_session( $order );
 
-		$this->client->get_failure = XPay_Api_Exception::transport( 'timeout' );
+		$this->client->get_failure = XPayEG_Api_Exception::transport( 'timeout' );
 
 		try {
 			$this->service->get_or_create_session( $order );
 			$this->fail( 'A transport blip must surface: re-minting over a possibly-OPEN session risks money-taken-order-never-paid.' );
-		} catch ( XPay_Api_Exception $e ) {
+		} catch ( XPayEG_Api_Exception $e ) {
 			$this->assertCount( 1, $this->client->created );
 		}
 	}
@@ -483,8 +483,8 @@ class CheckoutServiceContractTest extends ContractTestCase {
 		$this->service->get_or_create_session( $this->order( array( 'shipping_address_2' => 'Unit 5' ) ) );
 		$this->assertSame( 'Unit 5', $this->client->created[0]['customerDetails']['shipping']['address']['line2'] );
 
-		$this->client  = new XPay_Capture_Client();
-		$this->service = new XPay_Checkout_Service( $this->client );
+		$this->client  = new XPayEG_Capture_Client();
+		$this->service = new XPayEG_Checkout_Service( $this->client );
 		$this->service->get_or_create_session( $this->order( array( 'shipping_city' => 'Giza' ) ) );
 		$this->assertArrayNotHasKey( 'shipping', $this->client->created[0]['customerDetails'] );
 	}
@@ -498,7 +498,7 @@ class CheckoutServiceContractTest extends ContractTestCase {
 	}
 
 	public function test_linked_customer_sends_id_exclusively() {
-		update_user_meta( 7, XPay_Constants::customer_user_meta_key( false ), 'cus_LINKED' );
+		update_user_meta( 7, XPayEG_Constants::customer_user_meta_key( false ), 'cus_LINKED' );
 
 		$this->service->get_or_create_session( $this->order( array( 'user_id' => 7 ) ) );
 
@@ -509,11 +509,11 @@ class CheckoutServiceContractTest extends ContractTestCase {
 	}
 
 	public function test_stale_customer_link_is_cleared_and_retried_once() {
-		update_user_meta( 7, XPay_Constants::customer_user_meta_key( false ), 'cus_DELETED' );
+		update_user_meta( 7, XPayEG_Constants::customer_user_meta_key( false ), 'cus_DELETED' );
 		$this->client->create_failures = array(
-			XPay_Api_Exception::from_api_response(
+			XPayEG_Api_Exception::from_api_response(
 				array(
-					'code'    => XPay_Error_Codes::API_RESOURCE_MISSING,
+					'code'    => XPayEG_Error_Codes::API_RESOURCE_MISSING,
 					'message' => 'No such customer',
 					'param'   => 'customerId',
 				),
@@ -526,7 +526,7 @@ class CheckoutServiceContractTest extends ContractTestCase {
 		$this->assertNotEmpty( $session['id'] );
 		$this->assertCount( 1, $this->client->created, 'The retry body is the one that succeeded.' );
 		$this->assertArrayNotHasKey( 'customerId', $this->client->created[0] );
-		$this->assertSame( '', get_user_meta( 7, XPay_Constants::customer_user_meta_key( false ), true ), 'The dead link must be cleared so the next checkout re-creates.' );
+		$this->assertSame( '', get_user_meta( 7, XPayEG_Constants::customer_user_meta_key( false ), true ), 'The dead link must be cleared so the next checkout re-creates.' );
 		$this->assertStageFired( 'customer.stale_link_cleared' );
 	}
 

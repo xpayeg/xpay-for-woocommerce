@@ -4,7 +4,7 @@ Tags: woocommerce, payments, payment gateway, egypt, valu
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -81,7 +81,7 @@ The plugin configures them automatically when you connect. If the webhook status
 
 = How do I troubleshoot a payment? =
 
-Turn on Diagnostic logging in the XPay settings, reproduce the issue, then open WooCommerce → Status → Logs and select the latest `xpay` log. Secrets and personal data are redacted before the log is written.
+Turn on Diagnostic logging in the XPay settings, reproduce the issue, then open WooCommerce → Status → Logs and select the latest `xpayeg` log. Secrets and personal data are redacted before the log is written.
 
 = Can I issue refunds from WooCommerce? =
 
@@ -92,6 +92,10 @@ Yes, when the payment method supports refunds. ValU refunds are not currently su
 Yes. If customers return to the cart after paying and you do not use a working WPFunnels Pro upsell step, turn on WPFunnels compatibility in the XPay settings.
 
 == Changelog ==
+
+= 1.0.3 =
+
+* Every name the plugin defines now carries the xpayeg prefix: the gateway id, classes, functions, options, hooks, AJAX actions, order meta, constants, script handles, CSS classes, element ids, data attributes and the WooCommerce log source. This answers the WordPress.org review. A store that installed 1.0.x must open WooCommerce > Settings > Payments > XPay and connect again; the webhook address and the settings option changed with the gateway id.
 
 = 1.0.2 =
 

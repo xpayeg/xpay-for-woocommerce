@@ -7,10 +7,10 @@
  * core: what a nonce is scoped to, when a payment box is drawn, when an
  * unpaid order is swept away.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
-class GroupAMoneySafetyTest extends XPay_Integration_Test_Case {
+class GroupAMoneySafetyTest extends XPayEG_Integration_Test_Case {
 
 	/* ── A2: nonce scoping and method ────────────────────────────────── */
 
@@ -23,7 +23,7 @@ class GroupAMoneySafetyTest extends XPay_Integration_Test_Case {
 	public function test_the_nonce_action_is_scoped_to_the_individual_shopper(): void {
 		$this->assertStringStartsWith(
 			'woocommerce',
-			XPay_Checkout_Elements::NONCE_ACTION,
+			XPayEG_Checkout_Elements::NONCE_ACTION,
 			'The nonce action must start with "woocommerce" or every guest shares one nonce.'
 		);
 	}
@@ -37,7 +37,7 @@ class GroupAMoneySafetyTest extends XPay_Integration_Test_Case {
 
 		$this->assertSame(
 			0,
-			$handler->maybe_update_nonce_user_logged_out( 0, 'xpay_checkout_elements' ),
+			$handler->maybe_update_nonce_user_logged_out( 0, 'xpayeg_checkout_elements' ),
 			'Sanity check: an unprefixed action is NOT scoped, which was the bug.'
 		);
 
@@ -49,7 +49,7 @@ class GroupAMoneySafetyTest extends XPay_Integration_Test_Case {
 
 		$this->assertSame(
 			$customer_id,
-			WC()->session->maybe_update_nonce_user_logged_out( 0, XPay_Checkout_Elements::NONCE_ACTION ),
+			WC()->session->maybe_update_nonce_user_logged_out( 0, XPayEG_Checkout_Elements::NONCE_ACTION ),
 			'Core did not scope our nonce action to this shopper.'
 		);
 	}
@@ -94,7 +94,7 @@ class GroupAMoneySafetyTest extends XPay_Integration_Test_Case {
 	}
 
 	public function test_the_endpoints_refuse_anything_that_is_not_a_post(): void {
-		$verify = new ReflectionMethod( 'XPay_Checkout_Elements', 'verify' );
+		$verify = new ReflectionMethod( 'XPayEG_Checkout_Elements', 'verify' );
 		$verify->setAccessible( true );
 
 		$_SERVER['REQUEST_METHOD'] = 'GET';
@@ -111,7 +111,7 @@ class GroupAMoneySafetyTest extends XPay_Integration_Test_Case {
 	}
 
 	public function test_a_post_without_a_valid_nonce_is_refused(): void {
-		$verify = new ReflectionMethod( 'XPay_Checkout_Elements', 'verify' );
+		$verify = new ReflectionMethod( 'XPayEG_Checkout_Elements', 'verify' );
 		$verify->setAccessible( true );
 
 		$_SERVER['REQUEST_METHOD'] = 'POST';
@@ -128,11 +128,11 @@ class GroupAMoneySafetyTest extends XPay_Integration_Test_Case {
 	}
 
 	public function test_a_post_with_a_valid_nonce_passes(): void {
-		$verify = new ReflectionMethod( 'XPay_Checkout_Elements', 'verify' );
+		$verify = new ReflectionMethod( 'XPayEG_Checkout_Elements', 'verify' );
 		$verify->setAccessible( true );
 
 		$_SERVER['REQUEST_METHOD'] = 'POST';
-		$_REQUEST['nonce']         = wp_create_nonce( XPay_Checkout_Elements::NONCE_ACTION );
+		$_REQUEST['nonce']         = wp_create_nonce( XPayEG_Checkout_Elements::NONCE_ACTION );
 		$body                      = $this->capture_json(
 			static function () use ( $verify ) {
 				$verify->invoke( null );
@@ -166,19 +166,19 @@ class GroupAMoneySafetyTest extends XPay_Integration_Test_Case {
 
 	/* ── A4: the unpaid-order sweep ──────────────────────────────────── */
 
-	public function test_an_xpay_order_mid_payment_is_not_cancelled(): void {
-		$order = $this->make_xpay_order( array( XPay_Constants::META_SESSION_ID => 'cs_live_one' ) );
+	public function test_an_xpayeg_order_mid_payment_is_not_cancelled(): void {
+		$order = $this->make_xpayeg_order( array( XPayEG_Constants::META_SESSION_ID => 'cs_live_one' ) );
 
 		$this->assertFalse(
-			XPay_Order_Sync::should_cancel_unpaid( true, $order ),
+			XPayEG_Order_Sync::should_cancel_unpaid( true, $order ),
 			'A payment still open at XPay was swept away by the stock-hold timer.'
 		);
 	}
 
 	public function test_the_shopper_is_told_why_in_an_order_note(): void {
-		$order = $this->make_xpay_order( array( XPay_Constants::META_SESSION_ID => 'cs_live_two' ) );
+		$order = $this->make_xpayeg_order( array( XPayEG_Constants::META_SESSION_ID => 'cs_live_two' ) );
 
-		XPay_Order_Sync::should_cancel_unpaid( true, $order );
+		XPayEG_Order_Sync::should_cancel_unpaid( true, $order );
 
 		$notes = wc_get_order_notes( array( 'order_id' => $order->get_id() ) );
 		$this->assertNotEmpty( $notes, 'Holding back a cancellation left no trace on the order.' );
@@ -186,11 +186,11 @@ class GroupAMoneySafetyTest extends XPay_Integration_Test_Case {
 	}
 
 	public function test_the_note_is_written_once_not_once_per_sweep(): void {
-		$order = $this->make_xpay_order( array( XPay_Constants::META_SESSION_ID => 'cs_live_three' ) );
+		$order = $this->make_xpayeg_order( array( XPayEG_Constants::META_SESSION_ID => 'cs_live_three' ) );
 
-		XPay_Order_Sync::should_cancel_unpaid( true, $order );
-		XPay_Order_Sync::should_cancel_unpaid( true, wc_get_order( $order->get_id() ) );
-		XPay_Order_Sync::should_cancel_unpaid( true, wc_get_order( $order->get_id() ) );
+		XPayEG_Order_Sync::should_cancel_unpaid( true, $order );
+		XPayEG_Order_Sync::should_cancel_unpaid( true, wc_get_order( $order->get_id() ) );
+		XPayEG_Order_Sync::should_cancel_unpaid( true, wc_get_order( $order->get_id() ) );
 
 		$this->assertCount( 1, wc_get_order_notes( array( 'order_id' => $order->get_id() ) ) );
 	}
@@ -199,11 +199,11 @@ class GroupAMoneySafetyTest extends XPay_Integration_Test_Case {
 	 * The protection is bounded. Refusing forever would hold stock forever.
 	 */
 	public function test_the_protection_expires(): void {
-		$order = $this->make_xpay_order( array( XPay_Constants::META_SESSION_ID => 'cs_old' ) );
+		$order = $this->make_xpayeg_order( array( XPayEG_Constants::META_SESSION_ID => 'cs_old' ) );
 
-		add_filter( 'xpay_unpaid_order_grace_seconds', '__return_zero' );
-		$decision = XPay_Order_Sync::should_cancel_unpaid( true, $order );
-		remove_filter( 'xpay_unpaid_order_grace_seconds', '__return_zero' );
+		add_filter( 'xpayeg_unpaid_order_grace_seconds', '__return_zero' );
+		$decision = XPayEG_Order_Sync::should_cancel_unpaid( true, $order );
+		remove_filter( 'xpayeg_unpaid_order_grace_seconds', '__return_zero' );
 
 		$this->assertTrue( $decision, 'The grace period never ends, so stock is held forever.' );
 	}
@@ -219,9 +219,9 @@ class GroupAMoneySafetyTest extends XPay_Integration_Test_Case {
 	 * hours. The hold now covers only the order-created-to-webhook gap.
 	 */
 	public function test_an_awaiting_payment_order_is_outside_the_sweeps_reach(): void {
-		$order = $this->make_xpay_order( array( XPay_Constants::META_SESSION_ID => 'cs_fawry' ) );
+		$order = $this->make_xpayeg_order( array( XPayEG_Constants::META_SESSION_ID => 'cs_fawry' ) );
 
-		XPay_Order_Sync::mark_awaiting_payment(
+		XPayEG_Order_Sync::mark_awaiting_payment(
 			$order,
 			array(
 				'id'            => 'cs_fawry',
@@ -234,10 +234,10 @@ class GroupAMoneySafetyTest extends XPay_Integration_Test_Case {
 		$this->assertSame( 'on-hold', $fresh->get_status(), 'An awaiting order must leave `pending`, the only status the sweep cancels.' );
 	}
 
-	public function test_an_order_that_never_reached_xpay_is_left_to_core(): void {
-		$order = $this->make_xpay_order();
+	public function test_an_order_that_never_reached_xpayeg_is_left_to_core(): void {
+		$order = $this->make_xpayeg_order();
 
-		$this->assertTrue( XPay_Order_Sync::should_cancel_unpaid( true, $order ) );
+		$this->assertTrue( XPayEG_Order_Sync::should_cancel_unpaid( true, $order ) );
 	}
 
 	public function test_another_gateways_order_is_never_touched(): void {
@@ -245,14 +245,14 @@ class GroupAMoneySafetyTest extends XPay_Integration_Test_Case {
 		$order->set_payment_method( 'cod' );
 		$order->save();
 
-		$this->assertTrue( XPay_Order_Sync::should_cancel_unpaid( true, $order ) );
+		$this->assertTrue( XPayEG_Order_Sync::should_cancel_unpaid( true, $order ) );
 	}
 
 	public function test_a_decision_core_already_made_against_cancelling_is_respected(): void {
-		$order = $this->make_xpay_order( array( XPay_Constants::META_SESSION_ID => 'cs_x' ) );
+		$order = $this->make_xpayeg_order( array( XPayEG_Constants::META_SESSION_ID => 'cs_x' ) );
 
 		$this->assertFalse(
-			XPay_Order_Sync::should_cancel_unpaid( false, $order ),
+			XPayEG_Order_Sync::should_cancel_unpaid( false, $order ),
 			'We must never turn a "do not cancel" into a "cancel".'
 		);
 	}
@@ -260,7 +260,7 @@ class GroupAMoneySafetyTest extends XPay_Integration_Test_Case {
 	/* ── A6: the validation badge ────────────────────────────────────── */
 
 	private function keys_validated( bool $live ): bool {
-		return XPay_Admin_Screen::keys_validated( $this->gateway(), $live );
+		return XPayEG_Admin_Screen::keys_validated( $this->gateway(), $live );
 	}
 
 	public function test_the_badge_is_green_for_the_pair_that_was_validated(): void {
@@ -272,10 +272,10 @@ class GroupAMoneySafetyTest extends XPay_Integration_Test_Case {
 			)
 		);
 		update_option(
-			XPay_Constants::OPTION_KEY_VALIDATED,
+			XPayEG_Constants::OPTION_KEY_VALIDATED,
 			array(
 				'mode'        => 'test',
-				'fingerprint' => XPay_Constants::key_fingerprint( 'rk_test_abc', 'pk_test_abc' ),
+				'fingerprint' => XPayEG_Constants::key_fingerprint( 'rk_test_abc', 'pk_test_abc' ),
 			),
 			false
 		);
@@ -297,10 +297,10 @@ class GroupAMoneySafetyTest extends XPay_Integration_Test_Case {
 			)
 		);
 		update_option(
-			XPay_Constants::OPTION_KEY_VALIDATED,
+			XPayEG_Constants::OPTION_KEY_VALIDATED,
 			array(
 				'mode'        => 'test',
-				'fingerprint' => XPay_Constants::key_fingerprint( 'rk_test_abc', 'pk_test_abc' ),
+				'fingerprint' => XPayEG_Constants::key_fingerprint( 'rk_test_abc', 'pk_test_abc' ),
 			),
 			false
 		);
@@ -322,7 +322,7 @@ class GroupAMoneySafetyTest extends XPay_Integration_Test_Case {
 				'test_publishable_key' => 'pk_test_abc',
 			)
 		);
-		update_option( XPay_Constants::OPTION_KEY_VALIDATED, array( 'mode' => 'test' ), false );
+		update_option( XPayEG_Constants::OPTION_KEY_VALIDATED, array( 'mode' => 'test' ), false );
 
 		$this->assertTrue(
 			$this->keys_validated( false ),
@@ -331,7 +331,7 @@ class GroupAMoneySafetyTest extends XPay_Integration_Test_Case {
 	}
 
 	public function test_the_fingerprint_never_contains_the_key(): void {
-		$print = XPay_Constants::key_fingerprint( 'rk_test_SECRETVALUE', 'pk_test_PUBLICVALUE' );
+		$print = XPayEG_Constants::key_fingerprint( 'rk_test_SECRETVALUE', 'pk_test_PUBLICVALUE' );
 
 		$this->assertStringNotContainsString( 'SECRETVALUE', $print );
 		$this->assertStringNotContainsString( 'PUBLICVALUE', $print );
@@ -341,7 +341,7 @@ class GroupAMoneySafetyTest extends XPay_Integration_Test_Case {
 	public function test_an_empty_publishable_key_is_not_read_as_a_test_key(): void {
 		// is_live_key( '' ) is false, so a bare plane comparison would tell a
 		// merchant with a LIVE secret that their key is a TEST key.
-		$this->assertFalse( XPay_Api_Client::is_live_key( '' ) );
+		$this->assertFalse( XPayEG_Api_Client::is_live_key( '' ) );
 
 		$this->configure_gateway(
 			array(

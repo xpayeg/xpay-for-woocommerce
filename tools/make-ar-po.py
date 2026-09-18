@@ -280,8 +280,8 @@ AR = {
     "Only tick methods that are enabled for your XPay account. Shoppers who pick a method your account does not have are shown the full XPay window instead, and you get a notice here in admin.":
         "حدّد فقط الوسائل المفعّلة في حساب XPay الخاص بك. المتسوقون الذين يختارون وسيلة غير متاحة في حسابك تظهر لهم نافذة XPay الكاملة بدلًا منها، وستصلك ملاحظة هنا في لوحة التحكم.",
     "Diagnostic logging": "التسجيل التشخيصي",
-    "Write redacted diagnostic logs (WooCommerce → Status → Logs, source \"xpay\")":
-        "كتابة سجلات تشخيصية بعد إخفاء البيانات الحساسة (WooCommerce ← الحالة ← السجلات، المصدر \"xpay\")",
+    "Write redacted diagnostic logs (WooCommerce → Status → Logs, source \"xpayeg\")":
+        "كتابة سجلات تشخيصية بعد إخفاء البيانات الحساسة (WooCommerce ← الحالة ← السجلات، المصدر \"xpayeg\")",
     "XPay: no API key is saved for the selected mode, so XPay stays hidden at checkout until you add one.":
         "XPay: لا يوجد مفتاح API محفوظ للوضع المحدد، لذلك سيظل XPay مخفيًا عند إتمام الشراء حتى تضيف واحدًا.",
     "XPay: the key in the selected mode is a LIVE key but the gateway is in Test mode. Paste the matching key for the mode you selected.":
@@ -408,7 +408,7 @@ AR = {
     "XPay connected.": "تم الاتصال بـ XPay.",
     "XPay: the connection was not completed. %s": "XPay: لم يكتمل الاتصال. %s",
     "XPay: the connection was canceled before it finished. Nothing changed. To try again, click Connect.": "XPay: أُلغي الاتصال قبل اكتماله. لم يتغير شيء. للمحاولة مرة أخرى اضغط زر الاتصال.",
-    "XPay: the connection could not be completed. Nothing changed. Try again in a moment. If it keeps failing, the WooCommerce logs (source \"xpay\") carry the details.": "XPay: تعذّر إكمال الاتصال. لم يتغير شيء. حاول مرة أخرى بعد قليل. إذا استمر الفشل فستجد التفاصيل في سجلات ووكومرس (المصدر \"xpay\").",
+    "XPay: the connection could not be completed. Nothing changed. Try again in a moment. If it keeps failing, the WooCommerce logs (source \"xpayeg\") carry the details.": "XPay: تعذّر إكمال الاتصال. لم يتغير شيء. حاول مرة أخرى بعد قليل. إذا استمر الفشل فستجد التفاصيل في سجلات ووكومرس (المصدر \"xpayeg\").",
     "Could not reach the store. Reload the page and try again.": "تعذر الوصول إلى المتجر. أعد تحميل الصفحة وحاول مرة أخرى.",
     "Disconnect this mode? Its keys are removed from this store and its webhook endpoint is deleted at XPay. Payments in this mode stop until you connect again.":
         "فصل هذا الوضع؟ ستتم إزالة مفاتيحه من هذا المتجر وحذف نقطة اتصال الويب هوك الخاصة به في XPay. تتوقف المدفوعات في هذا الوضع حتى تتصل مرة أخرى.",
@@ -442,8 +442,8 @@ AR = {
         "يظهر عندما تعود صفحة إتمام الطلب إلى خيار XPay واحد مجمّع؛ خيارات وسائل الدفع المنفصلة تسمّي نفسها.",
     "One sentence under that combined option.": "جملة واحدة أسفل ذلك الخيار المجمّع.",
     "How XPay's payment fields look inside your checkout.": "كيف تبدو حقول الدفع من XPay داخل صفحة إتمام الطلب.",
-    "Write redacted diagnostic logs to WooCommerce → Status → Logs (source \"xpay\"). Failures are always recorded either way.":
-        "كتابة سجلات تشخيصية منقّحة إلى WooCommerce ← الحالة ← السجلات (المصدر \"xpay\"). تُسجّل الأعطال دائمًا في كل الأحوال.",
+    "Write redacted diagnostic logs to WooCommerce → Status → Logs (source \"xpayeg\"). Failures are always recorded either way.":
+        "كتابة سجلات تشخيصية منقّحة إلى WooCommerce ← الحالة ← السجلات (المصدر \"xpayeg\"). تُسجّل الأعطال دائمًا في كل الأحوال.",
     "WPFunnels: force the standard confirmation page": "WPFunnels: فرض صفحة التأكيد القياسية",
     "Only relevant when the WPFunnels plugin is active. Keeps shoppers on the normal order-received page after paying, unless you run a working upsell flow.":
         "مهم فقط عندما تكون إضافة WPFunnels نشطة. يُبقي المتسوقين على صفحة استلام الطلب العادية بعد الدفع، ما لم تكن لديك مسار بيع إضافي يعمل.",

@@ -10,7 +10,7 @@
  * The two fixtures below are real: both were read from the live test API
  * on 2026-08-22, one fully refunded and one untouched.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
 use PHPUnit\Framework\TestCase;
@@ -39,7 +39,7 @@ class RefundableTest extends TestCase {
 	 * @param string $status   Charge status.
 	 * @return array
 	 */
-	private function charge( int $amount, int $refunded, string $status = XPay_Charge_Status::SUCCEEDED ): array {
+	private function charge( int $amount, int $refunded, string $status = XPayEG_Charge_Status::SUCCEEDED ): array {
 		return array(
 			'id'             => 'ch_x',
 			'status'         => $status,
@@ -52,7 +52,7 @@ class RefundableTest extends TestCase {
 	/* ── The two live fixtures ───────────────────────────────────────── */
 
 	public function test_an_untouched_payment_is_fully_refundable(): void {
-		$answer = XPay_Refundable::from_session( $this->session( array( $this->charge( 11000, 0 ) ) ) );
+		$answer = XPayEG_Refundable::from_session( $this->session( array( $this->charge( 11000, 0 ) ) ) );
 
 		$this->assertSame( 11000, $answer['refundable'] );
 		$this->assertSame( 'EGP', $answer['currency'] );
@@ -61,7 +61,7 @@ class RefundableTest extends TestCase {
 	public function test_a_fully_refunded_payment_has_nothing_left(): void {
 		// Read from the live API: charge ch_7eNquFLgEaPwXog9GxeZbF,
 		// amount 34999, amountRefunded 34999.
-		$answer = XPay_Refundable::from_session( $this->session( array( $this->charge( 34999, 34999 ) ) ) );
+		$answer = XPayEG_Refundable::from_session( $this->session( array( $this->charge( 34999, 34999 ) ) ) );
 
 		$this->assertSame( 0, $answer['refundable'] );
 		$this->assertSame( 34999, $answer['refunded'] );
@@ -73,16 +73,16 @@ class RefundableTest extends TestCase {
 	 * off the status alone would have called it fully refundable.
 	 */
 	public function test_a_fully_refunded_charge_still_reading_succeeded_is_read_correctly(): void {
-		$answer = XPay_Refundable::from_session(
-			$this->session( array( $this->charge( 34999, 34999, XPay_Charge_Status::SUCCEEDED ) ) )
+		$answer = XPayEG_Refundable::from_session(
+			$this->session( array( $this->charge( 34999, 34999, XPayEG_Charge_Status::SUCCEEDED ) ) )
 		);
 
 		$this->assertSame( 0, $answer['refundable'] );
 	}
 
 	public function test_a_partly_refunded_payment_reports_the_remainder(): void {
-		$answer = XPay_Refundable::from_session(
-			$this->session( array( $this->charge( 10000, 3000, XPay_Charge_Status::PARTIALLY_REFUNDED ) ) )
+		$answer = XPayEG_Refundable::from_session(
+			$this->session( array( $this->charge( 10000, 3000, XPayEG_Charge_Status::PARTIALLY_REFUNDED ) ) )
 		);
 
 		$this->assertSame( 7000, $answer['refundable'] );
@@ -90,8 +90,8 @@ class RefundableTest extends TestCase {
 	}
 
 	public function test_a_charge_marked_refunded_is_still_counted_as_captured_money(): void {
-		$answer = XPay_Refundable::from_session(
-			$this->session( array( $this->charge( 5000, 5000, XPay_Charge_Status::REFUNDED ) ) )
+		$answer = XPayEG_Refundable::from_session(
+			$this->session( array( $this->charge( 5000, 5000, XPayEG_Charge_Status::REFUNDED ) ) )
 		);
 
 		$this->assertSame( 5000, $answer['captured'], 'A refunded charge is settled money, not a failure.' );
@@ -101,10 +101,10 @@ class RefundableTest extends TestCase {
 	/* ── Attempts that took no money ─────────────────────────────────── */
 
 	public function test_a_declined_attempt_is_not_refundable(): void {
-		$answer = XPay_Refundable::from_session(
+		$answer = XPayEG_Refundable::from_session(
 			$this->session(
 				array(
-					$this->charge( 11000, 0, XPay_Charge_Status::FAILED ),
+					$this->charge( 11000, 0, XPayEG_Charge_Status::FAILED ),
 					$this->charge( 11000, 0 ),
 				)
 			)
@@ -114,8 +114,8 @@ class RefundableTest extends TestCase {
 	}
 
 	public function test_a_cancelled_or_pending_charge_is_not_refundable(): void {
-		foreach ( array( XPay_Charge_Status::CANCELED, XPay_Charge_Status::PENDING ) as $status ) {
-			$answer = XPay_Refundable::from_session( $this->session( array( $this->charge( 9000, 0, $status ) ) ) );
+		foreach ( array( XPayEG_Charge_Status::CANCELED, XPayEG_Charge_Status::PENDING ) as $status ) {
+			$answer = XPayEG_Refundable::from_session( $this->session( array( $this->charge( 9000, 0, $status ) ) ) );
 			$this->assertNull( $answer, "A $status charge is not captured money and must not answer a figure." );
 		}
 	}
@@ -124,7 +124,7 @@ class RefundableTest extends TestCase {
 
 	public function test_a_session_that_did_not_expand_its_charges_answers_nothing(): void {
 		$this->assertNull(
-			XPay_Refundable::from_session(
+			XPayEG_Refundable::from_session(
 				array( 'paymentIntent' => array( 'id' => 'pi_x', 'amount' => 11000 ) )
 			),
 			'Absent charges are not zero charges.'
@@ -132,21 +132,21 @@ class RefundableTest extends TestCase {
 	}
 
 	public function test_a_session_with_no_payment_intent_answers_nothing(): void {
-		$this->assertNull( XPay_Refundable::from_session( array( 'id' => 'cs_x' ) ) );
+		$this->assertNull( XPayEG_Refundable::from_session( array( 'id' => 'cs_x' ) ) );
 	}
 
 	public function test_a_charge_with_no_amount_answers_nothing(): void {
 		$this->assertNull(
-			XPay_Refundable::from_session(
-				$this->session( array( array( 'status' => XPay_Charge_Status::SUCCEEDED, 'currency' => 'EGP' ) ) )
+			XPayEG_Refundable::from_session(
+				$this->session( array( array( 'status' => XPayEG_Charge_Status::SUCCEEDED, 'currency' => 'EGP' ) ) )
 			)
 		);
 	}
 
 	public function test_a_charge_with_no_currency_answers_nothing(): void {
 		$this->assertNull(
-			XPay_Refundable::from_session(
-				$this->session( array( array( 'status' => XPay_Charge_Status::SUCCEEDED, 'amount' => 5000 ) ) )
+			XPayEG_Refundable::from_session(
+				$this->session( array( array( 'status' => XPayEG_Charge_Status::SUCCEEDED, 'amount' => 5000 ) ) )
 			)
 		);
 	}
@@ -156,7 +156,7 @@ class RefundableTest extends TestCase {
 		$mixed['currency'] = 'USD';
 
 		$this->assertNull(
-			XPay_Refundable::from_session( $this->session( array( $this->charge( 5000, 0 ), $mixed ) ) )
+			XPayEG_Refundable::from_session( $this->session( array( $this->charge( 5000, 0 ), $mixed ) ) )
 		);
 	}
 
@@ -164,13 +164,13 @@ class RefundableTest extends TestCase {
 	 * An over-refund recorded upstream is not money this store may claim.
 	 */
 	public function test_more_refunded_than_captured_reports_zero_not_a_negative(): void {
-		$answer = XPay_Refundable::from_session( $this->session( array( $this->charge( 5000, 6000 ) ) ) );
+		$answer = XPayEG_Refundable::from_session( $this->session( array( $this->charge( 5000, 6000 ) ) ) );
 
 		$this->assertSame( 0, $answer['refundable'] );
 	}
 
 	public function test_two_captured_charges_are_summed(): void {
-		$answer = XPay_Refundable::from_session(
+		$answer = XPayEG_Refundable::from_session(
 			$this->session( array( $this->charge( 5000, 1000 ), $this->charge( 3000, 0 ) ) )
 		);
 
@@ -182,7 +182,7 @@ class RefundableTest extends TestCase {
 	/* ── The customer-facing mirror ──────────────────────────────────── */
 
 	public function test_an_egp_charge_has_no_mirror_to_show(): void {
-		$answer = XPay_Refundable::from_session( $this->session( array( $this->charge( 11000, 0 ) ) ) );
+		$answer = XPayEG_Refundable::from_session( $this->session( array( $this->charge( 11000, 0 ) ) ) );
 
 		$this->assertNull( $answer['presentment'] );
 	}
@@ -200,7 +200,7 @@ class RefundableTest extends TestCase {
 			'exchangeRateId' => 'rate_x',
 		);
 
-		$answer = XPay_Refundable::from_session( $this->session( array( $charge ) ) );
+		$answer = XPayEG_Refundable::from_session( $this->session( array( $charge ) ) );
 
 		$this->assertSame( 485000, $answer['captured'], 'Settlement figures stay in the settlement currency.' );
 		$this->assertSame( 'EGP', $answer['currency'] );
@@ -227,7 +227,7 @@ class RefundableTest extends TestCase {
 			),
 		);
 
-		$answer = XPay_Refundable::from_session( $this->session( array( $charge ) ) );
+		$answer = XPayEG_Refundable::from_session( $this->session( array( $charge ) ) );
 
 		$this->assertSame( 3333, $answer['presentment']['refunded'] );
 		$this->assertSame( 6667, $answer['presentment']['refundable'] );
@@ -242,7 +242,7 @@ class RefundableTest extends TestCase {
 		$charge                       = $this->charge( 485000, 161650 );
 		$charge['presentmentDetails'] = array( 'amount' => 10000, 'currency' => 'USD' );
 
-		$answer = XPay_Refundable::from_session( $this->session( array( $charge ) ) );
+		$answer = XPayEG_Refundable::from_session( $this->session( array( $charge ) ) );
 
 		$this->assertArrayNotHasKey(
 			'refundable',
@@ -264,7 +264,7 @@ class RefundableTest extends TestCase {
 			),
 		);
 
-		$answer = XPay_Refundable::from_session( $this->session( array( $charge ) ) );
+		$answer = XPayEG_Refundable::from_session( $this->session( array( $charge ) ) );
 
 		$this->assertArrayNotHasKey( 'refundable', $answer['presentment'] );
 	}
@@ -281,7 +281,7 @@ class RefundableTest extends TestCase {
 			),
 		);
 
-		$answer = XPay_Refundable::from_session( $this->session( array( $charge ) ) );
+		$answer = XPayEG_Refundable::from_session( $this->session( array( $charge ) ) );
 
 		$this->assertSame( 0, $answer['presentment']['refunded'] );
 		$this->assertSame( 10000, $answer['presentment']['refundable'] );
@@ -291,7 +291,7 @@ class RefundableTest extends TestCase {
 		$charge                       = $this->charge( 485000, 0 );
 		$charge['presentmentDetails'] = array( 'amount' => 10000, 'currency' => 'USD' );
 
-		$answer = XPay_Refundable::from_session( $this->session( array( $charge ) ) );
+		$answer = XPayEG_Refundable::from_session( $this->session( array( $charge ) ) );
 
 		$this->assertSame( 10000, $answer['presentment']['refundable'] );
 	}
@@ -300,7 +300,7 @@ class RefundableTest extends TestCase {
 		$charge = $this->charge( 485000, 0 );
 		$charge['presentmentDetails'] = array( 'amount' => 10000 );
 
-		$this->assertNull( XPay_Refundable::from_session( $this->session( array( $charge ) ) )['presentment'] );
+		$this->assertNull( XPayEG_Refundable::from_session( $this->session( array( $charge ) ) )['presentment'] );
 	}
 
 	public function test_mirrors_in_two_currencies_are_not_shown_at_all(): void {
@@ -309,6 +309,6 @@ class RefundableTest extends TestCase {
 		$b = $this->charge( 100000, 0 );
 		$b['presentmentDetails'] = array( 'amount' => 1800, 'currency' => 'EUR' );
 
-		$this->assertNull( XPay_Refundable::from_session( $this->session( array( $a, $b ) ) )['presentment'] );
+		$this->assertNull( XPayEG_Refundable::from_session( $this->session( array( $a, $b ) ) )['presentment'] );
 	}
 }

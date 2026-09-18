@@ -1,13 +1,13 @@
 <?php
 /**
- * wpdb stand-in for XPay_Order_Lock: scripts GET_LOCK answers per call
+ * wpdb stand-in for XPayEG_Order_Lock: scripts GET_LOCK answers per call
  * ('1' granted, '0' busy, null errored) and records every prepared
  * statement so tests can assert lock names and RELEASE_LOCK pairing.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
-class XPay_Fake_Wpdb {
+class XPayEG_Fake_Wpdb {
 
 	/** @var array Queue of GET_LOCK answers; '1' when empty. */
 	public $lock_results = array();

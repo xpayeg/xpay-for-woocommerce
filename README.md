@@ -58,7 +58,7 @@ Open a WooCommerce order and use the normal **Refund** action. Full and partial 
 
 ## Troubleshooting
 
-Turn on **Diagnostic logging**, reproduce the issue, then go to **WooCommerce → Status → Logs** and select the latest `xpay` log.
+Turn on **Diagnostic logging**, reproduce the issue, then go to **WooCommerce → Status → Logs** and select the latest `xpayeg` log.
 
 See the [troubleshooting guide](docs/TROUBLESHOOTING.md) for common fixes. Logs are redacted before they are written and are never sent automatically.
 

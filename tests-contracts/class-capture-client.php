@@ -1,14 +1,14 @@
 <?php
 /**
- * Scriptable XPay_Api_Client for the contract suite: records every
+ * Scriptable XPayEG_Api_Client for the contract suite: records every
  * create body, serves a configurable session for reads, and can be told
  * to fail specific calls with specific API errors — which is how the
  * pin-rejected and stale-customer retry contracts get exercised.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
-class XPay_Capture_Client extends XPay_Api_Client {
+class XPayEG_Capture_Client extends XPayEG_Api_Client {
 
 	/** @var array[] Every create_checkout_session body, in order. */
 	public $created = array();
@@ -22,10 +22,10 @@ class XPay_Capture_Client extends XPay_Api_Client {
 	/** @var array Overrides merged into every session this client returns. */
 	public $session = array();
 
-	/** @var XPay_Api_Exception[] Exceptions to throw on the next create calls (null entry = succeed). */
+	/** @var XPayEG_Api_Exception[] Exceptions to throw on the next create calls (null entry = succeed). */
 	public $create_failures = array();
 
-	/** @var XPay_Api_Exception|null Exception thrown on every get until cleared. */
+	/** @var XPayEG_Api_Exception|null Exception thrown on every get until cleared. */
 	public $get_failure = null;
 
 	public function __construct() {
@@ -35,7 +35,7 @@ class XPay_Capture_Client extends XPay_Api_Client {
 	private function serve( array $extra = array() ): array {
 		$base = array(
 			'id'           => 'cs_test_contract',
-			'status'       => XPay_Session_Status::OPEN,
+			'status'       => XPayEG_Session_Status::OPEN,
 			'isExpired'    => false,
 			'url'          => 'https://checkout.xpay.app/c/contract',
 			'clientSecret' => 'cs_secret_contract',
@@ -86,7 +86,7 @@ class XPay_Capture_Client extends XPay_Api_Client {
 	/** @var array<int, array{session_id:string, body:array, key:string}> Every PATCH sent. */
 	public $updated = array();
 
-	/** @var XPay_Api_Exception|null Thrown by the next update, if set. */
+	/** @var XPayEG_Api_Exception|null Thrown by the next update, if set. */
 	public $update_failure = null;
 
 	public function update_checkout_session( string $session_id, array $body, string $idempotency_key ): array {
@@ -136,7 +136,7 @@ class XPay_Capture_Client extends XPay_Api_Client {
 	/** What the platform settles when a refund states no amount of its own. */
 	const BARE_REFUND_SETTLED = 1406500;
 
-	/** @var XPay_Api_Exception|null Thrown on the next create_refund (once). */
+	/** @var XPayEG_Api_Exception|null Thrown on the next create_refund (once). */
 	public $refund_failure = null;
 
 	public function create_refund( array $body, string $idempotency_key ): array {
@@ -154,7 +154,7 @@ class XPay_Capture_Client extends XPay_Api_Client {
 		return array_merge(
 			array(
 				'id'     => 're_test_contract_' . count( $this->refunds ),
-				'status' => XPay_Refund_Status::SUCCEEDED,
+				'status' => XPayEG_Refund_Status::SUCCEEDED,
 				// A request that states no amount is answered with the full
 				// remaining balance the platform worked out for itself, so
 				// there is nothing here to echo. Verified against the live

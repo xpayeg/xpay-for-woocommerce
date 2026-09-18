@@ -54,14 +54,14 @@
  * Subscriptions are registered before mounting because neither 'change'
  * nor 'error' replays for a listener that arrives late.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 ( function ( window ) {
 	'use strict';
 
 	var SDK_TIMEOUT_MS = 6000;
 
-	var XPayElements = {};
+	var XPayEGElements = {};
 
 	/**
 	 * The element to mount into, from either shape of the option.
@@ -248,7 +248,7 @@
 	 * @return {Object} A handle with confirm(), check(), canPay(),
 	 *                  setAmount() and destroy().
 	 */
-	XPayElements.mount = function ( options ) {
+	XPayEGElements.mount = function ( options ) {
 		var opts = options || {};
 		var handle = {
 			xpay: null,
@@ -796,7 +796,7 @@
 	 * @param {string} reason Refusal code from the endpoint.
 	 * @return {string} Message to show.
 	 */
-	XPayElements.refusalMessage = function ( i18n, reason ) {
+	XPayEGElements.refusalMessage = function ( i18n, reason ) {
 		var strings = i18n || {};
 		if ( 'no-cart' === reason ) {
 			return strings.emptyCart || strings.unavailable || '';
@@ -823,12 +823,12 @@
 	 * the WooCommerce order, which turns on whether the session at XPay is
 	 * paid: the webhook may have settled it while this browser was still
 	 * waiting. So whether a retry may be offered is the server's to answer,
-	 * from the session (XPay_Checkout_Elements::verdict_for).
+	 * from the session (XPayEG_Checkout_Elements::verdict_for).
 	 *
-	 * @param {Object} outcome Result of XPayElements confirm().
+	 * @param {Object} outcome Result of XPayEGElements confirm().
 	 * @return {boolean} Whether the payment is known to have succeeded.
 	 */
-	XPayElements.confirmed = function ( outcome ) {
+	XPayEGElements.confirmed = function ( outcome ) {
 		return !! ( outcome && outcome.ok );
 	};
 
@@ -842,7 +842,7 @@
 	 * enough to outlast a dropped packet, short enough that nobody watching
 	 * a spinner reads it as a hang.
 	 */
-	XPayElements.RECHECK_DELAY_MS = 2000;
+	XPayEGElements.RECHECK_DELAY_MS = 2000;
 
 	/**
 	 * Ask again, once, when the first answer was "cannot say".
@@ -854,9 +854,9 @@
 	 * @param {Function} [wait] Scheduler, for tests. Defaults to setTimeout.
 	 * @return {Promise<string>} The best verdict of the two.
 	 */
-	XPayElements.settleVerdict = function ( ask, wait ) {
+	XPayEGElements.settleVerdict = function ( ask, wait ) {
 		var sleep = wait || function ( done ) {
-			window.setTimeout( done, XPayElements.RECHECK_DELAY_MS );
+			window.setTimeout( done, XPayEGElements.RECHECK_DELAY_MS );
 		};
 
 		// Called through a resolved promise, not directly: an asker that
@@ -890,7 +890,7 @@
 	 * @param {string} verdict The server's answer: paid, unpaid or unknown.
 	 * @return {string} 'paid', 'failed' (a retry is safe) or 'pending'.
 	 */
-	XPayElements.outcomeKind = function ( verdict ) {
+	XPayEGElements.outcomeKind = function ( verdict ) {
 		if ( 'paid' === verdict ) {
 			return 'paid';
 		}
@@ -901,9 +901,9 @@
 		return 'unpaid' === verdict ? 'failed' : 'pending';
 	};
 
-	window.XPayElements = XPayElements;
+	window.XPayEGElements = XPayEGElements;
 
 	if ( typeof module !== 'undefined' && module.exports ) {
-		module.exports = XPayElements;
+		module.exports = XPayEGElements;
 	}
 } )( typeof window !== 'undefined' ? window : globalThis );

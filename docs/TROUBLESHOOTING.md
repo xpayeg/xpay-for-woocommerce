@@ -6,7 +6,7 @@
 2. Turn on **Diagnostic logging** and save.
 3. Reproduce the problem.
 4. Go to **WooCommerce → Status → Logs**.
-5. Open the latest log whose source starts with `xpay`.
+5. Open the latest log whose source is `xpayeg`.
 
 Search by WooCommerce order number. XPay keys, secrets, card details, and personal data are redacted before the log is written.
 
@@ -25,7 +25,7 @@ Reconnect the selected mode if its account status says that its keys are invalid
 
 A JavaScript optimizer, consent tool, browser extension, or strict Content Security Policy may be blocking XPay.
 
-- Exclude `xpay-elements`, `xpay-checkout-driver`, `xpay-blocks`, and `xpay-pay-page` from script delay or optimization.
+- Exclude `xpayeg-elements`, `xpayeg-checkout-driver`, `xpayeg-blocks`, and `xpayeg-pay-page` from script delay or optimization.
 - Allow the script and payment fields from `https://checkout.xpay.app`.
 - Treat XPay payment fields as strictly necessary in the site's consent tool.
 - Test once in a private browser window with extensions disabled.
@@ -38,7 +38,7 @@ The webhook normally confirms the payment. Open the connection dialog and check 
 
 - If it is missing or unhealthy, click **Reconfigure webhook**.
 - Make sure the store is using HTTPS.
-- Check that a firewall or security plugin is not blocking `/?wc-api=xpay_webhook`.
+- Check that a firewall or security plugin is not blocking `/?wc-api=xpayeg_webhook`.
 - A `401` delivery usually means the stored signing secret does not match; reconfigure the webhook.
 - A `404` may be a short race while WooCommerce creates the order; XPay retries it automatically.
 

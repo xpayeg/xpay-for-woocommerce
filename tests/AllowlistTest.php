@@ -8,7 +8,7 @@
  * shim in bootstrap.php that wraps parse_url(), which is exactly what the
  * WordPress function does on our PHP floor.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
 use PHPUnit\Framework\TestCase;
@@ -26,8 +26,8 @@ final class AllowlistTest extends TestCase {
 	}
 
 	/** @dataProvider allowed_urls */
-	public function test_xpay_https_urls_pass( string $url ): void {
-		$this->assertTrue( XPay_Constants::is_allowed_xpay_url( $url ) );
+	public function test_xpayeg_https_urls_pass( string $url ): void {
+		$this->assertTrue( XPayEG_Constants::is_allowed_xpayeg_url( $url ) );
 	}
 
 	/** @return array<string, array{string}> */
@@ -47,6 +47,6 @@ final class AllowlistTest extends TestCase {
 
 	/** @dataProvider rejected_urls */
 	public function test_hostile_and_downgraded_urls_fail_closed( string $url ): void {
-		$this->assertFalse( XPay_Constants::is_allowed_xpay_url( $url ) );
+		$this->assertFalse( XPayEG_Constants::is_allowed_xpayeg_url( $url ) );
 	}
 }

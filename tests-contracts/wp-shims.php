@@ -5,26 +5,26 @@
  * Just enough of the WP surface for the state-machine classes to run:
  * in-memory options and user meta, an order registry behind
  * wc_get_order(), pass-through i18n/escaping, and an action recorder so
- * tests can assert which XPay_Logger stages fired. Deliberately dumb —
+ * tests can assert which XPayEG_Logger stages fired. Deliberately dumb —
  * any behavior a test depends on must be a behavior WordPress actually
  * has (add_query_arg really does not urlencode values, for instance).
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
-function xpay_tests_reset_world(): void {
-	$GLOBALS['xpay_test_options']      = array();
-	$GLOBALS['xpay_test_user_meta']    = array();
-	$GLOBALS['xpay_test_orders']       = array();
-	$GLOBALS['xpay_test_actions']      = array();
-	$GLOBALS['xpay_test_http']           = array();
-	$GLOBALS['xpay_test_http_responses'] = array();
-	$GLOBALS['xpay_test_locale']       = 'en_US';
-	$GLOBALS['xpay_test_wc_refunds']   = array();
-	$GLOBALS['xpay_test_refund_error'] = null;
-	$GLOBALS['xpay_test_wc_session']   = array();
-	$GLOBALS['xpay_test_scheduled']    = array();
-	$GLOBALS['wpdb']                   = new XPay_Fake_Wpdb();
+function xpayeg_tests_reset_world(): void {
+	$GLOBALS['xpayeg_test_options']      = array();
+	$GLOBALS['xpayeg_test_user_meta']    = array();
+	$GLOBALS['xpayeg_test_orders']       = array();
+	$GLOBALS['xpayeg_test_actions']      = array();
+	$GLOBALS['xpayeg_test_http']           = array();
+	$GLOBALS['xpayeg_test_http_responses'] = array();
+	$GLOBALS['xpayeg_test_locale']       = 'en_US';
+	$GLOBALS['xpayeg_test_wc_refunds']   = array();
+	$GLOBALS['xpayeg_test_refund_error'] = null;
+	$GLOBALS['xpayeg_test_wc_session']   = array();
+	$GLOBALS['xpayeg_test_scheduled']    = array();
+	$GLOBALS['wpdb']                   = new XPayEG_Fake_Wpdb();
 }
 
 /* ── WooCommerce session ─────────────────────────────────────────────── */
@@ -35,46 +35,46 @@ function xpay_tests_reset_world(): void {
  * Only get(), set() and the customer id are modelled, and set( key, null )
  * removes the key, which is how WooCommerce itself behaves.
  */
-class XPay_Test_WC_Session {
+class XPayEG_Test_WC_Session {
 	public function get_customer_id() {
 		return 'cust_test_contract';
 	}
 	public function get( $key, $default_value = null ) {
-		return array_key_exists( $key, $GLOBALS['xpay_test_wc_session'] )
-			? $GLOBALS['xpay_test_wc_session'][ $key ]
+		return array_key_exists( $key, $GLOBALS['xpayeg_test_wc_session'] )
+			? $GLOBALS['xpayeg_test_wc_session'][ $key ]
 			: $default_value;
 	}
 	public function set( $key, $value ) {
 		if ( null === $value ) {
-			unset( $GLOBALS['xpay_test_wc_session'][ $key ] );
+			unset( $GLOBALS['xpayeg_test_wc_session'][ $key ] );
 			return;
 		}
-		$GLOBALS['xpay_test_wc_session'][ $key ] = $value;
+		$GLOBALS['xpayeg_test_wc_session'][ $key ] = $value;
 	}
 }
 
-class XPay_Test_WC {
-	/** @var XPay_Test_WC_Session|null Null models a request with no session. */
+class XPayEG_Test_WC {
+	/** @var XPayEG_Test_WC_Session|null Null models a request with no session. */
 	public $session;
 	public function __construct() {
-		$this->session = new XPay_Test_WC_Session();
+		$this->session = new XPayEG_Test_WC_Session();
 	}
 }
 
 function WC() {
-	if ( ! isset( $GLOBALS['xpay_test_wc'] ) ) {
-		$GLOBALS['xpay_test_wc'] = new XPay_Test_WC();
+	if ( ! isset( $GLOBALS['xpayeg_test_wc'] ) ) {
+		$GLOBALS['xpayeg_test_wc'] = new XPayEG_Test_WC();
 	}
-	return $GLOBALS['xpay_test_wc'];
+	return $GLOBALS['xpayeg_test_wc'];
 }
 
 /* ── Options ─────────────────────────────────────────────────────────── */
 
 function get_option( $name, $default_value = false ) {
-	return array_key_exists( $name, $GLOBALS['xpay_test_options'] ) ? $GLOBALS['xpay_test_options'][ $name ] : $default_value;
+	return array_key_exists( $name, $GLOBALS['xpayeg_test_options'] ) ? $GLOBALS['xpayeg_test_options'][ $name ] : $default_value;
 }
 function update_option( $name, $value, $autoload = null ) {
-	$GLOBALS['xpay_test_options'][ $name ] = $value;
+	$GLOBALS['xpayeg_test_options'][ $name ] = $value;
 	return true;
 }
 /**
@@ -84,35 +84,35 @@ function update_option( $name, $value, $autoload = null ) {
  * exactly the bug that distinction exists to prevent.
  */
 function add_option( $name, $value = '', $deprecated = '', $autoload = null ) {
-	if ( array_key_exists( $name, $GLOBALS['xpay_test_options'] ) ) {
+	if ( array_key_exists( $name, $GLOBALS['xpayeg_test_options'] ) ) {
 		return false;
 	}
-	$GLOBALS['xpay_test_options'][ $name ] = $value;
+	$GLOBALS['xpayeg_test_options'][ $name ] = $value;
 	return true;
 }
 function delete_option( $name ) {
-	unset( $GLOBALS['xpay_test_options'][ $name ] );
+	unset( $GLOBALS['xpayeg_test_options'][ $name ] );
 	return true;
 }
 
 /* ── User meta ───────────────────────────────────────────────────────── */
 
 function update_user_meta( $user_id, $key, $value ) {
-	$GLOBALS['xpay_test_user_meta'][ $user_id ][ $key ] = $value;
+	$GLOBALS['xpayeg_test_user_meta'][ $user_id ][ $key ] = $value;
 	return true;
 }
 function get_user_meta( $user_id, $key, $single = false ) {
-	return isset( $GLOBALS['xpay_test_user_meta'][ $user_id ][ $key ] ) ? $GLOBALS['xpay_test_user_meta'][ $user_id ][ $key ] : '';
+	return isset( $GLOBALS['xpayeg_test_user_meta'][ $user_id ][ $key ] ) ? $GLOBALS['xpayeg_test_user_meta'][ $user_id ][ $key ] : '';
 }
 function delete_user_meta( $user_id, $key ) {
-	unset( $GLOBALS['xpay_test_user_meta'][ $user_id ][ $key ] );
+	unset( $GLOBALS['xpayeg_test_user_meta'][ $user_id ][ $key ] );
 	return true;
 }
 
 /* ── Orders ──────────────────────────────────────────────────────────── */
 
 function wc_get_order( $order_id ) {
-	return isset( $GLOBALS['xpay_test_orders'][ (int) $order_id ] ) ? $GLOBALS['xpay_test_orders'][ (int) $order_id ] : false;
+	return isset( $GLOBALS['xpayeg_test_orders'][ (int) $order_id ] ) ? $GLOBALS['xpayeg_test_orders'][ (int) $order_id ] : false;
 }
 function clean_post_cache( $order_id ) {}
 
@@ -124,7 +124,7 @@ function wc_get_orders( $args ) {
 	$matches = array();
 	$clauses = isset( $args['meta_query'] ) && is_array( $args['meta_query'] ) ? $args['meta_query'] : array();
 	$limit   = isset( $args['limit'] ) ? (int) $args['limit'] : -1;
-	foreach ( $GLOBALS['xpay_test_orders'] as $order ) {
+	foreach ( $GLOBALS['xpayeg_test_orders'] as $order ) {
 		$ok = true;
 		foreach ( $clauses as $clause ) {
 			if ( ! is_array( $clause ) || $order->get_meta( $clause['key'] ) !== $clause['value'] ) {
@@ -157,13 +157,13 @@ function wc_price( $amount, $args = array() ) {
 
 /**
  * Records every mirror call; scripted to fail via
- * $GLOBALS['xpay_test_refund_error'] (a WP_Error to return).
+ * $GLOBALS['xpayeg_test_refund_error'] (a WP_Error to return).
  */
 function wc_create_refund( $args ) {
-	if ( isset( $GLOBALS['xpay_test_refund_error'] ) && null !== $GLOBALS['xpay_test_refund_error'] ) {
-		return $GLOBALS['xpay_test_refund_error'];
+	if ( isset( $GLOBALS['xpayeg_test_refund_error'] ) && null !== $GLOBALS['xpayeg_test_refund_error'] ) {
+		return $GLOBALS['xpayeg_test_refund_error'];
 	}
-	$GLOBALS['xpay_test_wc_refunds'][] = $args;
+	$GLOBALS['xpayeg_test_wc_refunds'][] = $args;
 	return new stdClass();
 }
 
@@ -183,7 +183,7 @@ function is_wp_error( $thing ) {
 /* ── Hooks: recorded, never dispatched ───────────────────────────────── */
 
 function do_action( $hook, ...$args ) {
-	$GLOBALS['xpay_test_actions'][] = array_merge( array( $hook ), $args );
+	$GLOBALS['xpayeg_test_actions'][] = array_merge( array( $hook ), $args );
 }
 function add_action( $hook, $callback, $priority = 10, $accepted_args = 1 ) {}
 function add_filter( $hook, $callback, $priority = 10, $accepted_args = 1 ) {}
@@ -221,13 +221,13 @@ function apply_filters( $hook, $value ) {
  *             Scheduler has not initialised, which cannot happen here.
  */
 function as_schedule_single_action( $timestamp, $hook, $args = array(), $group = '', $unique = false, $priority = 10 ) {
-	$GLOBALS['xpay_test_scheduled'][] = array(
+	$GLOBALS['xpayeg_test_scheduled'][] = array(
 		'timestamp' => (int) $timestamp,
 		'hook'      => $hook,
 		'args'      => $args,
 		'group'     => $group,
 	);
-	return count( $GLOBALS['xpay_test_scheduled'] );
+	return count( $GLOBALS['xpayeg_test_scheduled'] );
 }
 
 /**
@@ -248,7 +248,7 @@ function as_schedule_single_action( $timestamp, $hook, $args = array(), $group =
  * @return bool
  */
 function as_has_scheduled_action( $hook, $args = null, $group = '' ) {
-	foreach ( $GLOBALS['xpay_test_scheduled'] as $action ) {
+	foreach ( $GLOBALS['xpayeg_test_scheduled'] as $action ) {
 		if ( $action['hook'] !== $hook ) {
 			continue;
 		}
@@ -308,7 +308,7 @@ function add_query_arg( $key, $value = null, $url = null ) {
 }
 
 function get_locale() {
-	return $GLOBALS['xpay_test_locale'];
+	return $GLOBALS['xpayeg_test_locale'];
 }
 function absint( $value ) {
 	return abs( (int) $value );
@@ -334,11 +334,11 @@ function wc_string_to_bool( $value ) {
  * invisible to every fake that overrides the methods above it.
  */
 function wp_remote_request( $url, $args = array() ) {
-	$GLOBALS['xpay_test_http'][] = array(
+	$GLOBALS['xpayeg_test_http'][] = array(
 		'url'  => $url,
 		'args' => $args,
 	);
-	$next = array_shift( $GLOBALS['xpay_test_http_responses'] );
+	$next = array_shift( $GLOBALS['xpayeg_test_http_responses'] );
 	return null === $next ? array(
 		'response' => array( 'code' => 200 ),
 		'body'     => '{}',

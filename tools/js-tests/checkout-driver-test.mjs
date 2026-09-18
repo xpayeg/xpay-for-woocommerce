@@ -27,7 +27,7 @@ const here = dirname( fileURLToPath( import.meta.url ) );
 const driverSource = readFileSync( join( here, '../../assets/js/checkout-driver.js' ), 'utf8' );
 
 /*
- * The REAL library, loaded once so the driver's fake XPayElements can expose
+ * The REAL library, loaded once so the driver's fake XPayEGElements can expose
  * the real refusalMessage. Hand-writing a copy of it here would mean the
  * test asserts against wording the shipped code does not use — the exact
  * failure mode that let a completely broken classic checkout sit behind a
@@ -43,7 +43,7 @@ const realLibrary = ( () => {
 	box.globalThis = box;
 	vm.createContext( box );
 	vm.runInContext( elementsSource, box );
-	return box.window.XPayElements;
+	return box.window.XPayEGElements;
 } )();
 
 /* ── A DOM small enough to reason about ──────────────────────────────── */
@@ -132,7 +132,7 @@ function makeJQuery( registry ) {
 			trigger() {
 				return api;
 			},
-			serialize: () => 'billing_email=a%40b.test&payment_method=xpay',
+			serialize: () => 'billing_email=a%40b.test&payment_method=xpayeg',
 			addClass: () => api,
 			removeClass: () => api,
 			block: () => api,
@@ -168,14 +168,14 @@ function bootDriver( {
 	const confirms = [];
 	const registry = new Map();
 
-	const mountNode = new FakeNode( 'div', { 'data-xpay-elements': '' } );
-	const errorNode = new FakeNode( 'p', { 'data-xpay-elements-error': '' } );
-	const radio = new FakeNode( 'input', { name: 'payment_method', value: 'xpay' } );
-	radio.value = 'xpay';
+	const mountNode = new FakeNode( 'div', { 'data-xpayeg-elements': '' } );
+	const errorNode = new FakeNode( 'p', { 'data-xpayeg-elements-error': '' } );
+	const radio = new FakeNode( 'input', { name: 'payment_method', value: 'xpayeg' } );
+	radio.value = 'xpayeg';
 
 	const nodes = {
-		'[data-xpay-elements]': mountNode,
-		'[data-xpay-elements-error]': errorNode,
+		'[data-xpayeg-elements]': mountNode,
+		'[data-xpayeg-elements-error]': errorNode,
 		'input[name="payment_method"]:checked': radio,
 		'form.checkout': new FakeNode( 'form' ),
 		'#billing_first_name': Object.assign( new FakeNode( 'input' ), { value: 'Mo' } ),
@@ -214,12 +214,12 @@ function bootDriver( {
 	const mounts = [];
 
 	const window = {
-		xpayElementsParams: {
+		xpayegElementsParams: {
 			ajaxUrl: '/admin-ajax.php',
 			nonce: 'n',
 			publishableKey: 'pk_test_x',
 			sdkUrl: 'https://checkout.xpay.app/v1/sdk.js',
-			gatewayId: 'xpay',
+			gatewayId: 'xpayeg',
 			rows: rows || undefined,
 			amount: 29000,
 			currency: 'EGP',
@@ -238,7 +238,7 @@ function bootDriver( {
 		// outcomeKind in particular decides whether a shopper is offered a
 		// retry, and a hand-written copy here would be asserting against a
 		// rule the shipped code does not follow.
-		XPayElements: {
+		XPayEGElements: {
 			// The real element becomes usable a moment after mount, and
 			// announces it through onReady. The gap is the point: setAmount
 			// answers false before it, so a driver that moves the amount too
@@ -287,10 +287,10 @@ function bootDriver( {
 								checkoutResponse || {
 									result: 'success',
 									redirect: 'https://store.test/order-received/9/',
-									xpay_confirm: 'yes',
-									xpay_secret: 'cs_test_1_secret_x',
-									xpay_order_id: '9',
-									xpay_order_key: 'wc_order_k',
+									xpayeg_confirm: 'yes',
+									xpayeg_secret: 'cs_test_1_secret_x',
+									xpayeg_order_id: '9',
+									xpayeg_order_key: 'wc_order_k',
 								}
 							)
 						),
@@ -309,9 +309,9 @@ function bootDriver( {
 			// to confirmed, so a test about something else is not silently
 			// turned into a test about a rejected move.
 			let fallback = { success: true, data: { clientSecret: 'cs_secret' } };
-			if ( 'xpay_elements_outcome' === action ) {
+			if ( 'xpayeg_elements_outcome' === action ) {
 				fallback = { success: true, data: { verdict: outcomeVerdict } };
-			} else if ( 'xpay_elements_applied' === action ) {
+			} else if ( 'xpayeg_elements_applied' === action ) {
 				fallback = { success: true, data: { confirmed: true } };
 			}
 			return Promise.resolve( {
@@ -354,22 +354,22 @@ function bootDriver( {
 		 * checked radio at it and give the row its own container, the way
 		 * each method gateway's payment_fields renders one.
 		 *
-		 * @param {string} id     Gateway id (e.g. 'xpay_valu').
-		 * @param {string} method The row's data-xpay-method value.
+		 * @param {string} id     Gateway id (e.g. 'xpayeg_valu').
+		 * @param {string} method The row's data-xpayeg-method value.
 		 */
 		selectRow: ( id, method ) => {
-			const row = new FakeNode( 'div', { 'data-xpay-elements': '', 'data-xpay-method': method } );
-			nodes[ '.payment_method_' + id + ' [data-xpay-elements]' ] = row;
+			const row = new FakeNode( 'div', { 'data-xpayeg-elements': '', 'data-xpayeg-method': method } );
+			nodes[ '.payment_method_' + id + ' [data-xpayeg-elements]' ] = row;
 			nodes[ 'input[name="payment_method"]:checked' ].value = id;
 			return row;
 		},
 		/** Stand in for WooCommerce replacing the whole payment box. */
 		replaceMountNode: () => {
-			nodes[ '[data-xpay-elements]' ] = new FakeNode( 'div', { 'data-xpay-elements': '' } );
+			nodes[ '[data-xpayeg-elements]' ] = new FakeNode( 'div', { 'data-xpayeg-elements': '' } );
 		},
 		/** Stand in for WooCommerce recalculating the cart in place. */
 		setDisplayedTotal: ( minor ) => {
-			nodes[ '[data-xpay-elements]' ].attrs[ 'data-xpay-amount' ] = String( minor );
+			nodes[ '[data-xpayeg-elements]' ].attrs[ 'data-xpayeg-amount' ] = String( minor );
 		},
 	};
 }
@@ -387,8 +387,8 @@ const settle = () => new Promise( ( resolve ) => setImmediate( resolve ) );
  */
 async function placeOrder( boot ) {
 	await settle();
-	boot.registry.get( 'form.checkout' ).get( 'checkout_place_order_xpay.xpay' )(
-		{ type: 'checkout_place_order_xpay' },
+	boot.registry.get( 'form.checkout' ).get( 'checkout_place_order_xpayeg.xpay' )(
+		{ type: 'checkout_place_order_xpayeg' },
 		null
 	);
 	for ( let i = 0; i < 12; i++ ) {
@@ -414,7 +414,7 @@ test( 'Place Order is bound to the form, which is where core fires it', () => {
 	const formEvents = registry.get( 'form.checkout' );
 	assert.ok( formEvents, 'Nothing was bound to form.checkout at all.' );
 	assert.ok(
-		[ ...formEvents.keys() ].some( ( e ) => e.startsWith( 'checkout_place_order_xpay' ) ),
+		[ ...formEvents.keys() ].some( ( e ) => e.startsWith( 'checkout_place_order_xpayeg' ) ),
 		'The Place Order takeover is not bound to the form.'
 	);
 } );
@@ -437,8 +437,8 @@ test( 'the order is created BEFORE the card is charged', async () => {
 	const boot = bootDriver();
 	await settle();
 
-	boot.registry.get( 'form.checkout' ).get( 'checkout_place_order_xpay.xpay' )(
-		{ type: 'checkout_place_order_xpay' },
+	boot.registry.get( 'form.checkout' ).get( 'checkout_place_order_xpayeg.xpay' )(
+		{ type: 'checkout_place_order_xpayeg' },
 		null
 	);
 
@@ -490,7 +490,7 @@ test( 'nothing is confirmed when the server sent no secret', async () => {
 		checkoutResponse: {
 			result: 'success',
 			redirect: 'https://store.test/order-received/9/',
-			xpay_confirm: 'yes',
+			xpayeg_confirm: 'yes',
 		},
 	} );
 	await placeOrder( boot );
@@ -505,7 +505,7 @@ test( 'a failed confirm keeps the shopper here with a reason', async () => {
 	const boot = bootDriver( { confirmResult: { ok: false, message: 'card declined' } } );
 	await settle();
 
-	boot.registry.get( 'form.checkout' ).get( 'checkout_place_order_xpay.xpay' )( {}, null );
+	boot.registry.get( 'form.checkout' ).get( 'checkout_place_order_xpayeg.xpay' )( {}, null );
 	for ( let i = 0; i < 12; i++ ) {
 		await settle();
 	}
@@ -515,7 +515,7 @@ test( 'a failed confirm keeps the shopper here with a reason', async () => {
 	// Nothing to release: there is no server-side lock any more. The retry
 	// reuses the SAME order and the SAME session, which is what keeps one
 	// purchase on one Payment Intent.
-	assert.ok( ! boot.calls.some( ( c ) => 0 === String( c ).indexOf( 'xpay_elements_pa' ) ) );
+	assert.ok( ! boot.calls.some( ( c ) => 0 === String( c ).indexOf( 'xpayeg_elements_pa' ) ) );
 } );
 
 test( 'a refused check never places an order', async () => {
@@ -535,7 +535,7 @@ test( 'a checkout the server rejected never charges', async () => {
 	} );
 	await settle();
 
-	boot.registry.get( 'form.checkout' ).get( 'checkout_place_order_xpay.xpay' )( {}, null );
+	boot.registry.get( 'form.checkout' ).get( 'checkout_place_order_xpayeg.xpay' )( {}, null );
 	for ( let i = 0; i < 12; i++ ) {
 		await settle();
 	}
@@ -553,7 +553,7 @@ test( 'a pay-page fallback navigates without charging in the browser', async () 
 	} );
 	await settle();
 
-	boot.registry.get( 'form.checkout' ).get( 'checkout_place_order_xpay.xpay' )( {}, null );
+	boot.registry.get( 'form.checkout' ).get( 'checkout_place_order_xpayeg.xpay' )( {}, null );
 	for ( let i = 0; i < 12; i++ ) {
 		await settle();
 	}
@@ -569,7 +569,7 @@ test( 'a second click while paying does nothing', async () => {
 	const boot = bootDriver();
 	await settle();
 
-	const handler = boot.registry.get( 'form.checkout' ).get( 'checkout_place_order_xpay.xpay' );
+	const handler = boot.registry.get( 'form.checkout' ).get( 'checkout_place_order_xpayeg.xpay' );
 	handler( {}, null );
 	handler( {}, null );
 	handler( {}, null );
@@ -592,7 +592,7 @@ test( 'a second click while paying does nothing', async () => {
 
 test( 'the handler always stops WooCommerce from submitting on its own', () => {
 	const boot = bootDriver();
-	const handler = boot.registry.get( 'form.checkout' ).get( 'checkout_place_order_xpay.xpay' );
+	const handler = boot.registry.get( 'form.checkout' ).get( 'checkout_place_order_xpayeg.xpay' );
 
 	assert.equal( handler( {}, null ), false );
 } );
@@ -651,7 +651,7 @@ test( 'moving the displayed amount costs no server call at all', async () => {
 	}
 
 	assert.ok(
-		! boot.calls.some( ( c ) => 0 === String( c ).indexOf( 'xpay_elements_' ) ),
+		! boot.calls.some( ( c ) => 0 === String( c ).indexOf( 'xpayeg_elements_' ) ),
 		`A cart recalculation reached the server: ${ boot.calls.join( ' → ' ) }`
 	);
 } );
@@ -663,7 +663,7 @@ test( 'a confirmed payment navigates straight to the order page', async () => {
 
 	await settle();
 
-	registry.get( 'form.checkout' ).get( 'checkout_place_order_xpay.xpay' )( {}, null );
+	registry.get( 'form.checkout' ).get( 'checkout_place_order_xpayeg.xpay' )( {}, null );
 	for ( let i = 0; i < 12; i++ ) {
 		await settle();
 	}
@@ -678,7 +678,7 @@ test( 'a declined card stays on the checkout with the reason', async () => {
 
 	await settle();
 
-	registry.get( 'form.checkout' ).get( 'checkout_place_order_xpay.xpay' )( {}, null );
+	registry.get( 'form.checkout' ).get( 'checkout_place_order_xpayeg.xpay' )( {}, null );
 	for ( let i = 0; i < 12; i++ ) {
 		await settle();
 	}
@@ -702,7 +702,7 @@ test( 'an undecided outcome goes to the order page instead of offering a retry',
 
 	await settle();
 
-	registry.get( 'form.checkout' ).get( 'checkout_place_order_xpay.xpay' )( {}, null );
+	registry.get( 'form.checkout' ).get( 'checkout_place_order_xpayeg.xpay' )( {}, null );
 	await settleWithTimers();
 
 	// The platform could not decide and left the charge pending. Money may
@@ -719,11 +719,11 @@ test( 'an unknown verdict is asked a second time before anyone gives up', async 
 	} );
 	await settle();
 
-	boot.registry.get( 'form.checkout' ).get( 'checkout_place_order_xpay.xpay' )( {}, null );
+	boot.registry.get( 'form.checkout' ).get( 'checkout_place_order_xpayeg.xpay' )( {}, null );
 	await settleWithTimers();
 
 	assert.equal(
-		boot.calls.filter( ( c ) => 'xpay_elements_outcome' === c ).length,
+		boot.calls.filter( ( c ) => 'xpayeg_elements_outcome' === c ).length,
 		2,
 		'A blip was accepted as the final word.'
 	);
@@ -739,7 +739,7 @@ test( 'a fallback with no secret simply follows the redirect', async () => {
 
 	await settle();
 
-	registry.get( 'form.checkout' ).get( 'checkout_place_order_xpay.xpay' )( {}, null );
+	registry.get( 'form.checkout' ).get( 'checkout_place_order_xpayeg.xpay' )( {}, null );
 	for ( let i = 0; i < 12; i++ ) {
 		await settle();
 	}
@@ -814,7 +814,7 @@ test( 'a payment the browser could not confirm but XPay has is treated as paid',
 	} );
 	await settle();
 
-	boot.registry.get( 'form.checkout' ).get( 'checkout_place_order_xpay.xpay' )( {}, null );
+	boot.registry.get( 'form.checkout' ).get( 'checkout_place_order_xpayeg.xpay' )( {}, null );
 	for ( let i = 0; i < 12; i++ ) {
 		await settle();
 	}
@@ -827,13 +827,13 @@ test( 'a clean confirm never asks the server', async () => {
 	const boot = bootDriver();
 	await settle();
 
-	boot.registry.get( 'form.checkout' ).get( 'checkout_place_order_xpay.xpay' )( {}, null );
+	boot.registry.get( 'form.checkout' ).get( 'checkout_place_order_xpayeg.xpay' )( {}, null );
 	for ( let i = 0; i < 12; i++ ) {
 		await settle();
 	}
 
 	assert.ok(
-		! boot.calls.includes( 'xpay_elements_outcome' ),
+		! boot.calls.includes( 'xpayeg_elements_outcome' ),
 		'The ordinary payment paid for a round trip it did not need.'
 	);
 } );
@@ -841,10 +841,10 @@ test( 'a clean confirm never asks the server', async () => {
 /* -- One row per payment method --------------------------------------- */
 
 test( 'every row gets its own Place Order takeover', () => {
-	const { registry } = bootDriver( { rows: [ 'xpay', 'xpay_valu', 'xpay_fawry' ] } );
+	const { registry } = bootDriver( { rows: [ 'xpayeg', 'xpayeg_valu', 'xpayeg_fawry' ] } );
 
 	const formEvents = [ ...registry.get( 'form.checkout' ).keys() ];
-	for ( const rowId of [ 'xpay', 'xpay_valu', 'xpay_fawry' ] ) {
+	for ( const rowId of [ 'xpayeg', 'xpayeg_valu', 'xpayeg_fawry' ] ) {
 		assert.ok(
 			formEvents.some( ( e ) => e.startsWith( 'checkout_place_order_' + rowId ) ),
 			'Core names the event after the CHOSEN gateway, so an unbound row falls through to a plain submit: ' + rowId
@@ -853,8 +853,8 @@ test( 'every row gets its own Place Order takeover', () => {
 } );
 
 test( 'a method row mounts fields restricted to its method', async () => {
-	const boot = bootDriver( { rows: [ 'xpay', 'xpay_valu' ] } );
-	boot.selectRow( 'xpay_valu', 'valu' );
+	const boot = bootDriver( { rows: [ 'xpayeg', 'xpayeg_valu' ] } );
+	boot.selectRow( 'xpayeg_valu', 'valu' );
 	boot.registry.get( 'body' ).get( 'updated_checkout' )( {} );
 	await settle();
 
@@ -890,13 +890,13 @@ test( 'the fallback single row still mounts unfiltered', async () => {
 } );
 
 test( 'switching rows keeps what the shopper typed in the other row', async () => {
-	const boot = bootDriver( { rows: [ 'xpay', 'xpay_valu' ] } );
-	boot.selectRow( 'xpay', 'card' );
+	const boot = bootDriver( { rows: [ 'xpayeg', 'xpayeg_valu' ] } );
+	boot.selectRow( 'xpayeg', 'card' );
 	boot.registry.get( 'body' ).get( 'updated_checkout' )( {} );
 	await settle();
 	const base = boot.mounts.length;
 
-	boot.selectRow( 'xpay_valu', 'valu' );
+	boot.selectRow( 'xpayeg_valu', 'valu' );
 	boot.registry.get( 'body' ).get( 'payment_method_selected' )( {} );
 	await settle();
 
@@ -905,7 +905,7 @@ test( 'switching rows keeps what the shopper typed in the other row', async () =
 
 	// Back to the first row: its element is still alive, so nothing new
 	// mounts and nothing dies.
-	boot.nodes[ 'input[name="payment_method"]:checked' ].value = 'xpay';
+	boot.nodes[ 'input[name="payment_method"]:checked' ].value = 'xpayeg';
 	boot.registry.get( 'body' ).get( 'payment_method_selected' )( {} );
 	await settle();
 
@@ -914,15 +914,15 @@ test( 'switching rows keeps what the shopper typed in the other row', async () =
 } );
 
 test( 'a redraw that replaces one row remounts it fresh', async () => {
-	const boot = bootDriver( { rows: [ 'xpay', 'xpay_valu' ] } );
-	const first = boot.selectRow( 'xpay', 'card' );
+	const boot = bootDriver( { rows: [ 'xpayeg', 'xpayeg_valu' ] } );
+	const first = boot.selectRow( 'xpayeg', 'card' );
 	boot.registry.get( 'body' ).get( 'updated_checkout' )( {} );
 	await settle();
 	const base = boot.mounts.length;
 
 	// WooCommerce replaced the payment box: the old container is detached.
 	first.isConnected = false;
-	boot.selectRow( 'xpay', 'card' );
+	boot.selectRow( 'xpayeg', 'card' );
 	boot.registry.get( 'body' ).get( 'updated_checkout' )( {} );
 	await settle();
 

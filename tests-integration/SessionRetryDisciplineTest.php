@@ -17,10 +17,10 @@
  * The contract suite pins the same rules against an in-memory shim; this
  * asserts them with real orders, real meta storage and real totals.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
-class SessionRetryDisciplineTest extends XPay_Integration_Test_Case {
+class SessionRetryDisciplineTest extends XPayEG_Integration_Test_Case {
 
 	/** @var int How many POST /checkout/sessions the store has made. */
 	private int $creates = 0;
@@ -87,8 +87,8 @@ class SessionRetryDisciplineTest extends XPay_Integration_Test_Case {
 		remove_filter( 'pre_http_request', array( $this, 'serve' ), 1 );
 		// Options a test writes must go even when the service under test
 		// throws before the test's own cleanup line would have run.
-		delete_option( XPay_Constants::OPTION_ENABLED_METHODS );
-		delete_option( XPay_Constants::account_methods_option( false ) );
+		delete_option( XPayEG_Constants::OPTION_ENABLED_METHODS );
+		delete_option( XPayEG_Constants::account_methods_option( false ) );
 		parent::tear_down();
 	}
 
@@ -173,12 +173,12 @@ class SessionRetryDisciplineTest extends XPay_Integration_Test_Case {
 		);
 	}
 
-	private function service(): XPay_Checkout_Service {
-		return new XPay_Checkout_Service( $this->gateway()->api_client() );
+	private function service(): XPayEG_Checkout_Service {
+		return new XPayEG_Checkout_Service( $this->gateway()->api_client() );
 	}
 
 	private function order( string $total = '290.00' ): WC_Order {
-		$order = $this->make_xpay_order();
+		$order = $this->make_xpayeg_order();
 		$order->set_total( $total );
 		$order->save();
 		return $order;
@@ -215,7 +215,7 @@ class SessionRetryDisciplineTest extends XPay_Integration_Test_Case {
 	public function test_an_expired_session_is_the_only_thing_that_mints_a_second(): void {
 		$order = $this->order();
 		$this->service()->get_or_create_session( $order );
-		$old_id = (string) $order->get_meta( XPay_Constants::META_SESSION_ID );
+		$old_id = (string) $order->get_meta( XPayEG_Constants::META_SESSION_ID );
 
 		$this->stored_status = 'expired';
 		$this->service()->get_or_create_session( $order );
@@ -226,29 +226,29 @@ class SessionRetryDisciplineTest extends XPay_Integration_Test_Case {
 		$fresh = wc_get_order( $order->get_id() );
 		$this->assertContains(
 			$old_id,
-			(array) $fresh->get_meta( XPay_Constants::META_SUPERSEDED_SESSIONS ),
+			(array) $fresh->get_meta( XPayEG_Constants::META_SUPERSEDED_SESSIONS ),
 			'A paid event on the old id must stay recognizable as this order\'s money.'
 		);
 	}
 
 	public function test_a_method_list_change_supersedes_like_a_currency_change(): void {
 		update_option(
-			XPay_Constants::account_methods_option( false ),
+			XPayEG_Constants::account_methods_option( false ),
 			array( 'EGP' => array( 'card', 'valu' ) )
 		);
 		$order   = $this->order();
-		$service = new XPay_Checkout_Service(
+		$service = new XPayEG_Checkout_Service(
 			$this->gateway()->api_client(),
 			$this->gateway()->accepted_types_for_session( 'EGP' )
 		);
 		$service->get_or_create_session( $order );
-		$old_id = (string) $order->get_meta( XPay_Constants::META_SESSION_ID );
+		$old_id = (string) $order->get_meta( XPayEG_Constants::META_SESSION_ID );
 
 		// The merchant unchecks ValU while this shopper holds a live
 		// session that still accepts it: the next attempt supersedes.
-		update_option( XPay_Constants::OPTION_ENABLED_METHODS, array( 'card' ) );
+		update_option( XPayEG_Constants::OPTION_ENABLED_METHODS, array( 'card' ) );
 		$this->stored_methods = array( 'card', 'valu' );
-		$narrowed             = new XPay_Checkout_Service(
+		$narrowed             = new XPayEG_Checkout_Service(
 			$this->gateway()->api_client(),
 			$this->gateway()->accepted_types_for_session( 'EGP' )
 		);
@@ -267,6 +267,6 @@ class SessionRetryDisciplineTest extends XPay_Integration_Test_Case {
 		$this->service()->get_or_create_session( $order );
 
 		$fresh = wc_get_order( $order->get_id() );
-		$this->assertSame( 'cs_created_1', (string) $fresh->get_meta( XPay_Constants::META_SESSION_ID ) );
+		$this->assertSame( 'cs_created_1', (string) $fresh->get_meta( XPayEG_Constants::META_SESSION_ID ) );
 	}
 }

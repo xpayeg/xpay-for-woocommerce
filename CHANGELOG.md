@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.3
+
+### Patch Changes
+
+- Every name the plugin defines now carries the xpayeg prefix: the gateway id, classes, functions, options, hooks, AJAX actions, order meta, constants, script handles, CSS classes, element ids, data attributes and the WooCommerce log source. This answers the WordPress.org review. A store that installed 1.0.x must open WooCommerce > Settings > Payments > XPay and connect again; the webhook address and the settings option changed with the gateway id.
+
 ## 1.0.2
 
 ### Patch Changes

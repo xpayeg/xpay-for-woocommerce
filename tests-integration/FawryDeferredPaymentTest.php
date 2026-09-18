@@ -11,14 +11,14 @@
  * payment_complete() from on-hold, and the real unpaid-order sweep
  * decision, which the shim can only agree with.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
-class FawryDeferredPaymentTest extends XPay_Integration_Test_Case {
+class FawryDeferredPaymentTest extends XPayEG_Integration_Test_Case {
 
 	/** A pending order wired to a session, the way process_payment leaves it. */
 	private function pending_fawry_order(): WC_Order {
-		$order = $this->make_xpay_order( array( XPay_Constants::META_SESSION_ID => 'cs_fawry_it' ) );
+		$order = $this->make_xpayeg_order( array( XPayEG_Constants::META_SESSION_ID => 'cs_fawry_it' ) );
 		$order->set_total( '290.00' );
 		$order->set_status( 'pending' );
 		$order->save();
@@ -33,7 +33,7 @@ class FawryDeferredPaymentTest extends XPay_Integration_Test_Case {
 		return array_merge(
 			array(
 				'id'             => 'cs_fawry_it',
-				'status'         => XPay_Session_Status::COMPLETE,
+				'status'         => XPayEG_Session_Status::COMPLETE,
 				'paymentStatus'  => $payment_status,
 				'amountSubtotal' => 29000,
 				'amountTotal'    => 29000,
@@ -46,30 +46,30 @@ class FawryDeferredPaymentTest extends XPay_Integration_Test_Case {
 	}
 
 	private function apply( string $type, string $event_id, array $payload ): void {
-		$method = new ReflectionMethod( 'XPay_Webhook_Controller', 'apply_event' );
+		$method = new ReflectionMethod( 'XPayEG_Webhook_Controller', 'apply_event' );
 		$method->setAccessible( true );
 		$method->invoke( null, $type, $event_id, $payload );
 	}
 
 	public function test_completed_unpaid_holds_the_order_and_the_sweep_leaves_it_alone(): void {
 		$order = $this->pending_fawry_order();
-		$order->update_meta_data( XPay_Constants::META_SESSION_ID, 'cs_fawry_it' );
+		$order->update_meta_data( XPayEG_Constants::META_SESSION_ID, 'cs_fawry_it' );
 		$order->save();
 
 		$this->apply(
-			XPay_Event_Names::CHECKOUT_SESSION_COMPLETED,
+			XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED,
 			'evt_it_f1',
-			$this->fawry_session( XPay_Payment_Status::UNPAID, array( 'metadata' => array( 'wc_order_id' => (string) $order->get_id() ) ) )
+			$this->fawry_session( XPayEG_Payment_Status::UNPAID, array( 'metadata' => array( 'wc_order_id' => (string) $order->get_id() ) ) )
 		);
 
 		$fresh = wc_get_order( $order->get_id() );
 		$this->assertFalse( $fresh->is_paid(), 'A completed-but-unpaid session must never complete the order.' );
 		$this->assertSame( 'on-hold', $fresh->get_status() );
-		$this->assertNotSame( '', (string) $fresh->get_meta( XPay_Constants::META_AWAITING_PAYMENT ) );
+		$this->assertNotSame( '', (string) $fresh->get_meta( XPayEG_Constants::META_AWAITING_PAYMENT ) );
 		// The real sweep decision: on-hold is not `pending`, and the filter
 		// must also leave a paid-nothing on-hold order alone.
 		$this->assertFalse(
-			XPay_Order_Sync::should_cancel_unpaid( true, $fresh ),
+			XPayEG_Order_Sync::should_cancel_unpaid( true, $fresh ),
 			'The unpaid-order protection must hold an awaiting order back from cancellation.'
 		);
 	}
@@ -77,36 +77,36 @@ class FawryDeferredPaymentTest extends XPay_Integration_Test_Case {
 	public function test_async_success_completes_the_held_order(): void {
 		$order = $this->pending_fawry_order();
 		$this->apply(
-			XPay_Event_Names::CHECKOUT_SESSION_COMPLETED,
+			XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED,
 			'evt_it_f1',
-			$this->fawry_session( XPay_Payment_Status::UNPAID, array( 'metadata' => array( 'wc_order_id' => (string) $order->get_id() ) ) )
+			$this->fawry_session( XPayEG_Payment_Status::UNPAID, array( 'metadata' => array( 'wc_order_id' => (string) $order->get_id() ) ) )
 		);
 
 		$this->apply(
-			XPay_Event_Names::CHECKOUT_SESSION_ASYNC_PAYMENT_SUCCEEDED,
+			XPayEG_Event_Names::CHECKOUT_SESSION_ASYNC_PAYMENT_SUCCEEDED,
 			'evt_it_f2',
-			$this->fawry_session( XPay_Payment_Status::PAID, array( 'metadata' => array( 'wc_order_id' => (string) $order->get_id() ) ) )
+			$this->fawry_session( XPayEG_Payment_Status::PAID, array( 'metadata' => array( 'wc_order_id' => (string) $order->get_id() ) ) )
 		);
 
 		$fresh = wc_get_order( $order->get_id() );
 		$this->assertTrue( $fresh->is_paid() );
 		$this->assertSame( 'pi_fawry_it', $fresh->get_transaction_id() );
-		$this->assertSame( 'pi_fawry_it', (string) $fresh->get_meta( XPay_Constants::META_PAYMENT_INTENT ) );
+		$this->assertSame( 'pi_fawry_it', (string) $fresh->get_meta( XPayEG_Constants::META_PAYMENT_INTENT ) );
 	}
 
 	public function test_async_failure_fails_the_held_order_with_the_reason(): void {
 		$order = $this->pending_fawry_order();
 		$this->apply(
-			XPay_Event_Names::CHECKOUT_SESSION_COMPLETED,
+			XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED,
 			'evt_it_f1',
-			$this->fawry_session( XPay_Payment_Status::UNPAID, array( 'metadata' => array( 'wc_order_id' => (string) $order->get_id() ) ) )
+			$this->fawry_session( XPayEG_Payment_Status::UNPAID, array( 'metadata' => array( 'wc_order_id' => (string) $order->get_id() ) ) )
 		);
 
 		$this->apply(
-			XPay_Event_Names::CHECKOUT_SESSION_ASYNC_PAYMENT_FAILED,
+			XPayEG_Event_Names::CHECKOUT_SESSION_ASYNC_PAYMENT_FAILED,
 			'evt_it_f2',
 			$this->fawry_session(
-				XPay_Payment_Status::UNPAID,
+				XPayEG_Payment_Status::UNPAID,
 				array(
 					'metadata'      => array( 'wc_order_id' => (string) $order->get_id() ),
 					'paymentIntent' => array(
@@ -137,25 +137,25 @@ class FawryDeferredPaymentTest extends XPay_Integration_Test_Case {
 		$order = $this->pending_fawry_order();
 
 		$this->apply(
-			XPay_Event_Names::CHECKOUT_SESSION_ASYNC_PAYMENT_FAILED,
+			XPayEG_Event_Names::CHECKOUT_SESSION_ASYNC_PAYMENT_FAILED,
 			'evt_it_f1',
-			$this->fawry_session( XPay_Payment_Status::UNPAID, array( 'metadata' => array( 'wc_order_id' => (string) $order->get_id() ) ) )
+			$this->fawry_session( XPayEG_Payment_Status::UNPAID, array( 'metadata' => array( 'wc_order_id' => (string) $order->get_id() ) ) )
 		);
 		$this->assertSame( 'failed', wc_get_order( $order->get_id() )->get_status() );
 
 		// The delayed (or redelivered) reference-issued event, under an
 		// event id the dedupe has never seen.
 		$this->apply(
-			XPay_Event_Names::CHECKOUT_SESSION_COMPLETED,
+			XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED,
 			'evt_it_f2',
-			$this->fawry_session( XPay_Payment_Status::UNPAID, array( 'metadata' => array( 'wc_order_id' => (string) $order->get_id() ) ) )
+			$this->fawry_session( XPayEG_Payment_Status::UNPAID, array( 'metadata' => array( 'wc_order_id' => (string) $order->get_id() ) ) )
 		);
 
 		$fresh = wc_get_order( $order->get_id() );
 		$this->assertSame( 'failed', $fresh->get_status(), 'A dead reference must not be parked as awaiting payment.' );
 		$this->assertSame(
 			'',
-			(string) $fresh->get_meta( XPay_Constants::META_AWAITING_PAYMENT ),
+			(string) $fresh->get_meta( XPayEG_Constants::META_AWAITING_PAYMENT ),
 			'The awaiting marker would also block mark_expired() from ever closing this order.'
 		);
 	}
@@ -165,9 +165,9 @@ class FawryDeferredPaymentTest extends XPay_Integration_Test_Case {
 		$order = $this->pending_fawry_order();
 
 		$this->apply(
-			XPay_Event_Names::CHECKOUT_SESSION_COMPLETED,
+			XPayEG_Event_Names::CHECKOUT_SESSION_COMPLETED,
 			'evt_it_f1',
-			$this->fawry_session( XPay_Payment_Status::PAID, array( 'metadata' => array( 'wc_order_id' => (string) $order->get_id() ) ) )
+			$this->fawry_session( XPayEG_Payment_Status::PAID, array( 'metadata' => array( 'wc_order_id' => (string) $order->get_id() ) ) )
 		);
 
 		$fresh = wc_get_order( $order->get_id() );

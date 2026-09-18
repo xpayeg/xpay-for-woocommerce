@@ -3,7 +3,7 @@
 #
 # They are read by different audiences and drift silently:
 #   - the plugin header      -> what WordPress shows and updates against
-#   - XPAY_WC_VERSION        -> what asset URLs and logs are stamped with
+#   - XPAYEG_VERSION        -> what asset URLs and logs are stamped with
 #   - readme.txt Stable tag  -> what wordpress.org actually serves
 #
 # A mismatched stable tag is the worst of the three: wordpress.org serves
@@ -18,13 +18,13 @@ cd "$(dirname "$0")/.."
 # absorbs that into an empty string so the missing-value report below runs and
 # the check fails with a message instead of dying silently.
 header=$(grep -m1 -E '^\s*\*\s*Version:' xpay-for-woocommerce.php | sed -E 's/.*Version:[[:space:]]*//' | tr -d '[:space:]' || true)
-constant=$(grep -m1 "define( 'XPAY_WC_VERSION'" xpay-for-woocommerce.php | sed -E "s/.*'XPAY_WC_VERSION', '([^']+)'.*/\1/" || true)
+constant=$(grep -m1 "define( 'XPAYEG_VERSION'" xpay-for-woocommerce.php | sed -E "s/.*'XPAYEG_VERSION', '([^']+)'.*/\1/" || true)
 stable=$(grep -m1 -E '^Stable tag:' readme.txt | sed -E 's/.*Stable tag:[[:space:]]*//' | tr -d '[:space:]' || true)
 package=$(php -r '$data = json_decode(file_get_contents("package.json"), true); echo $data["version"] ?? "";' || true)
 pot=$(grep -m1 'Project-Id-Version: XPay for WooCommerce ' languages/xpay-for-woocommerce.pot | sed -E 's/.*WooCommerce ([0-9.]+).*/\1/' || true)
 
 echo "plugin header : ${header:-<missing>}"
-echo "XPAY_WC_VERSION: ${constant:-<missing>}"
+echo "XPAYEG_VERSION : ${constant:-<missing>}"
 echo "readme stable  : ${stable:-<missing>}"
 echo "package version: ${package:-<missing>}"
 echo "POT version    : ${pot:-<missing>}"

@@ -45,7 +45,7 @@
 	var element = window.wp.element;
 	var createElement = element.createElement;
 
-	var params = window.xpayElementsParams || {};
+	var params = window.xpayegElementsParams || {};
 
 	/**
 	 * Ask one of the plugin's endpoints. The same set classic checkout uses.
@@ -56,7 +56,7 @@
 	 */
 	function ask( action, extra ) {
 		var form = new window.FormData();
-		form.append( 'action', 'xpay_elements_' + action );
+		form.append( 'action', 'xpayeg_elements_' + action );
 		form.append( 'nonce', params.nonce );
 		Object.keys( extra || {} ).forEach( function ( key ) {
 			form.append( key, extra[ key ] );
@@ -179,7 +179,7 @@
 		element.useEffect( function () {
 			var cancelled = false;
 
-			if ( ! window.XPayElements || ! mountRef.current ) {
+			if ( ! window.XPayEGElements || ! mountRef.current ) {
 				setError( ( params.i18n && params.i18n.unavailable ) || '' );
 				return undefined;
 			}
@@ -190,7 +190,7 @@
 			 * the order exists, and its secret arrives on the checkout
 			 * response.
 			 */
-			handleRef.current = window.XPayElements.mount( {
+			handleRef.current = window.XPayEGElements.mount( {
 				node: mountRef.current,
 				// One method per row: the row's own type restricts what
 				// the fields render, and Blocks' radio list is the
@@ -350,7 +350,7 @@
 					// No secret came back: the order exists but this page was
 					// given nothing to confirm against (already paid, or a
 					// fallback the server owns). Let Blocks redirect.
-					if ( 'yes' !== details.xpay_confirm || ! details.xpay_secret ) {
+					if ( 'yes' !== details.xpayeg_confirm || ! details.xpayeg_secret ) {
 						return { type: emit.responseTypes.SUCCESS };
 					}
 
@@ -363,7 +363,7 @@
 					// gateway gets; the SDK draws its own overlay for a 3DS
 					// or redirect challenge.
 
-					return handleRef.current.confirm( details.xpay_secret, customerDetails() )
+					return handleRef.current.confirm( details.xpayeg_secret, customerDetails() )
 						.then( function ( outcome ) {
 							/*
 							 * Charge = display, refused. The session the
@@ -378,7 +378,7 @@
 								if ( handleRef.current ) {
 									handleRef.current.setAmount( cartAmount(), cartCurrency() );
 								}
-								return stop( window.XPayElements.refusalMessage( strings, outcome.code ) );
+								return stop( window.XPayEGElements.refusalMessage( strings, outcome.code ) );
 							}
 
 							return Promise.resolve()
@@ -388,23 +388,23 @@
 									// decline and a payment the platform could
 									// not decide on in the same shape, so the
 									// server is asked which.
-									if ( window.XPayElements.confirmed( outcome ) ) {
+									if ( window.XPayEGElements.confirmed( outcome ) ) {
 										return 'paid';
 									}
 									// Asked twice when the first answer is
 									// "cannot say": an unreachable API is
 									// usually a blip, and the fallback is
 									// deliberately the cautious one.
-									return window.XPayElements.settleVerdict( function () {
+									return window.XPayEGElements.settleVerdict( function () {
 										return ask( 'outcome', {
-											order: details.xpay_order_id || '',
-											key: details.xpay_order_key || '',
+											order: details.xpayeg_order_id || '',
+											key: details.xpayeg_order_key || '',
 										} ).then( function ( answer ) {
 											return answer.ok && answer.json && answer.json.success
 												? answer.json.data.verdict
 												: 'unknown';
 										} );
-									} ).then( window.XPayElements.outcomeKind );
+									} ).then( window.XPayEGElements.outcomeKind );
 								} )
 								.then( function ( kind ) {
 									if ( 'paid' === kind ) {
@@ -450,7 +450,7 @@
 		 *
 		 * Nothing. Who the shopper is reaches XPay from the SERVER: the
 		 * session is created carrying the order's name, email and phone
-		 * (class-xpay-checkout-service.php, apply_customer_fields), so this
+		 * (class-xpayeg-checkout-service.php, apply_customer_fields), so this
 		 * checkout adds nothing at confirm time. The classic driver and the
 		 * pay page do pass details with their confirms — the same values the
 		 * order already carries, merged over the session's at collect — so
@@ -466,7 +466,7 @@
 			createElement( 'div', {
 				key: 'mount',
 				ref: mountRef,
-				className: 'xpay-el__mount',
+				className: 'xpayeg-el__mount',
 			} ),
 		];
 
@@ -498,12 +498,12 @@
 	/*
 	 * One registration per checkout row: the Card row plus one per other
 	 * method the account can charge, mirroring the classic per-method
-	 * gateways. The row list rides on xpayElementsParams (built with the
+	 * gateways. The row list rides on xpayegElementsParams (built with the
 	 * classic list, so the two can never disagree); each row's own data
 	 * comes from its server-side registration. A row the server marked
 	 * inactive for this currency has no data here and is skipped.
 	 */
-	( params.rows || [ params.gatewayId || 'xpay' ] ).forEach( function ( rowName ) {
+	( params.rows || [ params.gatewayId || 'xpayeg' ] ).forEach( function ( rowName ) {
 		var settings = getSetting( rowName + '_data', null );
 		if ( ! settings ) {
 			return;

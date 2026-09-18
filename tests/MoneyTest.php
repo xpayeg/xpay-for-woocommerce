@@ -1,6 +1,6 @@
 <?php
 /**
- * Money-truth guards for XPay_Money.
+ * Money-truth guards for XPayEG_Money.
  *
  * Pinned because float money math has a canonical failure the string
  * implementation must never regress into: (float) '1.005' * 100 is
@@ -12,7 +12,7 @@
  * Expected values are hand-computed literals — never recomputed with the
  * implementation's own formula (the failure-catalogue Class H rule).
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
 use PHPUnit\Framework\TestCase;
@@ -38,7 +38,7 @@ final class MoneyTest extends TestCase {
 
 	/** @dataProvider to_minor_cases */
 	public function test_to_minor_is_exact( string $amount, string $currency, int $expected ): void {
-		$this->assertSame( $expected, XPay_Money::to_minor( $amount, $currency ) );
+		$this->assertSame( $expected, XPayEG_Money::to_minor( $amount, $currency ) );
 	}
 
 	/** @return array<string, array{int, string, string}> */
@@ -54,17 +54,17 @@ final class MoneyTest extends TestCase {
 
 	/** @dataProvider from_minor_cases */
 	public function test_from_minor_formats_exactly( int $minor, string $currency, string $expected ): void {
-		$this->assertSame( $expected, XPay_Money::from_minor( $minor, $currency ) );
+		$this->assertSame( $expected, XPayEG_Money::from_minor( $minor, $currency ) );
 	}
 
 	public function test_round_trip_is_lossless_for_every_supported_currency(): void {
 		// Sweep the full currency registry (data-provider-over-enum rule):
 		// a newly added currency inherits this guard automatically.
-		foreach ( array_keys( XPay_Money::DECIMALS ) as $currency ) {
+		foreach ( array_keys( XPayEG_Money::DECIMALS ) as $currency ) {
 			$minor = 1234567;
 			$this->assertSame(
 				$minor,
-				XPay_Money::to_minor( XPay_Money::from_minor( $minor, $currency ), $currency ),
+				XPayEG_Money::to_minor( XPayEG_Money::from_minor( $minor, $currency ), $currency ),
 				"Round trip lost money for {$currency}"
 			);
 		}
@@ -87,6 +87,6 @@ final class MoneyTest extends TestCase {
 		// Throwing beats silently charging 0 — a malformed total must never
 		// reach the API as a real session amount.
 		$this->expectException( InvalidArgumentException::class );
-		XPay_Money::to_minor( $amount, 'EGP' );
+		XPayEG_Money::to_minor( $amount, 'EGP' );
 	}
 }

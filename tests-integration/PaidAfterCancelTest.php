@@ -17,10 +17,10 @@
  * their case, a shopper who cancelled their own order while the payment
  * settled. Ours is a shopper who paid slowly and is owed goods.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
-class PaidAfterCancelTest extends XPay_Integration_Test_Case {
+class PaidAfterCancelTest extends XPayEG_Integration_Test_Case {
 
 	/** A paid session for an order, as the webhook delivers it. */
 	private function paid_session( WC_Order $order ): array {
@@ -29,13 +29,13 @@ class PaidAfterCancelTest extends XPay_Integration_Test_Case {
 			'status'        => 'complete',
 			'paymentStatus' => 'paid',
 			'currency'      => 'EGP',
-			'amountTotal'   => XPay_Money::to_minor( $order->get_total(), 'EGP' ),
+			'amountTotal'   => XPayEG_Money::to_minor( $order->get_total(), 'EGP' ),
 			'paymentIntent' => array( 'id' => 'pi_test_late' ),
 		);
 	}
 
 	private function cancelled_order(): WC_Order {
-		$order = $this->make_xpay_order( array( XPay_Constants::META_SESSION_ID => 'cs_test_late' ) );
+		$order = $this->make_xpayeg_order( array( XPayEG_Constants::META_SESSION_ID => 'cs_test_late' ) );
 		$order->set_total( '123.00' );
 		$order->set_status( 'cancelled' );
 		$order->save();
@@ -47,7 +47,7 @@ class PaidAfterCancelTest extends XPay_Integration_Test_Case {
 	public function test_a_cancelled_order_is_not_shipped_by_a_late_payment(): void {
 		$order = $this->cancelled_order();
 
-		XPay_Order_Sync::mark_paid( $order, $this->paid_session( $order ), 'webhook' );
+		XPayEG_Order_Sync::mark_paid( $order, $this->paid_session( $order ), 'webhook' );
 
 		$fresh = wc_get_order( $order->get_id() );
 		$this->assertFalse(
@@ -60,7 +60,7 @@ class PaidAfterCancelTest extends XPay_Integration_Test_Case {
 	public function test_the_payment_is_still_recorded(): void {
 		$order = $this->cancelled_order();
 
-		XPay_Order_Sync::mark_paid( $order, $this->paid_session( $order ), 'webhook' );
+		XPayEG_Order_Sync::mark_paid( $order, $this->paid_session( $order ), 'webhook' );
 
 		$fresh = wc_get_order( $order->get_id() );
 		$this->assertSame(
@@ -68,13 +68,13 @@ class PaidAfterCancelTest extends XPay_Integration_Test_Case {
 			(string) $fresh->get_transaction_id(),
 			'Refusing without recording the payment leaves real money with nothing pointing at it.'
 		);
-		$this->assertSame( 'pi_test_late', (string) $fresh->get_meta( XPay_Constants::META_PAYMENT_INTENT ) );
+		$this->assertSame( 'pi_test_late', (string) $fresh->get_meta( XPayEG_Constants::META_PAYMENT_INTENT ) );
 	}
 
 	public function test_the_merchant_is_told_what_happened(): void {
 		$order = $this->cancelled_order();
 
-		XPay_Order_Sync::mark_paid( $order, $this->paid_session( $order ), 'webhook' );
+		XPayEG_Order_Sync::mark_paid( $order, $this->paid_session( $order ), 'webhook' );
 
 		$notes = wc_get_order_notes( array( 'order_id' => $order->get_id() ) );
 		$found = false;
@@ -101,11 +101,11 @@ class PaidAfterCancelTest extends XPay_Integration_Test_Case {
 		$order   = $this->cancelled_order();
 		$session = $this->paid_session( $order );
 
-		XPay_Order_Sync::mark_paid( $order, $session, 'webhook' );
+		XPayEG_Order_Sync::mark_paid( $order, $session, 'webhook' );
 		$after_first = wc_get_order( $order->get_id() );
 		$this->assertTrue( $after_first->has_status( 'on-hold' ) );
 
-		XPay_Order_Sync::mark_paid( $after_first, $session, 'thankyou' );
+		XPayEG_Order_Sync::mark_paid( $after_first, $session, 'thankyou' );
 
 		$after_second = wc_get_order( $order->get_id() );
 		$this->assertFalse(
@@ -121,7 +121,7 @@ class PaidAfterCancelTest extends XPay_Integration_Test_Case {
 		$session = $this->paid_session( $order );
 
 		for ( $i = 0; $i < 3; $i++ ) {
-			XPay_Order_Sync::mark_paid( wc_get_order( $order->get_id() ), $session, 'webhook' );
+			XPayEG_Order_Sync::mark_paid( wc_get_order( $order->get_id() ), $session, 'webhook' );
 		}
 
 		$this->assertFalse( wc_get_order( $order->get_id() )->is_paid() );
@@ -130,23 +130,23 @@ class PaidAfterCancelTest extends XPay_Integration_Test_Case {
 	/* ── No regression on the ordinary path ──────────────────────────── */
 
 	public function test_a_pending_order_still_completes(): void {
-		$order = $this->make_xpay_order( array( XPay_Constants::META_SESSION_ID => 'cs_test_late' ) );
+		$order = $this->make_xpayeg_order( array( XPayEG_Constants::META_SESSION_ID => 'cs_test_late' ) );
 		$order->set_total( '123.00' );
 		$order->set_status( 'pending' );
 		$order->save();
 
-		XPay_Order_Sync::mark_paid( $order, $this->paid_session( $order ), 'webhook' );
+		XPayEG_Order_Sync::mark_paid( $order, $this->paid_session( $order ), 'webhook' );
 
 		$this->assertTrue( wc_get_order( $order->get_id() )->is_paid() );
 	}
 
 	public function test_a_failed_order_still_completes(): void {
-		$order = $this->make_xpay_order( array( XPay_Constants::META_SESSION_ID => 'cs_test_late' ) );
+		$order = $this->make_xpayeg_order( array( XPayEG_Constants::META_SESSION_ID => 'cs_test_late' ) );
 		$order->set_total( '123.00' );
 		$order->set_status( 'failed' );
 		$order->save();
 
-		XPay_Order_Sync::mark_paid( $order, $this->paid_session( $order ), 'webhook' );
+		XPayEG_Order_Sync::mark_paid( $order, $this->paid_session( $order ), 'webhook' );
 
 		$this->assertTrue(
 			wc_get_order( $order->get_id() )->is_paid(),

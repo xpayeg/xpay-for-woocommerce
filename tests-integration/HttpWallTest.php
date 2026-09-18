@@ -11,13 +11,13 @@
  * These pin the wall itself, because a wall nobody tests is a wall that
  * quietly comes down.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
-class HttpWallTest extends XPay_Integration_Test_Case {
+class HttpWallTest extends XPayEG_Integration_Test_Case {
 
 	public function tear_down(): void {
-		$GLOBALS['xpay_test_http'] = array();
+		$GLOBALS['xpayeg_test_http'] = array();
 		parent::tear_down();
 	}
 
@@ -25,7 +25,7 @@ class HttpWallTest extends XPay_Integration_Test_Case {
 		$response = wp_remote_get( 'https://api.xpay.app/refunds?limit=1' );
 
 		$this->assertInstanceOf( 'WP_Error', $response, 'A test just reached a live system.' );
-		$this->assertSame( 'xpay_test_http_blocked', $response->get_error_code() );
+		$this->assertSame( 'xpayeg_test_http_blocked', $response->get_error_code() );
 	}
 
 	/**
@@ -56,8 +56,8 @@ class HttpWallTest extends XPay_Integration_Test_Case {
 		try {
 			$this->gateway()->api_client()->get_account();
 			$this->fail( 'The account check reached the network.' );
-		} catch ( XPay_Api_Exception $e ) {
-			$this->assertSame( XPay_Error_Codes::TRANSPORT_ERROR, $e->get_error_code() );
+		} catch ( XPayEG_Api_Exception $e ) {
+			$this->assertSame( XPayEG_Error_Codes::TRANSPORT_ERROR, $e->get_error_code() );
 		}
 	}
 
@@ -66,7 +66,7 @@ class HttpWallTest extends XPay_Integration_Test_Case {
 	 * one it asked for.
 	 */
 	public function test_a_scripted_response_is_served_instead(): void {
-		$GLOBALS['xpay_test_http'] = array(
+		$GLOBALS['xpayeg_test_http'] = array(
 			'api.xpay.app' => array(
 				'response' => array( 'code' => 200 ),
 				'body'     => '{"data":[]}',
@@ -80,7 +80,7 @@ class HttpWallTest extends XPay_Integration_Test_Case {
 	}
 
 	public function test_scripting_one_address_does_not_open_the_rest(): void {
-		$GLOBALS['xpay_test_http'] = array( 'api.xpay.app' => array( 'response' => array( 'code' => 200 ), 'body' => '{}' ) );
+		$GLOBALS['xpayeg_test_http'] = array( 'api.xpay.app' => array( 'response' => array( 'code' => 200 ), 'body' => '{}' ) );
 
 		$this->assertInstanceOf( 'WP_Error', wp_remote_get( 'https://checkout.xpay.app/v1/sdk.js' ) );
 	}

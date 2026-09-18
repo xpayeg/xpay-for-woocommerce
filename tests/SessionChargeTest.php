@@ -7,7 +7,7 @@
  * VAT, instead of `amountSubtotal`, which mirrors the single line item this
  * plugin actually sends.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
 use PHPUnit\Framework\TestCase;
@@ -20,7 +20,7 @@ class SessionChargeTest extends TestCase {
 				'amount'   => 29000,
 				'currency' => 'EGP',
 			),
-			XPay_Money::session_charge(
+			XPayEG_Money::session_charge(
 				array(
 					'amountSubtotal' => 29000,
 					'amountTotal'    => 29000,
@@ -37,7 +37,7 @@ class SessionChargeTest extends TestCase {
 	 * a mismatch.
 	 */
 	public function test_collected_vat_does_not_change_the_answer(): void {
-		$charge = XPay_Money::session_charge(
+		$charge = XPayEG_Money::session_charge(
 			array(
 				'amountSubtotal' => 29000,
 				'amountTotal'    => 33060,
@@ -49,7 +49,7 @@ class SessionChargeTest extends TestCase {
 	}
 
 	public function test_a_pass_through_platform_fee_does_not_change_the_answer(): void {
-		$charge = XPay_Money::session_charge(
+		$charge = XPayEG_Money::session_charge(
 			array(
 				'amountSubtotal' => 29000,
 				'amountTotal'    => 29725,
@@ -71,7 +71,7 @@ class SessionChargeTest extends TestCase {
 				'amount'   => 29000,
 				'currency' => 'EGP',
 			),
-			XPay_Money::session_charge(
+			XPayEG_Money::session_charge(
 				array(
 					'amountSubtotal'     => 61000,
 					'currency'           => 'USD',
@@ -91,7 +91,7 @@ class SessionChargeTest extends TestCase {
 				'amount'   => 61000,
 				'currency' => 'USD',
 			),
-			XPay_Money::session_charge(
+			XPayEG_Money::session_charge(
 				array(
 					'amountSubtotal'     => 61000,
 					'currency'           => 'USD',
@@ -106,11 +106,11 @@ class SessionChargeTest extends TestCase {
 	 * value may do that.
 	 */
 	public function test_a_session_that_states_no_subtotal_answers_null(): void {
-		$this->assertNull( XPay_Money::session_charge( array() ) );
-		$this->assertNull( XPay_Money::session_charge( array( 'currency' => 'EGP' ) ) );
-		$this->assertNull( XPay_Money::session_charge( array( 'amountSubtotal' => 29000 ) ) );
+		$this->assertNull( XPayEG_Money::session_charge( array() ) );
+		$this->assertNull( XPayEG_Money::session_charge( array( 'currency' => 'EGP' ) ) );
+		$this->assertNull( XPayEG_Money::session_charge( array( 'amountSubtotal' => 29000 ) ) );
 		$this->assertNull(
-			XPay_Money::session_charge(
+			XPayEG_Money::session_charge(
 				array(
 					'amountTotal' => 29000,
 					'currency'    => 'EGP',
@@ -122,7 +122,7 @@ class SessionChargeTest extends TestCase {
 
 	public function test_a_malformed_amount_answers_null(): void {
 		$this->assertNull(
-			XPay_Money::session_charge(
+			XPayEG_Money::session_charge(
 				array(
 					'amountSubtotal' => 'not a number',
 					'currency'       => 'EGP',
@@ -130,7 +130,7 @@ class SessionChargeTest extends TestCase {
 			)
 		);
 		$this->assertNull(
-			XPay_Money::session_charge(
+			XPayEG_Money::session_charge(
 				array(
 					'amountSubtotal' => 29000,
 					'currency'       => '',
@@ -140,7 +140,7 @@ class SessionChargeTest extends TestCase {
 	}
 
 	public function test_the_currency_is_normalised(): void {
-		$charge = XPay_Money::session_charge(
+		$charge = XPayEG_Money::session_charge(
 			array(
 				'amountSubtotal' => 100,
 				'currency'       => 'egp',
@@ -156,7 +156,7 @@ class SessionChargeTest extends TestCase {
 				'amount'   => 500,
 				'currency' => 'EGP',
 			),
-			XPay_Money::session_charge(
+			XPayEG_Money::session_charge(
 				array(
 					'amountSubtotal'     => 500,
 					'currency'           => 'EGP',

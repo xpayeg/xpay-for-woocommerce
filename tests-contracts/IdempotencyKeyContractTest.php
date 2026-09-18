@@ -8,23 +8,23 @@
  * with it, fingerprinting method, path, query, and body. A mismatch returns
  * 400 `idempotency_key_in_use`.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
 class IdempotencyKeyContractTest extends ContractTestCase {
 
-	/** @var XPay_Api_Client */
+	/** @var XPayEG_Api_Client */
 	private $client;
 
 	protected function setUp(): void {
 		parent::setUp();
-		$this->client = new XPay_Api_Client( 'rk_test_contract' );
+		$this->client = new XPayEG_Api_Client( 'rk_test_contract' );
 	}
 
 	/** Every Idempotency-Key sent so far, in order. */
 	private function keys(): array {
 		$keys = array();
-		foreach ( $GLOBALS['xpay_test_http'] as $call ) {
+		foreach ( $GLOBALS['xpayeg_test_http'] as $call ) {
 			if ( isset( $call['args']['headers']['Idempotency-Key'] ) ) {
 				$keys[] = $call['args']['headers']['Idempotency-Key'];
 			}
@@ -34,7 +34,7 @@ class IdempotencyKeyContractTest extends ContractTestCase {
 
 	/** The last request body that went over the wire. */
 	private function lastBody(): ?string {
-		$last = end( $GLOBALS['xpay_test_http'] );
+		$last = end( $GLOBALS['xpayeg_test_http'] );
 		return isset( $last['args']['body'] ) ? $last['args']['body'] : null;
 	}
 

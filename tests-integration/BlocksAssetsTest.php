@@ -8,20 +8,20 @@
  * an is_checkout() guard, so on the shop, the cart and the front page
  * Blocks found nothing and answered by switching the gateway off:
  *
- *   Payment gateway with handle 'xpay-blocks' has been deactivated in Cart
- *   and Checkout blocks because its dependency 'xpay-elements' is not
+ *   Payment gateway with handle 'xpayeg-blocks' has been deactivated in Cart
+ *   and Checkout blocks because its dependency 'xpayeg-elements' is not
  *   registered.
  *
  * Found in the wild, in a debug log full of it.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
-class BlocksAssetsTest extends XPay_Integration_Test_Case {
+class BlocksAssetsTest extends XPayEG_Integration_Test_Case {
 
-	private function blocks_support(): XPay_Blocks_Support {
-		return new XPay_Blocks_Support(
-			'xpay',
+	private function blocks_support(): XPayEG_Blocks_Support {
+		return new XPayEG_Blocks_Support(
+			'xpayeg',
 			array(
 				'title'       => 'XPay',
 				'description' => '',
@@ -34,9 +34,9 @@ class BlocksAssetsTest extends XPay_Integration_Test_Case {
 	public function test_declaring_the_bundle_registers_what_it_depends_on(): void {
 		$handles = $this->blocks_support()->get_payment_method_script_handles();
 
-		$this->assertContains( 'xpay-blocks', $handles );
+		$this->assertContains( 'xpayeg-blocks', $handles );
 		$this->assertTrue(
-			wp_script_is( XPay_Checkout_Elements::HANDLE, 'registered' ),
+			wp_script_is( XPayEG_Checkout_Elements::HANDLE, 'registered' ),
 			'Blocks switches the gateway off entirely when a declared dependency does not exist.'
 		);
 	}
@@ -46,9 +46,9 @@ class BlocksAssetsTest extends XPay_Integration_Test_Case {
 	 * did not ask for it — this runs on the front page too.
 	 */
 	public function test_registering_does_not_put_anything_on_the_page(): void {
-		XPay_Checkout_Elements::register_scripts();
+		XPayEG_Checkout_Elements::register_scripts();
 
-		foreach ( array( XPay_Checkout_Elements::HANDLE, XPay_Checkout_Elements::DRIVER_HANDLE ) as $handle ) {
+		foreach ( array( XPayEG_Checkout_Elements::HANDLE, XPayEG_Checkout_Elements::DRIVER_HANDLE ) as $handle ) {
 			$this->assertFalse( wp_script_is( $handle, 'enqueued' ), "$handle was enqueued by mere registration." );
 		}
 	}
@@ -61,6 +61,6 @@ class BlocksAssetsTest extends XPay_Integration_Test_Case {
 		$this->blocks_support()->get_payment_method_script_handles();
 		$this->blocks_support()->get_payment_method_script_handles();
 
-		$this->assertTrue( wp_script_is( XPay_Checkout_Elements::HANDLE, 'registered' ) );
+		$this->assertTrue( wp_script_is( XPayEG_Checkout_Elements::HANDLE, 'registered' ) );
 	}
 }

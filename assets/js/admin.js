@@ -13,22 +13,22 @@
  * Every listener is delegated from the document, so a swapped-in screen
  * needs no re-binding.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 ( function ( window, document ) {
 	'use strict';
 
-	var params = window.xpayAdminParams;
-	if ( ! params || ! document.querySelector( '[data-xpay-admin]' ) ) {
+	var params = window.xpayegAdminParams;
+	if ( ! params || ! document.querySelector( '[data-xpayeg-admin]' ) ) {
 		return;
 	}
 
 	function root() {
-		return document.querySelector( '[data-xpay-admin]' );
+		return document.querySelector( '[data-xpayeg-admin]' );
 	}
 
 	function modal() {
-		return document.querySelector( '[data-xpay-modal]' );
+		return document.querySelector( '[data-xpayeg-modal]' );
 	}
 
 	function text( key ) {
@@ -46,7 +46,7 @@
 		}
 		if ( ! toastNode ) {
 			toastNode = document.createElement( 'div' );
-			toastNode.className = 'xpay-ad__toast';
+			toastNode.className = 'xpayeg-ad__toast';
 			toastNode.setAttribute( 'role', 'status' );
 			document.body.appendChild( toastNode );
 		}
@@ -62,7 +62,7 @@
 
 	function ask( verb, body ) {
 		var form = new window.FormData();
-		form.append( 'action', 'xpay_admin_' + verb );
+		form.append( 'action', 'xpayeg_admin_' + verb );
 		form.append( 'nonce', params.nonce );
 		Object.keys( body || {} ).forEach( function ( key ) {
 			var value = body[ key ];
@@ -104,23 +104,23 @@
 
 		// The fresh screen renders with its default tab; the merchant is
 		// mid-conversation on a specific one, so it is carried across.
-		var activePage = document.querySelector( '[data-xpay-page-tab].is-active' );
-		var page = activePage ? activePage.getAttribute( 'data-xpay-page-tab' ) : '';
+		var activePage = document.querySelector( '[data-xpayeg-page-tab].is-active' );
+		var page = activePage ? activePage.getAttribute( 'data-xpayeg-page-tab' ) : '';
 
-		var fresh = parsed.querySelector( '[data-xpay-admin]' );
+		var fresh = parsed.querySelector( '[data-xpayeg-admin]' );
 		var current = root();
 		if ( fresh && current ) {
 			current.replaceWith( fresh );
 		}
 
 		if ( page ) {
-			document.querySelectorAll( '[data-xpay-page-tab]' ).forEach( function ( other ) {
-				var selected = other.getAttribute( 'data-xpay-page-tab' ) === page;
+			document.querySelectorAll( '[data-xpayeg-page-tab]' ).forEach( function ( other ) {
+				var selected = other.getAttribute( 'data-xpayeg-page-tab' ) === page;
 				other.classList.toggle( 'is-active', selected );
 				other.setAttribute( 'aria-selected', selected ? 'true' : 'false' );
 			} );
-			document.querySelectorAll( '[data-xpay-page]' ).forEach( function ( pane ) {
-				pane.hidden = pane.getAttribute( 'data-xpay-page' ) !== page;
+			document.querySelectorAll( '[data-xpayeg-page]' ).forEach( function ( pane ) {
+				pane.hidden = pane.getAttribute( 'data-xpayeg-page' ) !== page;
 			} );
 		}
 
@@ -212,8 +212,8 @@
 	function startConnect( button ) {
 		// The error node is a sibling of the actions row, so scope the
 		// lookup to the pane (or the card on the get-started screen).
-		var scope = button.closest( '[data-xpay-pane], .xpay-ad__card--hero' ) || button.parentElement;
-		var errorNode = scope && scope.querySelector( '[data-xpay-connect-error]' );
+		var scope = button.closest( '[data-xpayeg-pane], .xpayeg-ad__card--hero' ) || button.parentElement;
+		var errorNode = scope && scope.querySelector( '[data-xpayeg-connect-error]' );
 		var label = button.textContent;
 		if ( errorNode ) {
 			errorNode.hidden = true;
@@ -232,7 +232,7 @@
 			}
 		}
 
-		ask( 'connect', { plane: button.getAttribute( 'data-xpay-plane' ) || 'test' } )
+		ask( 'connect', { plane: button.getAttribute( 'data-xpayeg-plane' ) || 'test' } )
 			.then( function ( answer ) {
 				var data = ( answer.json && answer.json.data ) || {};
 				if ( answer.ok && answer.json && answer.json.success && data.url ) {
@@ -252,74 +252,74 @@
 		var target = event.target;
 		var dialog = modal();
 
-		var connect = target.closest( '[data-xpay-connect]' );
+		var connect = target.closest( '[data-xpayeg-connect]' );
 		if ( connect && ! connect.disabled ) {
 			startConnect( connect );
 		}
 
-		var opener = target.closest( '[data-xpay-open-modal]' );
+		var opener = target.closest( '[data-xpayeg-open-modal]' );
 		if ( opener && dialog ) {
 			dialog.hidden = false;
 			// An opener can name the pane it is about (the mode-lock notice
 			// sends the merchant straight to the plane missing its keys);
 			// without one, the dialog keeps whichever tab was active.
-			var wantedTab = opener.getAttribute( 'data-xpay-modal-tab' );
+			var wantedTab = opener.getAttribute( 'data-xpayeg-modal-tab' );
 			if ( wantedTab ) {
-				dialog.querySelectorAll( '[data-xpay-tab]' ).forEach( function ( other ) {
-					var selected = other.getAttribute( 'data-xpay-tab' ) === wantedTab;
+				dialog.querySelectorAll( '[data-xpayeg-tab]' ).forEach( function ( other ) {
+					var selected = other.getAttribute( 'data-xpayeg-tab' ) === wantedTab;
 					other.classList.toggle( 'is-active', selected );
 					other.setAttribute( 'aria-selected', selected ? 'true' : 'false' );
 				} );
-				dialog.querySelectorAll( '[data-xpay-pane]' ).forEach( function ( pane ) {
-					pane.hidden = pane.getAttribute( 'data-xpay-pane' ) !== wantedTab;
+				dialog.querySelectorAll( '[data-xpayeg-pane]' ).forEach( function ( pane ) {
+					pane.hidden = pane.getAttribute( 'data-xpayeg-pane' ) !== wantedTab;
 				} );
 			}
-			var activeTab = dialog.querySelector( '.xpay-ad__tab.is-active' ) || dialog.querySelector( '.xpay-ad__tab' );
+			var activeTab = dialog.querySelector( '.xpayeg-ad__tab.is-active' ) || dialog.querySelector( '.xpayeg-ad__tab' );
 			if ( activeTab ) {
 				activeTab.focus();
 			}
 		}
-		if ( ( target.closest( '[data-xpay-close-modal]' ) || target === dialog ) && dialog ) {
+		if ( ( target.closest( '[data-xpayeg-close-modal]' ) || target === dialog ) && dialog ) {
 			dialog.hidden = true;
 		}
 
-		var pageTab = target.closest( '[data-xpay-page-tab]' );
+		var pageTab = target.closest( '[data-xpayeg-page-tab]' );
 		if ( pageTab ) {
-			var page = pageTab.getAttribute( 'data-xpay-page-tab' );
-			document.querySelectorAll( '[data-xpay-page-tab]' ).forEach( function ( other ) {
+			var page = pageTab.getAttribute( 'data-xpayeg-page-tab' );
+			document.querySelectorAll( '[data-xpayeg-page-tab]' ).forEach( function ( other ) {
 				other.classList.toggle( 'is-active', other === pageTab );
 				other.setAttribute( 'aria-selected', other === pageTab ? 'true' : 'false' );
 			} );
-			document.querySelectorAll( '[data-xpay-page]' ).forEach( function ( pane ) {
-				pane.hidden = pane.getAttribute( 'data-xpay-page' ) !== page;
+			document.querySelectorAll( '[data-xpayeg-page]' ).forEach( function ( pane ) {
+				pane.hidden = pane.getAttribute( 'data-xpayeg-page' ) !== page;
 			} );
 		}
 
-		if ( target.closest( '[data-xpay-reorder-start]' ) ) {
+		if ( target.closest( '[data-xpayeg-reorder-start]' ) ) {
 			enterReorder();
 		}
-		if ( target.closest( '[data-xpay-reorder-cancel]' ) ) {
+		if ( target.closest( '[data-xpayeg-reorder-cancel]' ) ) {
 			exitReorder( true );
 		}
-		if ( target.closest( '[data-xpay-reorder-save]' ) ) {
-			saveReorder( target.closest( '[data-xpay-reorder-save]' ) );
+		if ( target.closest( '[data-xpayeg-reorder-save]' ) ) {
+			saveReorder( target.closest( '[data-xpayeg-reorder-save]' ) );
 		}
 
-		var tab = target.closest( '[data-xpay-tab]' );
+		var tab = target.closest( '[data-xpayeg-tab]' );
 		if ( tab ) {
-			var mode = tab.getAttribute( 'data-xpay-tab' );
-			document.querySelectorAll( '[data-xpay-tab]' ).forEach( function ( other ) {
+			var mode = tab.getAttribute( 'data-xpayeg-tab' );
+			document.querySelectorAll( '[data-xpayeg-tab]' ).forEach( function ( other ) {
 				other.classList.toggle( 'is-active', other === tab );
 				other.setAttribute( 'aria-selected', other === tab ? 'true' : 'false' );
 			} );
-			document.querySelectorAll( '[data-xpay-pane]' ).forEach( function ( pane ) {
-				pane.hidden = pane.getAttribute( 'data-xpay-pane' ) !== mode;
+			document.querySelectorAll( '[data-xpayeg-pane]' ).forEach( function ( pane ) {
+				pane.hidden = pane.getAttribute( 'data-xpayeg-pane' ) !== mode;
 			} );
 		}
 
-		var menuToggle = target.closest( '[data-xpay-menu-toggle]' );
-		document.querySelectorAll( '.xpay-ad__menu-list' ).forEach( function ( list ) {
-			if ( menuToggle && list === menuToggle.parentElement.querySelector( '.xpay-ad__menu-list' ) ) {
+		var menuToggle = target.closest( '[data-xpayeg-menu-toggle]' );
+		document.querySelectorAll( '.xpayeg-ad__menu-list' ).forEach( function ( list ) {
+			if ( menuToggle && list === menuToggle.parentElement.querySelector( '.xpayeg-ad__menu-list' ) ) {
 				list.hidden = ! list.hidden;
 				menuToggle.setAttribute( 'aria-expanded', list.hidden ? 'false' : 'true' );
 			} else {
@@ -327,12 +327,12 @@
 			}
 		} );
 
-		if ( target.closest( '[data-xpay-refresh-health]' ) ) {
-			var health = target.closest( '[data-xpay-health]' );
-			var message = health && health.querySelector( '[data-xpay-health-message]' );
+		if ( target.closest( '[data-xpayeg-refresh-health]' ) ) {
+			var health = target.closest( '[data-xpayeg-health]' );
+			var message = health && health.querySelector( '[data-xpayeg-health-message]' );
 			if ( message ) {
 				message.textContent = text( 'refreshing' );
-				ask( 'health', { plane: health.getAttribute( 'data-xpay-plane' ) } ).then( function ( answer ) {
+				ask( 'health', { plane: health.getAttribute( 'data-xpayeg-plane' ) } ).then( function ( answer ) {
 					message.textContent =
 						answer.ok && answer.json && answer.json.success
 							? answer.json.data.message
@@ -341,7 +341,7 @@
 			}
 		}
 
-		if ( target.closest( '[data-xpay-refresh-account]' ) ) {
+		if ( target.closest( '[data-xpayeg-refresh-account]' ) ) {
 			toast( text( 'refreshing' ) );
 			ask( 'refresh_account', {} ).then( function ( answer ) {
 				if ( answer.ok && answer.json && answer.json.success ) {
@@ -352,9 +352,9 @@
 			} );
 		}
 
-		var disconnect = target.closest( '[data-xpay-disconnect]' );
+		var disconnect = target.closest( '[data-xpayeg-disconnect]' );
 		if ( disconnect && window.confirm( text( 'disconnectConfirm' ) ) ) {
-			ask( 'disconnect', { plane: disconnect.getAttribute( 'data-xpay-plane' ) } ).then( function ( answer ) {
+			ask( 'disconnect', { plane: disconnect.getAttribute( 'data-xpayeg-plane' ) } ).then( function ( answer ) {
 				if ( answer.ok && answer.json && answer.json.success ) {
 					softReload( text( 'disconnected' ) );
 				} else {
@@ -363,12 +363,12 @@
 			} );
 		}
 
-		var reconfigure = target.closest( '[data-xpay-reconfigure]' );
+		var reconfigure = target.closest( '[data-xpayeg-reconfigure]' );
 		if ( reconfigure ) {
-			var pane = reconfigure.closest( '[data-xpay-pane]' ) || reconfigure.parentElement;
-			var result = pane.querySelector( '[data-xpay-reconfigure-result]' );
+			var pane = reconfigure.closest( '[data-xpayeg-pane]' ) || reconfigure.parentElement;
+			var result = pane.querySelector( '[data-xpayeg-reconfigure-result]' );
 			reconfigure.disabled = true;
-			ask( 'reconfigure_webhooks', { plane: reconfigure.getAttribute( 'data-xpay-plane' ) } ).then( function ( answer ) {
+			ask( 'reconfigure_webhooks', { plane: reconfigure.getAttribute( 'data-xpayeg-plane' ) } ).then( function ( answer ) {
 				reconfigure.disabled = false;
 				var data = ( answer.json && answer.json.data ) || {};
 				if ( result ) {
@@ -390,12 +390,12 @@
 	var draggedRow = null;
 
 	function methodsCard() {
-		return document.querySelector( '[data-xpay-methods]' );
+		return document.querySelector( '[data-xpayeg-methods]' );
 	}
 
 	function methodRows() {
 		var card = methodsCard();
-		return card ? Array.prototype.slice.call( card.querySelectorAll( '[data-xpay-method-row]' ) ) : [];
+		return card ? Array.prototype.slice.call( card.querySelectorAll( '[data-xpayeg-method-row]' ) ) : [];
 	}
 
 	function setReorderChrome( on ) {
@@ -407,8 +407,8 @@
 		// The idle controls (Change display order + the kebab) and the
 		// reorder controls (Cancel + Save display order) swap as one:
 		// Stripe's header renders one set or the other, never both.
-		var idle = card.querySelector( '[data-xpay-methods-idle]' );
-		var actions = card.querySelector( '.xpay-ad__reorder-actions' );
+		var idle = card.querySelector( '[data-xpayeg-methods-idle]' );
+		var actions = card.querySelector( '.xpayeg-ad__reorder-actions' );
 		if ( idle ) {
 			idle.hidden = on;
 		}
@@ -432,7 +432,7 @@
 	function exitReorder( restore ) {
 		if ( restore && reorderSnapshot ) {
 			var card = methodsCard();
-			var list = card && card.querySelector( '[data-xpay-method-list]' );
+			var list = card && card.querySelector( '[data-xpayeg-method-list]' );
 			if ( list ) {
 				reorderSnapshot.forEach( function ( row ) {
 					list.appendChild( row );
@@ -446,7 +446,7 @@
 
 	function saveReorder( button ) {
 		var order = methodRows().map( function ( row ) {
-			return row.getAttribute( 'data-xpay-type' ) || '';
+			return row.getAttribute( 'data-xpayeg-type' ) || '';
 		} );
 		button.disabled = true;
 		ask( 'save_method_order', { order: order } ).then( function ( answer ) {
@@ -464,7 +464,7 @@
 	// row lands: before the row whose upper half the pointer is over,
 	// after it otherwise.
 	document.addEventListener( 'dragstart', function ( event ) {
-		var row = event.target.closest && event.target.closest( '[data-xpay-method-row]' );
+		var row = event.target.closest && event.target.closest( '[data-xpayeg-method-row]' );
 		if ( ! row || null === reorderSnapshot ) {
 			return;
 		}
@@ -472,7 +472,7 @@
 		row.classList.add( 'is-dragging' );
 		// Firefox starts no drag without data on the transfer.
 		if ( event.dataTransfer ) {
-			event.dataTransfer.setData( 'text/plain', row.getAttribute( 'data-xpay-type' ) || '' );
+			event.dataTransfer.setData( 'text/plain', row.getAttribute( 'data-xpayeg-type' ) || '' );
 			event.dataTransfer.effectAllowed = 'move';
 		}
 	} );
@@ -481,8 +481,8 @@
 		if ( ! draggedRow ) {
 			return;
 		}
-		var over = event.target.closest && event.target.closest( '[data-xpay-method-row]' );
-		var list = event.target.closest && event.target.closest( '[data-xpay-method-list]' );
+		var over = event.target.closest && event.target.closest( '[data-xpayeg-method-row]' );
+		var list = event.target.closest && event.target.closest( '[data-xpayeg-method-list]' );
 		if ( ! list ) {
 			return;
 		}
@@ -507,16 +507,16 @@
 	document.addEventListener( 'change', function ( event ) {
 		var target = event.target;
 
-		var testmode = target.closest( '[data-xpay-testmode]' );
+		var testmode = target.closest( '[data-xpayeg-testmode]' );
 		if ( testmode ) {
-			var carrier = document.querySelector( '[data-xpay-mode-carrier]' );
+			var carrier = document.querySelector( '[data-xpayeg-mode-carrier]' );
 			if ( carrier ) {
 				carrier.value = testmode.checked ? 'test' : 'live';
 			}
 		}
 
-		if ( target.matches( '.xpay-ad__segment input[type="radio"]' ) ) {
-			target.closest( '.xpay-ad__segment' ).querySelectorAll( '.xpay-ad__segment-opt' ).forEach( function ( opt ) {
+		if ( target.matches( '.xpayeg-ad__segment input[type="radio"]' ) ) {
+			target.closest( '.xpayeg-ad__segment' ).querySelectorAll( '.xpayeg-ad__segment-opt' ).forEach( function ( opt ) {
 				opt.classList.toggle( 'is-active', opt.contains( target ) );
 			} );
 		}
@@ -530,7 +530,7 @@
 	} );
 
 	var initial = modal();
-	if ( initial && initial.hasAttribute( 'data-xpay-autopen' ) ) {
+	if ( initial && initial.hasAttribute( 'data-xpayeg-autopen' ) ) {
 		initial.hidden = false;
 	}
 } )( window, document );

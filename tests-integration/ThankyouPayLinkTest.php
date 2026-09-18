@@ -11,10 +11,10 @@
  * already says everything true, and rendering more is how a plugin ends
  * up redrawing a page that was never its to draw.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
-class ThankyouPayLinkTest extends XPay_Integration_Test_Case {
+class ThankyouPayLinkTest extends XPayEG_Integration_Test_Case {
 
 	/**
 	 * An order with something to pay for. A zero-total order needs no
@@ -24,7 +24,7 @@ class ThankyouPayLinkTest extends XPay_Integration_Test_Case {
 	 * @param string $status Order status.
 	 */
 	private function order( string $status ): WC_Order {
-		$order = $this->make_xpay_order();
+		$order = $this->make_xpayeg_order();
 		$order->set_total( '249.99' );
 		$order->set_status( $status );
 		$order->save();
@@ -33,7 +33,7 @@ class ThankyouPayLinkTest extends XPay_Integration_Test_Case {
 
 	private function rendered( WC_Order $order ): string {
 		ob_start();
-		XPay_Thankyou_Notice::render( $order->get_id() );
+		XPayEG_Thankyou_Notice::render( $order->get_id() );
 		return (string) ob_get_clean();
 	}
 
@@ -72,7 +72,7 @@ class ThankyouPayLinkTest extends XPay_Integration_Test_Case {
 
 	public function test_a_fawry_reference_order_explains_the_wait(): void {
 		$order = $this->order( 'on-hold' );
-		$order->update_meta_data( XPay_Constants::META_AWAITING_PAYMENT, (string) time() );
+		$order->update_meta_data( XPayEG_Constants::META_AWAITING_PAYMENT, (string) time() );
 		$order->save();
 
 		$html = $this->rendered( $order );

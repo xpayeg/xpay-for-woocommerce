@@ -8,10 +8,10 @@
  * is stamped per plane when the payment lands, from the session's own
  * livemode rather than from whatever the settings say at that moment.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
-class FirstPaidStampTest extends XPay_Integration_Test_Case {
+class FirstPaidStampTest extends XPayEG_Integration_Test_Case {
 
 	private function paid_session( WC_Order $order, ?bool $livemode ): array {
 		$session = array(
@@ -19,7 +19,7 @@ class FirstPaidStampTest extends XPay_Integration_Test_Case {
 			'status'        => 'complete',
 			'paymentStatus' => 'paid',
 			'currency'      => 'EGP',
-			'amountTotal'   => XPay_Money::to_minor( $order->get_total(), 'EGP' ),
+			'amountTotal'   => XPayEG_Money::to_minor( $order->get_total(), 'EGP' ),
 			'paymentIntent' => array( 'id' => 'pi_test_stamp' ),
 		);
 		if ( null !== $livemode ) {
@@ -29,7 +29,7 @@ class FirstPaidStampTest extends XPay_Integration_Test_Case {
 	}
 
 	private function paid_order(): WC_Order {
-		$order = $this->make_xpay_order( array( XPay_Constants::META_SESSION_ID => 'cs_test_stamp' ) );
+		$order = $this->make_xpayeg_order( array( XPayEG_Constants::META_SESSION_ID => 'cs_test_stamp' ) );
 		$order->set_total( '123.00' );
 		$order->save();
 		return $order;
@@ -39,20 +39,20 @@ class FirstPaidStampTest extends XPay_Integration_Test_Case {
 	public function test_a_test_payment_stamps_the_test_plane(): void {
 		$order = $this->paid_order();
 
-		XPay_Order_Sync::mark_paid( $order, $this->paid_session( $order, false ), 'webhook' );
+		XPayEG_Order_Sync::mark_paid( $order, $this->paid_session( $order, false ), 'webhook' );
 
-		$this->assertGreaterThan( 0, (int) get_option( XPay_Constants::first_paid_option( false ), 0 ) );
-		$this->assertSame( 0, (int) get_option( XPay_Constants::first_paid_option( true ), 0 ), 'The live plane was stamped by a test payment.' );
+		$this->assertGreaterThan( 0, (int) get_option( XPayEG_Constants::first_paid_option( false ), 0 ) );
+		$this->assertSame( 0, (int) get_option( XPayEG_Constants::first_paid_option( true ), 0 ), 'The live plane was stamped by a test payment.' );
 	}
 
 	/** And a live payment stamps the live one. */
 	public function test_a_live_payment_stamps_the_live_plane(): void {
 		$order = $this->paid_order();
 
-		XPay_Order_Sync::mark_paid( $order, $this->paid_session( $order, true ), 'webhook' );
+		XPayEG_Order_Sync::mark_paid( $order, $this->paid_session( $order, true ), 'webhook' );
 
-		$this->assertGreaterThan( 0, (int) get_option( XPay_Constants::first_paid_option( true ), 0 ) );
-		$this->assertSame( 0, (int) get_option( XPay_Constants::first_paid_option( false ), 0 ), 'The test plane was stamped by a live payment.' );
+		$this->assertGreaterThan( 0, (int) get_option( XPayEG_Constants::first_paid_option( true ), 0 ) );
+		$this->assertSame( 0, (int) get_option( XPayEG_Constants::first_paid_option( false ), 0 ), 'The test plane was stamped by a live payment.' );
 	}
 
 	/**
@@ -70,18 +70,18 @@ class FirstPaidStampTest extends XPay_Integration_Test_Case {
 	 */
 	public function test_a_second_payment_does_not_move_the_stamp(): void {
 		$first = $this->paid_order();
-		XPay_Order_Sync::mark_paid( $first, $this->paid_session( $first, false ), 'webhook' );
-		$this->assertGreaterThan( 0, (int) get_option( XPay_Constants::first_paid_option( false ), 0 ), 'The first payment left no stamp to defend.' );
+		XPayEG_Order_Sync::mark_paid( $first, $this->paid_session( $first, false ), 'webhook' );
+		$this->assertGreaterThan( 0, (int) get_option( XPayEG_Constants::first_paid_option( false ), 0 ), 'The first payment left no stamp to defend.' );
 
 		$long_ago = time() - ( 30 * DAY_IN_SECONDS );
-		update_option( XPay_Constants::first_paid_option( false ), $long_ago, false );
+		update_option( XPayEG_Constants::first_paid_option( false ), $long_ago, false );
 
 		$second = $this->paid_order();
-		XPay_Order_Sync::mark_paid( $second, $this->paid_session( $second, false ), 'webhook' );
+		XPayEG_Order_Sync::mark_paid( $second, $this->paid_session( $second, false ), 'webhook' );
 
 		$this->assertSame(
 			$long_ago,
-			(int) get_option( XPay_Constants::first_paid_option( false ), 0 ),
+			(int) get_option( XPayEG_Constants::first_paid_option( false ), 0 ),
 			'A later payment moved the stamp, so the screen now answers "when did this plane last take one".'
 		);
 	}
@@ -90,9 +90,9 @@ class FirstPaidStampTest extends XPay_Integration_Test_Case {
 	public function test_a_session_without_livemode_stamps_nothing(): void {
 		$order = $this->paid_order();
 
-		XPay_Order_Sync::mark_paid( $order, $this->paid_session( $order, null ), 'webhook' );
+		XPayEG_Order_Sync::mark_paid( $order, $this->paid_session( $order, null ), 'webhook' );
 
-		$this->assertSame( 0, (int) get_option( XPay_Constants::first_paid_option( false ), 0 ) );
-		$this->assertSame( 0, (int) get_option( XPay_Constants::first_paid_option( true ), 0 ) );
+		$this->assertSame( 0, (int) get_option( XPayEG_Constants::first_paid_option( false ), 0 ) );
+		$this->assertSame( 0, (int) get_option( XPayEG_Constants::first_paid_option( true ), 0 ) );
 	}
 }

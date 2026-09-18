@@ -22,7 +22,7 @@
  * @see https://docs.xpay.app/en/api-reference/objects/checkout-session
  * @see https://docs.xpay.app/en/api-reference/objects/charge
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
 class OutcomeVerdictTest extends WP_UnitTestCase {
@@ -36,7 +36,7 @@ class OutcomeVerdictTest extends WP_UnitTestCase {
 	 *                            be read at all.
 	 */
 	private function verdict( ?array $session ): string {
-		$method = new ReflectionMethod( 'XPay_Checkout_Elements', 'verdict_for' );
+		$method = new ReflectionMethod( 'XPayEG_Checkout_Elements', 'verdict_for' );
 		$method->setAccessible( true );
 		return (string) $method->invoke( null, $session );
 	}
@@ -127,7 +127,7 @@ class OutcomeVerdictTest extends WP_UnitTestCase {
 	 * nothing is known — and "nothing known" must never read as "safe to
 	 * charge again".
 	 */
-	public function test_an_unreachable_xpay_never_offers_a_retry(): void {
+	public function test_an_unreachable_xpayeg_never_offers_a_retry(): void {
 		$this->assertSame( 'unknown', $this->verdict( null ) );
 	}
 
@@ -157,7 +157,7 @@ class OutcomeVerdictTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Absent is not empty, the same rule XPay_Refundable reads charges by.
+	 * Absent is not empty, the same rule XPayEG_Refundable reads charges by.
 	 * An intent whose charges were not expanded says nothing about them, and
 	 * "nothing" is not "nothing is moving".
 	 */
@@ -201,7 +201,7 @@ class OutcomeVerdictTest extends WP_UnitTestCase {
 	 * @param string $key      The order key it presented.
 	 */
 	private function owned( int $order_id, string $key ): string {
-		$method = new ReflectionMethod( 'XPay_Checkout_Elements', 'owned_session_id' );
+		$method = new ReflectionMethod( 'XPayEG_Checkout_Elements', 'owned_session_id' );
 		$method->setAccessible( true );
 		return (string) $method->invoke( null, $order_id, $key );
 	}
@@ -209,7 +209,7 @@ class OutcomeVerdictTest extends WP_UnitTestCase {
 	/** An order paired with its own key is the shopper who placed it. */
 	public function test_an_order_with_its_key_yields_its_session() {
 		$order = wc_create_order();
-		$order->update_meta_data( XPay_Constants::META_SESSION_ID, 'cs_test_owned' );
+		$order->update_meta_data( XPayEG_Constants::META_SESSION_ID, 'cs_test_owned' );
 		$order->save();
 
 		$this->assertSame( 'cs_test_owned', $this->owned( $order->get_id(), $order->get_order_key() ) );
@@ -226,7 +226,7 @@ class OutcomeVerdictTest extends WP_UnitTestCase {
 	 */
 	public function test_an_order_without_its_key_yields_nothing() {
 		$order = wc_create_order();
-		$order->update_meta_data( XPay_Constants::META_SESSION_ID, 'cs_test_owned' );
+		$order->update_meta_data( XPayEG_Constants::META_SESSION_ID, 'cs_test_owned' );
 		$order->save();
 
 		$this->assertSame( '', $this->owned( $order->get_id(), '' ), 'No key at all was accepted.' );

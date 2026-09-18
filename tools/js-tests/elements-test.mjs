@@ -232,7 +232,7 @@ function makePayable( state ) {
 const SECRET = 'cs_test_abc_secret_xyz';
 
 const BASE = {
-	selector: '#xpay-element',
+	selector: '#xpayeg-element',
 	amount: 29000,
 	currency: 'EGP',
 	publishableKey: 'pk_test_1',
@@ -247,7 +247,7 @@ test( 'mounts the payment element at the given selector', async () => {
 	mod.mount( { ...BASE } );
 	await Promise.resolve();
 	await Promise.resolve();
-	assert.equal( mountedSelector( state.mountedAt ), '#xpay-element' );
+	assert.equal( mountedSelector( state.mountedAt ), '#xpayeg-element' );
 	assert.equal( state.clientSecret, BASE.clientSecret );
 } );
 
@@ -291,7 +291,7 @@ test( 'a page the resolver cannot read answers light, never a crash', async () =
 	mod.mount( opts );
 	await Promise.resolve();
 	assert.deepEqual( state.appearance, { colorMode: 'light' } );
-	assert.equal( mountedSelector( state.mountedAt ), '#xpay-element' );
+	assert.equal( mountedSelector( state.mountedAt ), '#xpayeg-element' );
 } );
 
 test( 'a mostly transparent background is decided by what is behind it', async () => {

@@ -6,16 +6,16 @@
  * needs the keys to be cleared while a shopper is mid-checkout. Rare, and
  * the outcome still has to be a failed payment rather than a white screen.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
-class UnconfiguredProcessPaymentTest extends XPay_Integration_Test_Case {
+class UnconfiguredProcessPaymentTest extends XPayEG_Integration_Test_Case {
 
 	public function set_up(): void {
 		parent::set_up();
 		// Enabled, and no keys of any kind.
 		update_option(
-			'woocommerce_xpay_settings',
+			'woocommerce_xpayeg_settings',
 			array(
 				'enabled' => 'yes',
 				'mode'    => 'test',
@@ -30,7 +30,7 @@ class UnconfiguredProcessPaymentTest extends XPay_Integration_Test_Case {
 		$order->set_total( '100.00' );
 		$order->save();
 
-		$result = ( new XPay_Gateway() )->process_payment( $order->get_id() );
+		$result = ( new XPayEG_Gateway() )->process_payment( $order->get_id() );
 
 		$this->assertIsArray( $result, 'process_payment did not return at all.' );
 		$this->assertSame( 'failure', $result['result'] );
@@ -42,7 +42,7 @@ class UnconfiguredProcessPaymentTest extends XPay_Integration_Test_Case {
 		$order->set_total( '100.00' );
 		$order->save();
 
-		( new XPay_Gateway() )->process_payment( $order->get_id() );
+		( new XPayEG_Gateway() )->process_payment( $order->get_id() );
 
 		$notes = wc_get_order_notes( array( 'order_id' => $order->get_id() ) );
 		$text  = '';

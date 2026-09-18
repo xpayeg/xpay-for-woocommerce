@@ -10,14 +10,14 @@
  * assertion recomputed with the implementation's formula would prove
  * nothing.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
 use PHPUnit\Framework\TestCase;
 
 final class ConnectDecisionsTest extends TestCase {
 
-	private const CALLBACK = 'https://store.example/?wc-api=xpay_connect';
+	private const CALLBACK = 'https://store.example/?wc-api=xpayeg_connect';
 	private const NOW      = 1700000000;
 
 	/* ── PKCE ────────────────────────────────────────────────────────── */
@@ -27,7 +27,7 @@ final class ConnectDecisionsTest extends TestCase {
 		// by the spec's authors.
 		$this->assertSame(
 			'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM',
-			XPay_Connect::challenge( 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk' )
+			XPayEG_Connect::challenge( 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk' )
 		);
 	}
 
@@ -39,7 +39,7 @@ final class ConnectDecisionsTest extends TestCase {
 	 * @param bool       $expected Must register.
 	 */
 	public function test_client_registration_decision( ?array $stored, bool $expected ): void {
-		$this->assertSame( $expected, XPay_Connect::client_needs_registration( $stored, self::CALLBACK, self::NOW ) );
+		$this->assertSame( $expected, XPayEG_Connect::client_needs_registration( $stored, self::CALLBACK, self::NOW ) );
 	}
 
 	public function registration_cases(): array {
@@ -49,7 +49,7 @@ final class ConnectDecisionsTest extends TestCase {
 			'created_at'   => self::NOW - 60,
 			'completed_at' => 0,
 		);
-		$aged  = self::NOW - XPay_Connect::CLIENT_STALE_SECONDS - 1;
+		$aged  = self::NOW - XPayEG_Connect::CLIENT_STALE_SECONDS - 1;
 
 		return array(
 			'nothing stored registers'                => array( null, true ),
@@ -60,7 +60,7 @@ final class ConnectDecisionsTest extends TestCase {
 			),
 			'fresh matching client is reused'         => array( $fresh, false ),
 			'moved host registers'                    => array(
-				array_merge( $fresh, array( 'redirect_uri' => 'https://old-host.example/?wc-api=xpay_connect' ) ),
+				array_merge( $fresh, array( 'redirect_uri' => 'https://old-host.example/?wc-api=xpayeg_connect' ) ),
 				true,
 			),
 			'stale never-completed registers'         => array(
@@ -78,7 +78,7 @@ final class ConnectDecisionsTest extends TestCase {
 				false,
 			),
 			'exactly at the stale boundary is kept'   => array(
-				array_merge( $fresh, array( 'created_at' => self::NOW - XPay_Connect::CLIENT_STALE_SECONDS ) ),
+				array_merge( $fresh, array( 'created_at' => self::NOW - XPayEG_Connect::CLIENT_STALE_SECONDS ) ),
 				false,
 			),
 		);
@@ -95,7 +95,7 @@ final class ConnectDecisionsTest extends TestCase {
 	 * @param string|null $expected Refusal reason, null = valid.
 	 */
 	public function test_flow_verification_decision( ?array $flow, string $state, int $user_id, int $now, ?string $expected ): void {
-		$this->assertSame( $expected, XPay_Connect::flow_error( $flow, $state, $user_id, $now ) );
+		$this->assertSame( $expected, XPayEG_Connect::flow_error( $flow, $state, $user_id, $now ) );
 	}
 
 	public function flow_cases(): array {
@@ -115,8 +115,8 @@ final class ConnectDecisionsTest extends TestCase {
 			'wrong state refused'            => array( $flow, 'state-FORGED', 7, self::NOW, 'state_mismatch' ),
 			'empty state refused'            => array( $flow, '', 7, self::NOW, 'state_mismatch' ),
 			'another user refused'           => array( $flow, 'state-abc', 8, self::NOW, 'user_mismatch' ),
-			'expired flow refused'           => array( $flow, 'state-abc', 7, self::NOW - 60 + XPay_Connect::FLOW_TTL_SECONDS + 1, 'expired' ),
-			'at the TTL boundary passes'     => array( $flow, 'state-abc', 7, self::NOW - 60 + XPay_Connect::FLOW_TTL_SECONDS, null ),
+			'expired flow refused'           => array( $flow, 'state-abc', 7, self::NOW - 60 + XPayEG_Connect::FLOW_TTL_SECONDS + 1, 'expired' ),
+			'at the TTL boundary passes'     => array( $flow, 'state-abc', 7, self::NOW - 60 + XPayEG_Connect::FLOW_TTL_SECONDS, null ),
 		);
 	}
 
@@ -129,7 +129,7 @@ final class ConnectDecisionsTest extends TestCase {
 	 * @param bool  $accepted Whether keys come back.
 	 */
 	public function test_token_response_decision( $body, bool $live, bool $accepted ): void {
-		$keys = XPay_Connect::keys_from_token_response( $body, $live );
+		$keys = XPayEG_Connect::keys_from_token_response( $body, $live );
 		if ( ! $accepted ) {
 			$this->assertNull( $keys );
 			return;

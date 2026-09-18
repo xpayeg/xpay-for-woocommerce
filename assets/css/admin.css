@@ -7,7 +7,7 @@
  * and preferred Stripe's restraint, so restraint is the design.
  */
 
-.xpay-ad {
+.xpayeg-ad {
 	max-width: 760px;
 	margin: 16px 0 32px;
 }
@@ -16,8 +16,8 @@
    author display value (the overlay's flex, the panes' flex) outranks it.
    Without this line the connection dialog ignores hidden entirely: open
    on page load, Close doing nothing, both mode panes stacked. */
-.xpay-ad [hidden],
-.xpay-ad__overlay[hidden] {
+.xpayeg-ad [hidden],
+.xpayeg-ad__overlay[hidden] {
 	display: none !important;
 }
 
@@ -32,30 +32,30 @@ p.submit .woocommerce-save-button {
 
 /* ── Header band ─────────────────────────────────────────────────── */
 
-.xpay-ad__header {
+.xpayeg-ad__header {
 	display: flex;
 	align-items: center;
 	gap: 10px;
 	margin-bottom: 16px;
 }
 
-.xpay-ad__mark {
+.xpayeg-ad__mark {
 	width: 28px;
 	height: 28px;
 	border-radius: 6px;
 }
 
-.xpay-ad__name {
+.xpayeg-ad__name {
 	font-size: 16px;
 	font-weight: 600;
 	color: #1e1e1e;
 }
 
-.xpay-ad__spacer {
+.xpayeg-ad__spacer {
 	flex: 1;
 }
 
-.xpay-ad__pill {
+.xpayeg-ad__pill {
 	font-size: 11px;
 	font-weight: 600;
 	padding: 2px 8px;
@@ -64,25 +64,25 @@ p.submit .woocommerce-save-button {
 	letter-spacing: 0.02em;
 }
 
-.xpay-ad__pill--test {
+.xpayeg-ad__pill--test {
 	background: #fcf9e8;
 	color: #8a6d1a;
 	border: 1px solid #f0e6bb;
 }
 
-.xpay-ad__pill--live {
+.xpayeg-ad__pill--live {
 	background: #edfaef;
 	color: #1a7a2e;
 	border: 1px solid #c6e8cc;
 }
 
-.xpay-ad__ext {
+.xpayeg-ad__ext {
 	text-decoration: none;
 }
 
 /* ── Cards ───────────────────────────────────────────────────────── */
 
-.xpay-ad__card {
+.xpayeg-ad__card {
 	background: #fff;
 	border: 1px solid #dcdcde;
 	border-radius: 8px;
@@ -90,13 +90,13 @@ p.submit .woocommerce-save-button {
 	margin-bottom: 16px;
 }
 
-.xpay-ad__card-head {
+.xpayeg-ad__card-head {
 	display: flex;
 	align-items: center;
 	gap: 12px;
 }
 
-.xpay-ad__card-title {
+.xpayeg-ad__card-title {
 	font-size: 14px;
 	font-weight: 600;
 	margin: 0;
@@ -104,16 +104,16 @@ p.submit .woocommerce-save-button {
 	color: #1e1e1e;
 }
 
-.xpay-ad__card-head .xpay-ad__menu {
+.xpayeg-ad__card-head .xpayeg-ad__menu {
 	margin-left: auto;
 }
 
-.xpay-ad__muted {
+.xpayeg-ad__muted {
 	color: #757575;
 	font-size: 12px;
 }
 
-.xpay-ad__mono {
+.xpayeg-ad__mono {
 	font-family: Consolas, Monaco, monospace;
 }
 
@@ -123,20 +123,20 @@ p.submit .woocommerce-save-button {
    nothing about the product and dates on sight. The card is one flat
    surface, left-aligned, where the type carries the hierarchy and the
    payment marks carry the picture. */
-.xpay-ad__card--hero {
+.xpayeg-ad__card--hero {
 	padding: 36px 40px 0;
 }
 
 /* The mark alone, in its own colours on the card's white: no tile, no
    backing shape. */
-.xpay-ad__hero-logo {
+.xpayeg-ad__hero-logo {
 	display: block;
 	height: 32px;
 	width: auto;
 	margin-bottom: 22px;
 }
 
-.xpay-ad__hero-title {
+.xpayeg-ad__hero-title {
 	font-size: 24px;
 	line-height: 1.25;
 	font-weight: 600;
@@ -145,7 +145,7 @@ p.submit .woocommerce-save-button {
 	color: #101828;
 }
 
-.xpay-ad__hero-sub {
+.xpayeg-ad__hero-sub {
 	color: #50575e;
 	font-size: 14px;
 	line-height: 1.6;
@@ -154,21 +154,21 @@ p.submit .woocommerce-save-button {
 	text-wrap: pretty;
 }
 
-.xpay-ad__hero-actions {
+.xpayeg-ad__hero-actions {
 	display: flex;
 	align-items: center;
 	gap: 16px;
 	flex-wrap: wrap;
 }
 
-.xpay-ad__hero-aside {
+.xpayeg-ad__hero-aside {
 	color: #757575;
 	font-size: 12px;
 }
 
 /* The methods sit in their own quiet register under a hairline, so the
    card ends on what the merchant gets rather than on more copy. */
-.xpay-ad__hero-methods {
+.xpayeg-ad__hero-methods {
 	display: flex;
 	align-items: center;
 	gap: 12px;
@@ -180,7 +180,7 @@ p.submit .woocommerce-save-button {
 	border-radius: 0 0 8px 8px;
 }
 
-.xpay-ad__hero-method {
+.xpayeg-ad__hero-method {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -191,7 +191,7 @@ p.submit .woocommerce-save-button {
 	background: #fff;
 }
 
-.xpay-ad__hero-method img {
+.xpayeg-ad__hero-method img {
 	height: 16px;
 	width: auto;
 }
@@ -201,7 +201,7 @@ p.submit .woocommerce-save-button {
 /* The store-to-XPay diagram: Stripe's shape (stripe-auth-account/
    styles.scss __diagram: centered tiles, dashed connector with end
    dots), with our own tiles. */
-.xpay-ad__diagram {
+.xpayeg-ad__diagram {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -209,7 +209,7 @@ p.submit .woocommerce-save-button {
 	margin: 28px 0 20px;
 }
 
-.xpay-ad__diagram-tile {
+.xpayeg-ad__diagram-tile {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -222,31 +222,31 @@ p.submit .woocommerce-save-button {
 	overflow: hidden;
 }
 
-.xpay-ad__diagram-tile img {
+.xpayeg-ad__diagram-tile img {
 	width: 40px;
 	height: 40px;
 	border-radius: 8px;
 }
 
-.xpay-ad__diagram-tile--store {
+.xpayeg-ad__diagram-tile--store {
 	background: #f6f7f7;
 }
 
-.xpay-ad__diagram-tile--store .dashicons {
+.xpayeg-ad__diagram-tile--store .dashicons {
 	font-size: 28px;
 	width: 28px;
 	height: 28px;
 	color: #50575e;
 }
 
-.xpay-ad__diagram-line {
+.xpayeg-ad__diagram-line {
 	position: relative;
 	width: 50px;
 	border-top: 1px dashed #949494;
 }
 
-.xpay-ad__diagram-line::before,
-.xpay-ad__diagram-line::after {
+.xpayeg-ad__diagram-line::before,
+.xpayeg-ad__diagram-line::after {
 	content: '';
 	position: absolute;
 	top: -2.5px;
@@ -256,36 +256,36 @@ p.submit .woocommerce-save-button {
 	border-radius: 50%;
 }
 
-.xpay-ad__diagram-line::before {
+.xpayeg-ad__diagram-line::before {
 	left: -4px;
 }
 
-.xpay-ad__diagram-line::after {
+.xpayeg-ad__diagram-line::after {
 	right: -4px;
 }
 
-.xpay-ad__auth-heading {
+.xpayeg-ad__auth-heading {
 	font-size: 15px;
 	margin: 14px 0 6px;
 }
 
-.xpay-ad__auth-sub {
+.xpayeg-ad__auth-sub {
 	color: #3c434a;
 	margin: 0 0 8px;
 	text-wrap: pretty;
 }
 
-.xpay-ad__auth-help {
+.xpayeg-ad__auth-help {
 	color: #757575;
 	font-size: 12px;
 	margin: 6px 0 0;
 }
 
-.xpay-ad__auth-help:empty {
+.xpayeg-ad__auth-help:empty {
 	display: none;
 }
 
-.xpay-ad__auth-actions {
+.xpayeg-ad__auth-actions {
 	display: flex;
 	align-items: center;
 	gap: 12px;
@@ -294,7 +294,7 @@ p.submit .woocommerce-save-button {
 
 /* Inline, next to the button it belongs to: a toast outlives its
    moment, and the merchant is looking at the button that failed. */
-.xpay-ad__connect-error {
+.xpayeg-ad__connect-error {
 	color: #b32d2e;
 	font-size: 12px;
 	margin: 8px 0 0;
@@ -302,20 +302,20 @@ p.submit .woocommerce-save-button {
 
 /* ── Badges ──────────────────────────────────────────────────────── */
 
-.xpay-ad__badges {
+.xpayeg-ad__badges {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 18px;
 	margin: 14px 0 4px;
 }
 
-.xpay-ad__badge {
+.xpayeg-ad__badge {
 	display: flex;
 	align-items: center;
 	gap: 8px;
 }
 
-.xpay-ad__badge-label {
+.xpayeg-ad__badge-label {
 	font-size: 11px;
 	font-weight: 600;
 	text-transform: uppercase;
@@ -323,24 +323,24 @@ p.submit .woocommerce-save-button {
 	color: #757575;
 }
 
-.xpay-ad__badge-value {
+.xpayeg-ad__badge-value {
 	font-size: 12px;
 	font-weight: 500;
 	padding: 2px 8px;
 	border-radius: 4px;
 }
 
-.xpay-ad__badge-value--ok {
+.xpayeg-ad__badge-value--ok {
 	background: #edfaef;
 	color: #1a7a2e;
 }
 
-.xpay-ad__badge-value--warn {
+.xpayeg-ad__badge-value--warn {
 	background: #fcf0f1;
 	color: #a4262c;
 }
 
-.xpay-ad__health {
+.xpayeg-ad__health {
 	margin: 10px 0 0;
 	color: #50575e;
 	font-size: 12px;
@@ -348,11 +348,11 @@ p.submit .woocommerce-save-button {
 
 /* ── Kebab menu ──────────────────────────────────────────────────── */
 
-.xpay-ad__menu {
+.xpayeg-ad__menu {
 	position: relative;
 }
 
-.xpay-ad__menu-btn {
+.xpayeg-ad__menu-btn {
 	background: none;
 	border: 1px solid transparent;
 	border-radius: 4px;
@@ -363,11 +363,11 @@ p.submit .woocommerce-save-button {
 	color: #50575e;
 }
 
-.xpay-ad__menu-btn:hover {
+.xpayeg-ad__menu-btn:hover {
 	border-color: #dcdcde;
 }
 
-.xpay-ad__menu-list {
+.xpayeg-ad__menu-list {
 	position: absolute;
 	right: 0;
 	top: calc(100% + 4px);
@@ -380,7 +380,7 @@ p.submit .woocommerce-save-button {
 	padding: 4px;
 }
 
-.xpay-ad__menu-item {
+.xpayeg-ad__menu-item {
 	display: block;
 	width: 100%;
 	text-align: start;
@@ -392,50 +392,50 @@ p.submit .woocommerce-save-button {
 	font-size: 13px;
 }
 
-.xpay-ad__menu-item:hover {
+.xpayeg-ad__menu-item:hover {
 	background: #f6f7f7;
 }
 
-.xpay-ad__menu-item--danger {
+.xpayeg-ad__menu-item--danger {
 	color: #a4262c;
 }
 
 /* ── Fields ──────────────────────────────────────────────────────── */
 
-.xpay-ad__fields {
+.xpayeg-ad__fields {
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
 	margin-top: 16px;
 }
 
-.xpay-ad__field {
+.xpayeg-ad__field {
 	display: flex;
 	align-items: baseline;
 	gap: 12px;
 }
 
-.xpay-ad__field--check {
+.xpayeg-ad__field--check {
 	align-items: flex-start;
 	cursor: pointer;
 }
 
-.xpay-ad__field--check input[type="checkbox"] {
+.xpayeg-ad__field--check input[type="checkbox"] {
 	margin-top: 2px;
 }
 
-.xpay-ad__field-label {
+.xpayeg-ad__field-label {
 	font-weight: 600;
 	font-size: 13px;
 	min-width: 140px;
 	color: #1e1e1e;
 }
 
-.xpay-ad__field--check .xpay-ad__field-label {
+.xpayeg-ad__field--check .xpayeg-ad__field-label {
 	min-width: 0;
 }
 
-.xpay-ad__field-main {
+.xpayeg-ad__field-main {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
@@ -443,21 +443,21 @@ p.submit .woocommerce-save-button {
 	min-width: 0;
 }
 
-.xpay-ad__field-help {
+.xpayeg-ad__field-help {
 	color: #757575;
 	font-size: 12px;
 	font-weight: 400;
 }
 
 
-.xpay-ad__actions {
+.xpayeg-ad__actions {
 	margin-top: 20px;
 	display: flex;
 	justify-content: flex-end;
 	gap: 8px;
 }
 
-.xpay-ad__docs {
+.xpayeg-ad__docs {
 	margin: 16px 0 0;
 	color: #757575;
 	font-size: 12px;
@@ -465,7 +465,7 @@ p.submit .woocommerce-save-button {
 
 /* ── Modal ───────────────────────────────────────────────────────── */
 
-.xpay-ad__overlay {
+.xpayeg-ad__overlay {
 	position: fixed;
 	inset: 0;
 	background: rgba(30, 30, 30, 0.55);
@@ -477,7 +477,7 @@ p.submit .woocommerce-save-button {
 	overflow: auto;
 }
 
-.xpay-ad__modal {
+.xpayeg-ad__modal {
 	background: #fff;
 	border-radius: 10px;
 	width: 560px;
@@ -486,14 +486,14 @@ p.submit .woocommerce-save-button {
 	box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
 }
 
-.xpay-ad__modal-head {
+.xpayeg-ad__modal-head {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	margin-bottom: 12px;
 }
 
-.xpay-ad__close {
+.xpayeg-ad__close {
 	background: none;
 	border: 0;
 	font-size: 22px;
@@ -503,14 +503,14 @@ p.submit .woocommerce-save-button {
 	padding: 2px 6px;
 }
 
-.xpay-ad__tabs {
+.xpayeg-ad__tabs {
 	display: flex;
 	gap: 4px;
 	border-bottom: 1px solid #dcdcde;
 	margin-bottom: 16px;
 }
 
-.xpay-ad__tab {
+.xpayeg-ad__tab {
 	background: none;
 	border: 0;
 	border-bottom: 2px solid transparent;
@@ -521,26 +521,26 @@ p.submit .woocommerce-save-button {
 	color: #50575e;
 }
 
-.xpay-ad__tab.is-active {
+.xpayeg-ad__tab.is-active {
 	color: #1e1e1e;
 	border-bottom-color: #2271b1;
 	font-weight: 600;
 }
 
-.xpay-ad__pane {
+.xpayeg-ad__pane {
 	display: flex;
 	flex-direction: column;
 	gap: 14px;
 }
 
-.xpay-ad__pane .xpay-ad__badges {
+.xpayeg-ad__pane .xpayeg-ad__badges {
 	margin-top: 0;
 }
 
 
 /* ── Segmented control ───────────────────────────────────────────── */
 
-.xpay-ad__segment {
+.xpayeg-ad__segment {
 	display: inline-flex;
 	border: 1px solid #dcdcde;
 	border-radius: 6px;
@@ -548,7 +548,7 @@ p.submit .woocommerce-save-button {
 	width: fit-content;
 }
 
-.xpay-ad__segment-opt {
+.xpayeg-ad__segment-opt {
 	padding: 6px 14px;
 	font-size: 12px;
 	font-weight: 500;
@@ -558,17 +558,17 @@ p.submit .woocommerce-save-button {
 	border-inline-end: 1px solid #dcdcde;
 }
 
-.xpay-ad__segment-opt:last-child {
+.xpayeg-ad__segment-opt:last-child {
 	border-inline-end: 0;
 }
 
-.xpay-ad__segment-opt.is-active {
+.xpayeg-ad__segment-opt.is-active {
 	background: #f0f6fc;
 	color: #2271b1;
 	font-weight: 600;
 }
 
-.xpay-ad__segment-opt input {
+.xpayeg-ad__segment-opt input {
 	position: absolute;
 	opacity: 0;
 	pointer-events: none;
@@ -576,7 +576,7 @@ p.submit .woocommerce-save-button {
 
 /* ── Snackbar ────────────────────────────────────────────────────── */
 
-.xpay-ad__toast {
+.xpayeg-ad__toast {
 	position: fixed;
 	inset-inline-start: 24px;
 	bottom: 24px;
@@ -594,21 +594,21 @@ p.submit .woocommerce-save-button {
 	pointer-events: none;
 }
 
-.xpay-ad__toast.is-visible {
+.xpayeg-ad__toast.is-visible {
 	opacity: 1;
 	transform: translateY(0);
 }
 
 /* ── Account identity (name over id, card head right) ────────────── */
 
-.xpay-ad__identity {
+.xpayeg-ad__identity {
 	display: flex;
 	flex-direction: column;
 	align-items: flex-end;
 	line-height: 1.3;
 }
 
-.xpay-ad__identity-name {
+.xpayeg-ad__identity-name {
 	font-size: 13px;
 	font-weight: 600;
 	color: #1e1e1e;
@@ -616,7 +616,7 @@ p.submit .woocommerce-save-button {
 
 /* ── Payment Methods tab ─────────────────────────────────────────── */
 
-.xpay-ad__tabs--page {
+.xpayeg-ad__tabs--page {
 	margin-bottom: 20px;
 }
 
@@ -628,7 +628,7 @@ p.submit .woocommerce-save-button {
  * admin .button classes are the gray legacy set, so these are written
  * out with the component palette.
  */
-.xpay-ad__btn {
+.xpayeg-ad__btn {
 	border: 0;
 	background: none;
 	cursor: pointer;
@@ -640,25 +640,25 @@ p.submit .woocommerce-save-button {
 	color: #2271b1;
 }
 
-.xpay-ad__btn--tertiary:hover,
-.xpay-ad__btn--tertiary:focus {
+.xpayeg-ad__btn--tertiary:hover,
+.xpayeg-ad__btn--tertiary:focus {
 	background: #f0f6fc;
 	color: #135e96;
 }
 
-.xpay-ad__btn--outline {
+.xpayeg-ad__btn--outline {
 	border: 1px solid #2271b1;
 	background: #fff;
 }
 
-.xpay-ad__btn--outline:hover,
-.xpay-ad__btn--outline:focus {
+.xpayeg-ad__btn--outline:hover,
+.xpayeg-ad__btn--outline:focus {
 	background: #f0f6fc;
 	color: #135e96;
 	border-color: #135e96;
 }
 
-.xpay-ad__methods-idle {
+.xpayeg-ad__methods-idle {
 	display: flex;
 	align-items: center;
 	gap: 4px;
@@ -667,13 +667,13 @@ p.submit .woocommerce-save-button {
 /* The mode lock's sentence under the checkbox: bold, its own line, the
    admin's text color rather than the help gray (Stripe renders theirs
    as a strong block the same way). */
-.xpay-ad__lock-notice {
+.xpayeg-ad__lock-notice {
 	display: block;
 	margin-top: 6px;
 	color: #1e1e1e;
 }
 
-.xpay-ad__methods {
+.xpayeg-ad__methods {
 	list-style: none;
 	margin: 0;
 	padding: 0;
@@ -681,7 +681,7 @@ p.submit .woocommerce-save-button {
 	border-radius: 6px;
 }
 
-.xpay-ad__method {
+.xpayeg-ad__method {
 	display: flex;
 	align-items: center;
 	gap: 12px;
@@ -690,13 +690,13 @@ p.submit .woocommerce-save-button {
 	background: #fff;
 }
 
-.xpay-ad__method + .xpay-ad__method {
+.xpayeg-ad__method + .xpayeg-ad__method {
 	border-top: 1px solid #f0f0f1;
 }
 
 /* The drag handle exists only while reordering; the checkbox only while
    not. Both are the same slot, so the row never shifts sideways. */
-.xpay-ad__method-drag {
+.xpayeg-ad__method-drag {
 	display: none;
 	color: #757575;
 	cursor: grab;
@@ -705,29 +705,29 @@ p.submit .woocommerce-save-button {
 	user-select: none;
 }
 
-.xpay-ad__method-check {
+.xpayeg-ad__method-check {
 	margin: 0;
 }
 
-[data-xpay-methods].is-reordering .xpay-ad__method-drag {
+[data-xpayeg-methods].is-reordering .xpayeg-ad__method-drag {
 	display: inline;
 }
 
-[data-xpay-methods].is-reordering .xpay-ad__method-check {
+[data-xpayeg-methods].is-reordering .xpayeg-ad__method-check {
 	display: none;
 }
 
-[data-xpay-methods].is-reordering .xpay-ad__method {
+[data-xpayeg-methods].is-reordering .xpayeg-ad__method {
 	cursor: grab;
 }
 
-.xpay-ad__method.is-dragging {
+.xpayeg-ad__method.is-dragging {
 	opacity: 0.5;
 	background: #f6f7f7;
 }
 
 /* The brand mark in a bordered tile, Stripe's row anatomy. */
-.xpay-ad__method-icon {
+.xpayeg-ad__method-icon {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -739,29 +739,29 @@ p.submit .woocommerce-save-button {
 	flex-shrink: 0;
 }
 
-.xpay-ad__method-icon img {
+.xpayeg-ad__method-icon img {
 	max-width: 42px;
 	max-height: 24px;
 }
 
-.xpay-ad__method-main {
+.xpayeg-ad__method-main {
 	display: flex;
 	flex-direction: column;
 	gap: 2px;
 	cursor: pointer;
 }
 
-.xpay-ad__method-name {
+.xpayeg-ad__method-name {
 	font-size: 13px;
 	font-weight: 600;
 	color: #1e1e1e;
 }
 
-.xpay-ad__methods-note {
+.xpayeg-ad__methods-note {
 	margin-top: 12px;
 }
 
-.xpay-ad__reorder-actions {
+.xpayeg-ad__reorder-actions {
 	display: flex;
 	gap: 6px;
 }

@@ -3,11 +3,11 @@
  * A WC_Order stand-in exposing exactly the surface the XPay state
  * machines touch, with recorders (notes, status history, saves) for
  * assertions. One deliberate divergence from production: wc_get_order()
- * returns the same instance every time, so XPay_Order_Sync::reload()
+ * returns the same instance every time, so XPayEG_Order_Sync::reload()
  * degrades to "same object" — acceptable because these tests pin
  * decision logic, not cache-coherency mechanics.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
 /**
@@ -58,7 +58,7 @@ class WC_Order {
 	public $status         = 'pending';
 	public $paid           = false;
 	public $user_id        = 0;
-	public $payment_method = 'xpay';
+	public $payment_method = 'xpayeg';
 	public $order_key      = 'wc_order_testkey';
 	public $transaction_id = '';
 	public $meta           = array();

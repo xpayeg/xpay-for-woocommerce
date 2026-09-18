@@ -9,7 +9,7 @@
  *
  * ABSPATH is defined so the plugin files' direct-access guards pass.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
 define( 'ABSPATH', __DIR__ . '/' );
@@ -29,17 +29,17 @@ if ( ! function_exists( 'untrailingslashit' ) ) {
 	}
 }
 
-require_once dirname( __DIR__ ) . '/includes/constants/class-xpay-constants.php';
-require_once dirname( __DIR__ ) . '/includes/constants/class-xpay-error-codes.php';
-require_once dirname( __DIR__ ) . '/includes/constants/class-xpay-payment-methods.php';
-require_once dirname( __DIR__ ) . '/includes/constants/class-xpay-refund-status.php';
-require_once dirname( __DIR__ ) . '/includes/constants/class-xpay-charge-status.php';
-require_once dirname( __DIR__ ) . '/includes/api/class-xpay-api-exception.php';
-require_once dirname( __DIR__ ) . '/includes/api/class-xpay-signature.php';
-require_once dirname( __DIR__ ) . '/includes/api/class-xpay-money.php';
-require_once dirname( __DIR__ ) . '/includes/api/class-xpay-fx.php';
-require_once dirname( __DIR__ ) . '/includes/logger/class-xpay-redactor.php';
-require_once dirname( __DIR__ ) . '/includes/refunds/class-xpay-refundable.php';
+require_once dirname( __DIR__ ) . '/includes/constants/class-xpayeg-constants.php';
+require_once dirname( __DIR__ ) . '/includes/constants/class-xpayeg-error-codes.php';
+require_once dirname( __DIR__ ) . '/includes/constants/class-xpayeg-payment-methods.php';
+require_once dirname( __DIR__ ) . '/includes/constants/class-xpayeg-refund-status.php';
+require_once dirname( __DIR__ ) . '/includes/constants/class-xpayeg-charge-status.php';
+require_once dirname( __DIR__ ) . '/includes/api/class-xpayeg-api-exception.php';
+require_once dirname( __DIR__ ) . '/includes/api/class-xpayeg-signature.php';
+require_once dirname( __DIR__ ) . '/includes/api/class-xpayeg-money.php';
+require_once dirname( __DIR__ ) . '/includes/api/class-xpayeg-fx.php';
+require_once dirname( __DIR__ ) . '/includes/logger/class-xpayeg-redactor.php';
+require_once dirname( __DIR__ ) . '/includes/refunds/class-xpayeg-refundable.php';
 // Only its pure decision tables run here; everything WordPress-touching
 // in it belongs to the integration suite.
-require_once dirname( __DIR__ ) . '/includes/connect/class-xpay-connect.php';
+require_once dirname( __DIR__ ) . '/includes/connect/class-xpayeg-connect.php';

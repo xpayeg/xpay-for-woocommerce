@@ -14,7 +14,7 @@
  * covered honestly: tests-integration/WebhookOrderLookupTest.php runs every
  * lookup case against real WooCommerce on BOTH order storages.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
 namespace Automattic\WooCommerce\Utilities;

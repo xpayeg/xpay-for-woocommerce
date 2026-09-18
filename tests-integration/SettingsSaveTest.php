@@ -5,15 +5,15 @@
  * WooCommerce writes every declared field from the POST, so fields the
  * screen does not render must be preserved without exposing secrets in HTML.
  *
- * @package XPay_For_WooCommerce
+ * @package XPayEG_For_WooCommerce
  */
 
-class SettingsSaveTest extends XPay_Integration_Test_Case {
+class SettingsSaveTest extends XPayEG_Integration_Test_Case {
 
 	public function set_up(): void {
 		parent::set_up();
 		update_option(
-			'woocommerce_xpay_settings',
+			'woocommerce_xpayeg_settings',
 			array(
 				'enabled'                => 'yes',
 				'mode'                   => 'test',
@@ -35,21 +35,21 @@ class SettingsSaveTest extends XPay_Integration_Test_Case {
 	 */
 	private function save( array $post ): array {
 		$_POST   = $post;
-		$gateway = new XPay_Gateway();
+		$gateway = new XPayEG_Gateway();
 		// Only the carry-forward is under test; the key validation that
 		// follows it needs the network and is covered elsewhere.
 		$gateway->process_admin_options();
 		$_POST = array();
 
-		$saved = get_option( 'woocommerce_xpay_settings' );
+		$saved = get_option( 'woocommerce_xpayeg_settings' );
 		return is_array( $saved ) ? $saved : array();
 	}
 
 	public function test_saving_the_test_plane_does_not_wipe_the_live_keys(): void {
 		$saved = $this->save(
 			array(
-				'woocommerce_xpay_test_api_key'         => 'rk_test_new',
-				'woocommerce_xpay_test_publishable_key' => 'pk_test_new',
+				'woocommerce_xpayeg_test_api_key'         => 'rk_test_new',
+				'woocommerce_xpayeg_test_publishable_key' => 'pk_test_new',
 			)
 		);
 
@@ -60,7 +60,7 @@ class SettingsSaveTest extends XPay_Integration_Test_Case {
 	}
 
 	public function test_a_field_the_screen_did_show_is_still_saved(): void {
-		$saved = $this->save( array( 'woocommerce_xpay_title' => 'Pay with XPay' ) );
+		$saved = $this->save( array( 'woocommerce_xpayeg_title' => 'Pay with XPay' ) );
 
 		$this->assertSame( 'Pay with XPay', $saved['title'] );
 	}
@@ -72,8 +72,8 @@ class SettingsSaveTest extends XPay_Integration_Test_Case {
 	public function test_a_field_the_merchant_cleared_is_cleared(): void {
 		$saved = $this->save(
 			array(
-				'woocommerce_xpay_test_api_key' => '',
-				'woocommerce_xpay_title'        => 'XPay',
+				'woocommerce_xpayeg_test_api_key' => '',
+				'woocommerce_xpayeg_title'        => 'XPay',
 			)
 		);
 
@@ -86,11 +86,11 @@ class SettingsSaveTest extends XPay_Integration_Test_Case {
 	 */
 	public function test_an_unchecked_box_still_turns_off(): void {
 		update_option(
-			'woocommerce_xpay_settings',
-			array_merge( get_option( 'woocommerce_xpay_settings' ), array( 'debug' => 'yes' ) )
+			'woocommerce_xpayeg_settings',
+			array_merge( get_option( 'woocommerce_xpayeg_settings' ), array( 'debug' => 'yes' ) )
 		);
 
-		$saved = $this->save( array( 'woocommerce_xpay_title' => 'XPay' ) );
+		$saved = $this->save( array( 'woocommerce_xpayeg_title' => 'XPay' ) );
 
 		$this->assertSame( 'no', $saved['debug'] );
 	}
@@ -98,8 +98,8 @@ class SettingsSaveTest extends XPay_Integration_Test_Case {
 	public function test_a_checked_box_turns_on(): void {
 		$saved = $this->save(
 			array(
-				'woocommerce_xpay_title' => 'XPay',
-				'woocommerce_xpay_debug' => '1',
+				'woocommerce_xpayeg_title' => 'XPay',
+				'woocommerce_xpayeg_debug' => '1',
 			)
 		);
 
@@ -112,8 +112,8 @@ class SettingsSaveTest extends XPay_Integration_Test_Case {
 	 * POST rather than the values it kept.
 	 */
 	public function test_the_gateway_reports_the_kept_values_after_saving(): void {
-		$_POST   = array( 'woocommerce_xpay_test_api_key' => 'rk_test_new' );
-		$gateway = new XPay_Gateway();
+		$_POST   = array( 'woocommerce_xpayeg_test_api_key' => 'rk_test_new' );
+		$gateway = new XPayEG_Gateway();
 		$gateway->process_admin_options();
 		$_POST = array();
 
@@ -128,12 +128,12 @@ class SettingsSaveTest extends XPay_Integration_Test_Case {
 	 * @return int
 	 */
 	private function outbound_calls(): int {
-		return isset( $GLOBALS['xpay_test_calls'] ) ? (int) $GLOBALS['xpay_test_calls'] : 0;
+		return isset( $GLOBALS['xpayeg_test_calls'] ) ? (int) $GLOBALS['xpayeg_test_calls'] : 0;
 	}
 
 	private function count_outbound(): void {
-		$GLOBALS['xpay_test_calls'] = 0;
-		$GLOBALS['xpay_test_http']  = array(
+		$GLOBALS['xpayeg_test_calls'] = 0;
+		$GLOBALS['xpayeg_test_http']  = array(
 			'api.xpay.app' => array(
 				'response' => array( 'code' => 200 ),
 				// Account-shaped: the save now proves keys via GET /account
@@ -152,7 +152,7 @@ class SettingsSaveTest extends XPay_Integration_Test_Case {
 			'pre_http_request',
 			function ( $preempt, $args, $url ) {
 				if ( false !== strpos( (string) $url, 'api.xpay.app' ) ) {
-					++$GLOBALS['xpay_test_calls'];
+					++$GLOBALS['xpayeg_test_calls'];
 				}
 				return $preempt;
 			},
@@ -166,11 +166,11 @@ class SettingsSaveTest extends XPay_Integration_Test_Case {
 	 */
 	private function save_with( string $title ): void {
 		$_POST = array(
-			'woocommerce_xpay_enabled'              => '1',
-			'woocommerce_xpay_title'                => $title,
-			'woocommerce_xpay_mode'                 => 'test',
-			'woocommerce_xpay_test_api_key'         => 'rk_test_proved',
-			'woocommerce_xpay_test_publishable_key' => 'pk_test_proved',
+			'woocommerce_xpayeg_enabled'              => '1',
+			'woocommerce_xpayeg_title'                => $title,
+			'woocommerce_xpayeg_mode'                 => 'test',
+			'woocommerce_xpayeg_test_api_key'         => 'rk_test_proved',
+			'woocommerce_xpayeg_test_publishable_key' => 'pk_test_proved',
 		);
 		$this->gateway()->process_admin_options();
 		$_POST = array();
@@ -189,7 +189,7 @@ class SettingsSaveTest extends XPay_Integration_Test_Case {
 
 		$this->save_with( 'Pay with XPay' );
 		$after_first = $this->outbound_calls();
-		$proof       = get_option( XPay_Constants::OPTION_KEY_VALIDATED );
+		$proof       = get_option( XPayEG_Constants::OPTION_KEY_VALIDATED );
 
 		$this->save_with( 'Pay by card' );
 
@@ -197,7 +197,7 @@ class SettingsSaveTest extends XPay_Integration_Test_Case {
 		$this->assertSame( 2, $this->outbound_calls(), 'The second save reads the account once, and only once.' );
 		$this->assertSame(
 			$proof,
-			get_option( XPay_Constants::OPTION_KEY_VALIDATED ),
+			get_option( XPayEG_Constants::OPTION_KEY_VALIDATED ),
 			'The badge must keep the ORIGINAL proof; a facts refresh is not a re-validation.'
 		);
 	}
@@ -207,11 +207,11 @@ class SettingsSaveTest extends XPay_Integration_Test_Case {
 		$this->save_with( 'Pay with XPay' );
 
 		$_POST = array(
-			'woocommerce_xpay_enabled'              => '1',
-			'woocommerce_xpay_title'                => 'Pay with XPay',
-			'woocommerce_xpay_mode'                 => 'test',
-			'woocommerce_xpay_test_api_key'         => 'rk_test_different',
-			'woocommerce_xpay_test_publishable_key' => 'pk_test_proved',
+			'woocommerce_xpayeg_enabled'              => '1',
+			'woocommerce_xpayeg_title'                => 'Pay with XPay',
+			'woocommerce_xpayeg_mode'                 => 'test',
+			'woocommerce_xpayeg_test_api_key'         => 'rk_test_different',
+			'woocommerce_xpayeg_test_publishable_key' => 'pk_test_proved',
 		);
 		$this->gateway()->process_admin_options();
 		$_POST = array();
@@ -220,7 +220,7 @@ class SettingsSaveTest extends XPay_Integration_Test_Case {
 	}
 
 	public function tear_down(): void {
-		$GLOBALS['xpay_test_http'] = array();
+		$GLOBALS['xpayeg_test_http'] = array();
 		parent::tear_down();
 	}
 }

@@ -30,7 +30,7 @@ const realLibrary = ( () => {
 	box.globalThis = box;
 	vm.createContext( box );
 	vm.runInContext( elementsSource, box );
-	return box.window.XPayElements;
+	return box.window.XPayEGElements;
 } )();
 
 /** A node just deep enough for the driver's queries. */
@@ -55,12 +55,12 @@ function boot( { confirmResult = { ok: true }, checkProblem = '', ajax = {} } = 
 	const errorNode = node();
 	const form = node();
 	const payButton = node();
-	const radio = { value: 'xpay' };
+	const radio = { value: 'xpayeg' };
 
 	const nodes = {
-		'[data-xpay-elements]': mountNode,
-		'[data-xpay-elements-error]': errorNode,
-		'[data-xpay-pay]': payButton,
+		'[data-xpayeg-elements]': mountNode,
+		'[data-xpayeg-elements-error]': errorNode,
+		'[data-xpayeg-pay]': payButton,
 		'input[name="payment_method"]:checked': radio,
 	};
 
@@ -75,12 +75,12 @@ function boot( { confirmResult = { ok: true }, checkProblem = '', ajax = {} } = 
 	};
 
 	const window = {
-		xpayPayPageParams: {
+		xpayegPayPageParams: {
 			ajaxUrl: '/admin-ajax.php',
 			nonce: 'n',
 			publishableKey: 'pk_test_x',
 			sdkUrl: 'https://checkout.xpay.app/v1/sdk.js',
-			gatewayId: 'xpay',
+			gatewayId: 'xpayeg',
 			amount: '29000',
 			currency: 'EGP',
 			orderId: '9',
@@ -94,7 +94,7 @@ function boot( { confirmResult = { ok: true }, checkProblem = '', ajax = {} } = 
 				retry: 'reload to retry',
 			},
 		},
-		XPayElements: {
+		XPayEGElements: {
 			mount: ( opts ) => {
 				calls.push( [ 'mount', opts.amount, opts.currency ] );
 				return handle;
@@ -135,7 +135,7 @@ function boot( { confirmResult = { ok: true }, checkProblem = '', ajax = {} } = 
 		querySelector: ( sel ) => nodes[ sel ] || null,
 		// The driver freezes the Pay controls through this while an
 		// attempt runs; the harness's one button is the whole page's.
-		querySelectorAll: ( sel ) => ( -1 !== sel.indexOf( 'data-xpay-pay' ) ? [ payButton ] : [] ),
+		querySelectorAll: ( sel ) => ( -1 !== sel.indexOf( 'data-xpayeg-pay' ) ? [ payButton ] : [] ),
 		getElementById: ( id ) => ( 'order_review' === id ? form : null ),
 		addEventListener: () => {},
 	};
@@ -162,12 +162,12 @@ async function press( boot ) {
 const SESSION_ANSWER = { success: true, data: { paid: false, clientSecret: 'cs_ops_secret' } };
 
 test( 'the form submit is intercepted and the session comes from the server at Pay', async () => {
-	const b = boot( { ajax: { xpay_elements_order_session: SESSION_ANSWER } } );
+	const b = boot( { ajax: { xpayeg_elements_order_session: SESSION_ANSWER } } );
 
 	const prevented = await press( b );
 
 	assert.ok( prevented, 'A plain form POST would navigate and destroy the card iframe mid-payment.' );
-	assert.ok( b.calls.includes( 'xpay_elements_order_session' ), 'The session must be asked for at Pay, never mounted with one.' );
+	assert.ok( b.calls.includes( 'xpayeg_elements_order_session' ), 'The session must be asked for at Pay, never mounted with one.' );
 	assert.equal( b.confirms[ 0 ].clientSecret, 'cs_ops_secret' );
 	assert.deepEqual( b.navigations, [ 'https://store.test/order-received/9/' ] );
 } );
@@ -182,7 +182,7 @@ test( 'the element mounts at the order total with no server call', async () => {
 test( 'a stale already-paid link goes to the receipt and never near a charge', async () => {
 	const b = boot( {
 		ajax: {
-			xpay_elements_order_session: {
+			xpayeg_elements_order_session: {
 				success: true,
 				data: { paid: true, redirect: 'https://store.test/order-received/9/?key=k' },
 			},
@@ -199,8 +199,8 @@ test( 'a decline keeps the shopper here with the reason', async () => {
 	const b = boot( {
 		confirmResult: { ok: false, message: 'card declined' },
 		ajax: {
-			xpay_elements_order_session: SESSION_ANSWER,
-			xpay_elements_outcome: { success: true, data: { verdict: 'unpaid' } },
+			xpayeg_elements_order_session: SESSION_ANSWER,
+			xpayeg_elements_outcome: { success: true, data: { verdict: 'unpaid' } },
 		},
 	} );
 
@@ -214,22 +214,22 @@ test( 'a decline keeps the shopper here with the reason', async () => {
 test( 'a total that changed under the page reloads it instead of refusing forever', async () => {
 	const b = boot( {
 		confirmResult: { ok: false, code: 'amount_reconfirmation_required', message: 'amount changed' },
-		ajax: { xpay_elements_order_session: SESSION_ANSWER },
+		ajax: { xpayeg_elements_order_session: SESSION_ANSWER },
 	} );
 
 	await press( b );
 
 	assert.equal( b.reloads.length, 1, 'The reload is this page\'s re-read of the total; without it every retry meets the same refusal.' );
 	assert.deepEqual( b.navigations, [], 'Nothing was charged, so the shopper must not be sent to the order page.' );
-	assert.ok( ! b.calls.includes( 'xpay_elements_outcome' ), 'A refusal the SDK names needs no server verdict.' );
+	assert.ok( ! b.calls.includes( 'xpayeg_elements_outcome' ), 'A refusal the SDK names needs no server verdict.' );
 } );
 
 test( 'an undecided outcome goes to the order page instead of offering a retry', async () => {
 	const b = boot( {
 		confirmResult: { ok: false, message: 'network wobble' },
 		ajax: {
-			xpay_elements_order_session: SESSION_ANSWER,
-			xpay_elements_outcome: { success: true, data: { verdict: 'unknown' } },
+			xpayeg_elements_order_session: SESSION_ANSWER,
+			xpayeg_elements_outcome: { success: true, data: { verdict: 'unknown' } },
 		},
 	} );
 
@@ -252,12 +252,12 @@ test( 'a refused check never asks for a session', async () => {
 
 	await press( b );
 
-	assert.ok( ! b.calls.includes( 'xpay_elements_order_session' ) );
+	assert.ok( ! b.calls.includes( 'xpayeg_elements_order_session' ) );
 	assert.equal( b.errorNode.textContent, 'Finish the payment details.' );
 } );
 
 test( 'the customer details from the order reach the confirm', async () => {
-	const b = boot( { ajax: { xpay_elements_order_session: SESSION_ANSWER } } );
+	const b = boot( { ajax: { xpayeg_elements_order_session: SESSION_ANSWER } } );
 
 	await press( b );
 
