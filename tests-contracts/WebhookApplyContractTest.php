@@ -138,6 +138,37 @@ class WebhookApplyContractTest extends ContractTestCase {
 		$this->assertStageNotFired( 'webhook.abandoned_cart_expired' );
 	}
 
+	/** Invoke the webhook controller's private quiet_retry_status(). */
+	private function quietRetryStatus( XPayEG_Api_Exception $e ): ?int {
+		$method = new ReflectionMethod( XPayEG_Webhook_Controller::class, 'quiet_retry_status' );
+		$method->setAccessible( true );
+		return $method->invoke( null, $e );
+	}
+
+	/**
+	 * A delivery that finds the order locked by another delivery is a race
+	 * the redelivery resolves on its own, the same as order-not-found: it
+	 * must answer non-2xx (so XPay redelivers) without being recorded as a
+	 * webhook health failure.
+	 */
+	public function test_lock_busy_answers_non_2xx_and_records_no_failure() {
+		$status = $this->quietRetryStatus( XPayEG_Api_Exception::order_lock_busy() );
+
+		$this->assertNotNull( $status, 'A busy lock must not fall through to record_failure.' );
+		$this->assertGreaterThanOrEqual( 300, $status, 'The response must be non-2xx so XPay redelivers.' );
+	}
+
+	/**
+	 * An ordinary apply failure (anything that is not the two known races)
+	 * must still be recorded — the point of the quiet path is narrow, not a
+	 * blanket exemption from the health record.
+	 */
+	public function test_ordinary_apply_failure_still_records_one() {
+		$status = $this->quietRetryStatus( XPayEG_Api_Exception::amount_above_line_ceiling() );
+
+		$this->assertNull( $status, 'A genuine apply failure must still fall through to record_failure.' );
+	}
+
 	public function test_foreign_gateway_order_is_never_touched() {
 		$foreign = $this->makeOrder( 14, array( 'payment_method' => 'cod' ) );
 		try {

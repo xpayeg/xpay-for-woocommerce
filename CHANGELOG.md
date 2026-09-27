@@ -1,25 +1,32 @@
 # Changelog
 
+## 1.0.4
+
+### Patch Changes
+
+- The installation steps on the plugin page now describe installing XPay from the WordPress plugin directory.
+- The webhook health indicator no longer reports a failure when two payment updates for the same order arrive at the same moment. XPay retries the second update and the order is unaffected.
+
 ## 1.0.3
 
 ### Patch Changes
 
-- Every name the plugin defines now carries the xpayeg prefix: the gateway id, classes, functions, options, hooks, AJAX actions, order meta, constants, script handles, CSS classes, element ids, data attributes and the WooCommerce log source. This answers the WordPress.org review. A store that installed 1.0.x must open WooCommerce > Settings > Payments > XPay and connect again; the webhook address and the settings option changed with the gateway id.
+- XPay no longer clashes with other plugins on your site that use similar names. If you installed an earlier version from GitHub, open WooCommerce > Settings > Payments > XPay and connect again after updating.
 
 ## 1.0.2
 
 ### Patch Changes
 
-- Fix the Terms of Service and Privacy Policy links and the WordPress.org contributor name in the plugin listing, and stop bundling translation files: WordPress now installs the Arabic translation as a language pack from WordPress.org.
+- Corrected the Terms of Service and Privacy Policy links shown on the plugin page. Arabic now arrives as a WordPress language pack instead of being bundled, so translations can update without a plugin update.
 
 ## 1.0.1
 
 ### Patch Changes
 
-- Point the plugin's `Plugin URI` header at the public repository so it differs from `Author URI`, resolving the WordPress.org Plugin Check error that blocks submission.
+- Corrected a link in the plugin header.
 
 ## 1.0.0
 
 ### Major Changes
 
-- Launch XPay for WooCommerce with secure on-site payments, one-click account connection, automatic webhooks, refunds, test and live modes, payment-method controls, HPOS support, and Arabic translations.
+- First release. Accept card, ValU and Fawry payments on your WooCommerce checkout. Connect your XPay account in one click with no API keys to copy, with webhooks set up for you, refunds from WooCommerce, test and live modes, payment method controls, HPOS support and Arabic.

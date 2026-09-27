@@ -79,7 +79,7 @@ final class XPayEG_Signature {
 			}
 		}
 
-		// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- constant registry-code message with no request data (AGENTS.md rule: ids live in log context, never messages); render sites escape on output.
+		// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- constant registry-code message with no request data; identifiers live in log context, never in messages, and render sites escape on output.
 		throw XPayEG_Api_Exception::webhook( XPayEG_Error_Codes::WEBHOOK_SIGNATURE_INVALID, 'Webhook signature does not match' );
 	}
 }

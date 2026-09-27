@@ -81,3 +81,9 @@ internal-docs/
 # This file itself: it describes the build, and the build is over by the
 # time anyone unzips the result.
 .distignore
+
+# WordPress.org listing artwork and its vector sources: the artwork belongs
+# in the SVN assets/ directory, the sources stay in the monorepo, and
+# neither belongs inside the plugin ZIP.
+.wordpress-org
+listing

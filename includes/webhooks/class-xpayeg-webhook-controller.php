@@ -16,6 +16,9 @@
  *         Place Order, or a refund outran its payment). Retry-worthy:
  *         XPay's engine redelivers and the race resolves itself. There is
  *         no local retry queue; the platform's engine is the only one.
+ *   409 — verified, order found, but another delivery is already applying
+ *         this same order's transition (advisory lock busy). Retry-worthy:
+ *         the current holder finishes and the redelivery resolves it.
  *   500 — plugin's own config/code fault. Retry-worthy.
  *
  * Event dedupe: processed event ids are stored on the order (bounded list),
@@ -98,13 +101,14 @@ class XPayEG_Webhook_Controller {
 					)
 				);
 			}
-			// No order yet: a delivery outran Place Order, or a refund
-			// outran its payment. Non-2xx so XPay's retry engine
-			// redelivers; NOT record_failure — a race is not a
-			// misconfiguration, and the health row must not go red over
-			// one. Already logged at ERROR inside apply_event.
-			if ( XPayEG_Error_Codes::WEBHOOK_ORDER_NOT_FOUND === $e->get_error_code() ) {
-				self::respond( 404, array( 'error' => $e->get_error_code() ) );
+			// A race the redelivery resolves on its own, never a
+			// misconfiguration: order-not-found and a busy per-order lock
+			// both answer non-2xx so XPay's retry engine redelivers,
+			// WITHOUT record_failure — the health row must not go red
+			// over either. Already logged at ERROR inside apply_event.
+			$quiet_status = self::quiet_retry_status( $e );
+			if ( null !== $quiet_status ) {
+				self::respond( $quiet_status, array( 'error' => $e->get_error_code() ) );
 			}
 			XPayEG_Logger::error(
 				'webhook.apply_failed',
@@ -201,6 +205,30 @@ class XPayEG_Webhook_Controller {
 	 */
 	private static function record_failure( XPayEG_Gateway $gateway, string $code ): void {
 		XPayEG_Webhook_State::record_failure( ! $gateway->is_test_mode(), $code );
+	}
+
+	/**
+	 * The status to answer with when an apply_event failure is a race the
+	 * redelivery resolves on its own — never a misconfiguration, so the
+	 * caller must skip record_failure — or null when the failure is worth
+	 * recording.
+	 *
+	 * An order not found yet may still arrive (delivery outran Place
+	 * Order, or a refund outran its payment). A busy per-order lock means
+	 * another delivery is mid-write on this very order; the redelivery
+	 * this response provokes is what lets it apply once that write is
+	 * done. Neither tells the merchant anything is actually wrong.
+	 *
+	 * @param XPayEG_Api_Exception $e Exception thrown by apply_event().
+	 */
+	private static function quiet_retry_status( XPayEG_Api_Exception $e ): ?int {
+		if ( XPayEG_Error_Codes::WEBHOOK_ORDER_NOT_FOUND === $e->get_error_code() ) {
+			return 404;
+		}
+		if ( XPayEG_Error_Codes::ORDER_LOCK_BUSY === $e->get_error_code() ) {
+			return $e->get_http_status();
+		}
+		return null;
 	}
 
 	/** Event types whose data.object is session-scoped (a session, or a payment intent carrying its session id). */
@@ -311,8 +339,9 @@ class XPayEG_Webhook_Controller {
 		// dedupe and both apply side effects.
 		$order_id = $order->get_id();
 		if ( ! XPayEG_Order_Lock::acquire( $order_id, XPayEG_Order_Lock::WAIT_SECONDS ) ) {
-			// Surfaces as a 500 → XPay's retry engine redelivers after the
-			// current holder finishes; nothing is lost.
+			// Surfaces as a 409, not record_failure → XPay's retry engine
+			// redelivers after the current holder finishes; nothing is
+			// lost, and the health row stays untouched.
 			throw XPayEG_Api_Exception::order_lock_busy();
 		}
 

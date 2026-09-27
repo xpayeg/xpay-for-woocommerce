@@ -49,6 +49,7 @@ while IFS= read -r mdfile; do
 done < <(
 	find . -name "*.md" \
 		-not -path "*/.git/*" \
+		-not -path "./.claude/*" \
 		-not -path "*/node_modules/*" \
 		-not -path "*/vendor/*" \
 		-not -path "*/dist/*" \
