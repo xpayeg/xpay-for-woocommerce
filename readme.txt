@@ -4,11 +4,11 @@ Tags: woocommerce, payments, payment gateway, egypt, valu
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.4
+Stable tag: 1.1.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Accept card, ValU, Fawry, and other XPay-supported payments directly on your WooCommerce checkout.
+Accept card, Apple Pay, ValU, Fawry, and other XPay-supported payments directly on your WooCommerce checkout.
 
 == Description ==
 
@@ -18,7 +18,8 @@ The plugin supports classic checkout, Cart and Checkout Blocks, HPOS, Arabic, te
 
 = Features =
 
-* Card, ValU, Fawry, and other methods enabled for your XPay account.
+* Card, Apple Pay, ValU, Fawry, and other methods enabled for your XPay account.
+* Apple Pay with a guided setup: the plugin serves Apple's domain verification file for you and shows when setup is complete.
 * One-click connection through XPay. No API key is pasted or shown.
 * Automatic, signed webhook setup for reliable order updates.
 * Secure payment fields on the WooCommerce checkout and order-pay pages.
@@ -71,6 +72,10 @@ Nowhere. Click Connect with XPay and approve access on XPay. The plugin saves th
 
 Enable them for the merchant account in XPay, then use the Payment Methods tab in the plugin to choose which available methods this store shows and their order.
 
+= How do I set up Apple Pay? =
+
+Apple Pay must be available on your XPay account. Add your Apple Merchant ID and certificates in your XPay dashboard, then upload Apple's domain verification file in the Apple Pay row of the plugin's Payment Methods tab. You can turn Apple Pay on once both steps show as done. Availability also depends on the shopper's device and browser. Full guide: https://docs.xpay.app/en/plugins/woocommerce#apple-pay
+
 = How do I test payments? =
 
 Keep Test mode enabled and use the test payment details provided in your XPay dashboard. Test mode does not move real money.
@@ -91,7 +96,20 @@ Yes, when the payment method supports refunds. ValU refunds are not currently su
 
 Yes. If customers return to the cart after paying and you do not use a working WPFunnels Pro upsell step, turn on WPFunnels compatibility in the XPay settings.
 
+== Screenshots ==
+
+1. XPay's secure card fields on the WooCommerce checkout. The shopper never leaves your store.
+2. A Fawry reference number the shopper can pay at any Fawry outlet or in the Fawry app.
+3. The XPay settings: account connected, payments enabled and webhook configured.
+4. The Payment Methods tab, where you choose which methods appear at checkout.
+5. XPay's approval screen states exactly what the store may and may not do.
+6. The XPay panel on a WooCommerce order, for support and reconciliation.
+
 == Changelog ==
+
+= 1.1.0 =
+
+* Accept Apple Pay at checkout when it is enabled on your XPay account. Apple Pay stays off until its setup is complete: add your certificates in your XPay dashboard, then upload Apple's domain verification file in the plugin's Payment Methods tab, where the setup status is shown. Checkout now stops safely when a payment cannot be prepared, so customers can retry without being charged.
 
 = 1.0.4 =
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.0
+
+### Minor Changes
+
+- Accept Apple Pay at checkout when it is enabled on your XPay account. Apple Pay stays off until its setup is complete: add your certificates in your XPay dashboard, then upload Apple's domain verification file in the plugin's Payment Methods tab, where the setup status is shown. Checkout now stops safely when a payment cannot be prepared, so customers can retry without being charged.
+
 ## 1.0.4
 
 ### Patch Changes

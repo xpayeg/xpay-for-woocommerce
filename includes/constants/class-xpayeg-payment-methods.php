@@ -24,9 +24,17 @@ defined( 'ABSPATH' ) || exit;
 
 final class XPayEG_Payment_Methods {
 
-	const CARD  = 'card';
-	const VALU  = 'valu';
-	const FAWRY = 'fawry';
+	const CARD      = 'card';
+	const VALU      = 'valu';
+	const FAWRY     = 'fawry';
+	const APPLE_PAY = 'apple_pay';
+
+	/**
+	 * Wallet methods. Their payment preparation holds an authorization that
+	 * must be released if checkout cannot continue; a card preparation only
+	 * validates fields the shopper typed.
+	 */
+	const WALLETS = array( self::APPLE_PAY );
 
 	/**
 	 * Card networks XPay accepts, shown on the Card row. Amex is
@@ -43,6 +51,8 @@ final class XPayEG_Payment_Methods {
 		switch ( $type ) {
 			case self::CARD:
 				return __( 'Card', 'xpay-for-woocommerce' );
+			case self::APPLE_PAY:
+				return __( 'Apple Pay', 'xpay-for-woocommerce' );
 			case self::VALU:
 				return __( 'ValU', 'xpay-for-woocommerce' );
 			case self::FAWRY:
@@ -56,6 +66,8 @@ final class XPayEG_Payment_Methods {
 		switch ( $type ) {
 			case self::CARD:
 				return __( 'Pay with your Visa, Mastercard or Meeza card.', 'xpay-for-woocommerce' );
+			case self::APPLE_PAY:
+				return __( 'Pay securely with Apple Pay.', 'xpay-for-woocommerce' );
 			case self::VALU:
 				return __( 'Split your payment into installments with ValU.', 'xpay-for-woocommerce' );
 			case self::FAWRY:
@@ -74,6 +86,8 @@ final class XPayEG_Payment_Methods {
 		switch ( $type ) {
 			case self::CARD:
 				return XPAYEG_PLUGIN_URL . 'assets/images/card-networks.svg';
+			case self::APPLE_PAY:
+				return XPAYEG_PLUGIN_URL . 'assets/images/apple-pay.svg';
 			case self::VALU:
 				return XPAYEG_PLUGIN_URL . 'assets/images/valu.svg';
 			case self::FAWRY:

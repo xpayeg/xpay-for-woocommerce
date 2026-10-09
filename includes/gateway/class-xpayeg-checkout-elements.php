@@ -208,6 +208,7 @@ final class XPayEG_Checkout_Elements {
 				// the classic driver binds one Place Order takeover per
 				// name. Data for each row rides on the row itself.
 				'rows'           => self::row_names( $gateway ),
+				'walletTypes'    => XPayEG_Payment_Methods::WALLETS,
 				/*
 				 * What the element DISPLAYS, and therefore what may be
 				 * charged. No session exists while the shopper fills the
@@ -276,6 +277,7 @@ final class XPayEG_Checkout_Elements {
 				'gatewayId'      => XPayEG_Constants::GATEWAY_ID,
 				'amount'         => XPayEG_Money::to_minor( $order->get_total(), $currency ),
 				'currency'       => $currency,
+				'walletTypes'    => XPayEG_Payment_Methods::WALLETS,
 				'orderId'        => (string) $order->get_id(),
 				'orderKey'       => (string) $order->get_order_key(),
 				'returnUrl'      => $order->get_checkout_order_received_url(),

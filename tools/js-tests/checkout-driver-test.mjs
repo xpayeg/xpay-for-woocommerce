@@ -201,6 +201,7 @@ function bootDriver( {
 			return Promise.resolve( confirmResult );
 		},
 		destroy: () => calls.push( 'destroy' ),
+		cancelPreparation: () => calls.push( 'cancel-preparation' ),
 		setAmount: ( amount, currency ) => {
 			calls.push( 'setAmount' );
 			amountMoves.push( { amount, currency } );
@@ -278,6 +279,9 @@ function bootDriver( {
 		fetch: ( url, options ) => {
 			if ( String( url ).includes( 'wc-ajax=checkout' ) ) {
 				calls.push( 'place-order' );
+				if ( checkoutResponse instanceof Error ) {
+					return Promise.reject( checkoutResponse );
+				}
 				return Promise.resolve( {
 					ok: true,
 					status: 200,
@@ -545,6 +549,30 @@ test( 'a checkout the server rejected never charges', async () => {
 		'The card was charged for a checkout WooCommerce refused to accept.'
 	);
 	assert.deepEqual( boot.navigations, [] );
+	assert.ok( boot.calls.includes( 'cancel-preparation' ) );
+} );
+
+test( 'a lost checkout response cancels preparation without confirming', async () => {
+	const boot = bootDriver( { checkoutResponse: new Error( 'offline' ) } );
+	await placeOrder( boot );
+	assert.ok( boot.calls.includes( 'cancel-preparation' ) );
+	assert.equal( boot.confirms.length, 0 );
+	assert.equal( boot.errorNode.textContent, 'offline' );
+	await placeOrder( boot );
+	assert.equal( boot.calls.filter( ( call ) => call === 'place-order' ).length, 2 );
+} );
+
+test( 'switching methods during preparation never places the order under the new method', async () => {
+	let resolve;
+	const checkProblem = new Promise( ( done ) => { resolve = done; } );
+	const boot = bootDriver( { checkProblem } );
+	boot.registry.get( 'form.checkout' ).get( 'checkout_place_order_xpayeg.xpay' )( {}, null );
+	boot.selectRow( 'xpayeg_apple_pay', 'apple_pay' );
+	resolve( null );
+	await settle();
+	assert.ok( boot.calls.includes( 'cancel-preparation' ) );
+	assert.ok( ! boot.calls.includes( 'place-order' ) );
+	assert.equal( boot.confirms.length, 0 );
 } );
 
 test( 'a pay-page fallback navigates without charging in the browser', async () => {

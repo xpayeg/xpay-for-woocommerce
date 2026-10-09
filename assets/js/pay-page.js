@@ -122,6 +122,7 @@
 			// driver smaller than the checkout's.
 			amount: parseInt( params.amount, 10 ),
 			currency: params.currency,
+			walletTypes: params.walletTypes,
 			publishableKey: params.publishableKey,
 			sdkUrl: params.sdkUrl,
 			colorMode: params.colorMode,
@@ -218,6 +219,7 @@
 			return ask( 'order_session', { order: params.orderId, key: params.orderKey } ).then( function ( result ) {
 				var data = result.ok && result.json && result.json.success ? result.json.data : null;
 				if ( ! data ) {
+					handle.cancelPreparation();
 					releasePay();
 					showError( ( params.i18n && params.i18n.unavailable ) || '' );
 					return;
@@ -227,11 +229,13 @@
 				// another tab or by a webhook still in flight when the page
 				// rendered. The only honest destination is the receipt.
 				if ( data.paid ) {
+					handle.cancelPreparation();
 					navigate( data.redirect );
 					return;
 				}
 
 				if ( ! data.clientSecret ) {
+					handle.cancelPreparation();
 					releasePay();
 					showError( ( params.i18n && params.i18n.unavailable ) || '' );
 					return;
@@ -284,6 +288,7 @@
 				navigate();
 				return;
 			}
+			handle.cancelPreparation();
 			releasePay();
 			showError( strings.unavailable || '' );
 		} );

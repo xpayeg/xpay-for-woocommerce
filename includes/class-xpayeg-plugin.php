@@ -62,6 +62,7 @@ final class XPayEG_Plugin {
 		require_once $dir . 'gateway/class-xpayeg-checkout-elements.php';
 		require_once $dir . 'gateway/class-xpayeg-gateway-order.php';
 		require_once $dir . 'gateway/class-xpayeg-order-sync.php';
+		require_once $dir . 'gateway/class-xpayeg-apple-pay-domain.php';
 		require_once $dir . 'refunds/class-xpayeg-refundable.php';
 		require_once $dir . 'refunds/class-xpayeg-refund-service.php';
 		require_once $dir . 'webhooks/class-xpayeg-webhook-state.php';
@@ -112,6 +113,9 @@ final class XPayEG_Plugin {
 		// Connect with XPay OAuth callback: https://<site>/?wc-api=xpayeg_connect
 		// The merchant's browser returns here from XPay's approve page.
 		XPayEG_Connect::register();
+
+		// Apple Pay domain verification file, served at Apple's path.
+		XPayEG_Apple_Pay_Domain::register();
 
 		// Thank-you page truth: re-check the session server-side rather than
 		// trusting the redirect. Webhook remains the authoritative writer;

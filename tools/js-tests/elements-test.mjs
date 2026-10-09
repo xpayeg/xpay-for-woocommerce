@@ -114,6 +114,7 @@ function fakeSdk( {
 	// submit() resolves a bare object, not an ActionResult: no `type`
 	// discriminant, and `error` absent rather than null when all is well.
 	submitResult = {},
+	submitError = null,
 	neverReady = false,
 	updateThrows = null,
 } = {} ) {
@@ -159,6 +160,9 @@ function fakeSdk( {
 		off: () => {},
 		submit: () => {
 			state.submits += 1;
+			if ( submitError ) {
+				return Promise.reject( submitError );
+			}
 			return Promise.resolve( submitResult );
 		},
 		update: ( opts ) => {
@@ -237,7 +241,100 @@ const BASE = {
 	currency: 'EGP',
 	publishableKey: 'pk_test_1',
 	sdkUrl: 'https://checkout.xpay.app/v1/sdk.js',
+	walletTypes: [ 'apple_pay' ],
 };
+
+const WALLET_SUBMISSION = { selectedPaymentMethod: 'apple_pay' };
+
+for ( const [ name, submitResult ] of [
+	[ 'an empty submission', {} ],
+	[ 'a card submission', { selectedPaymentMethod: 'card' } ],
+] ) {
+	test( `${ name } keeps the typed card when checkout fails`, async () => {
+		const { xpay, state } = fakeSdk( { submitResult } );
+		const { mod } = load( { xpay } );
+		const handle = mod.mount( { ...BASE } );
+		assert.equal( await handle.check(), null );
+		handle.cancelPreparation();
+		assert.equal( state.destroyed, 0, 'A card preparation holds nothing to release.' );
+		await handle.confirm( SECRET );
+		assert.equal( state.confirmedWith.clientSecret, SECRET );
+	} );
+}
+
+test( 'a wallet submission is released when checkout fails', async () => {
+	const { xpay, state } = fakeSdk( { submitResult: WALLET_SUBMISSION } );
+	const { mod } = load( { xpay } );
+	let ready = 0;
+	const handle = mod.mount( { ...BASE, onReady: () => ready++ } );
+	assert.equal( await handle.check(), null );
+	await handle.setAmount( 31000, 'EGP' );
+	handle.cancelPreparation();
+	assert.equal( state.destroyed, 1 );
+	assert.equal( state.createdWith.amount, 31000 );
+	assert.equal( mountedSelector( state.mountedAt ), BASE.selector );
+	assert.equal( ready, 1, 'Remounting must not clear the checkout failure message.' );
+	assert.equal( handle.canPay(), true );
+	handle.cancelPreparation();
+	assert.equal( state.destroyed, 1, 'Duplicate failure events must not remount twice.' );
+	assert.equal( await handle.check(), null );
+	await handle.confirm( SECRET );
+	assert.equal( state.confirmedWith.clientSecret, SECRET );
+} );
+
+test( 'abandoning preparation never resets an attempted payment, including an uncertain result', async () => {
+	const { xpay, state } = fakeSdk( {
+		submitResult: WALLET_SUBMISSION,
+		confirmResult: { type: 'error', error: { message: 'unknown' } },
+	} );
+	const { mod } = load( { xpay } );
+	const handle = mod.mount( { ...BASE } );
+	await handle.check();
+	const confirming = handle.confirm( SECRET );
+	handle.cancelPreparation();
+	assert.equal( state.destroyed, 0 );
+	await confirming;
+	handle.cancelPreparation();
+	assert.equal( state.destroyed, 0 );
+} );
+
+test( 'destroying fields while submission is pending cannot approve order creation', async () => {
+	let resolve;
+	const submission = new Promise( ( done ) => { resolve = done; } );
+	const { xpay } = fakeSdk( { submitResult: submission } );
+	const { mod } = load( { xpay } );
+	const handle = mod.mount( { ...BASE, i18n: { notReady: 'not ready' } } );
+	const checking = handle.check();
+	handle.destroy();
+	resolve( {} );
+	assert.equal( await checking, 'not ready' );
+} );
+
+test( 'destroying before SDK load prevents a late mount', () => {
+	const { mod, win, scripts } = load();
+	const handle = mod.mount( { ...BASE } );
+	handle.destroy();
+	const { xpay, state } = fakeSdk();
+	win.XPay = () => xpay;
+	scripts[ 0 ].onload();
+	assert.equal( state.mountedAt, null );
+} );
+
+for ( const [ name, submit ] of [
+	[ 'missing method', undefined ],
+	[ 'synchronous error', () => { throw new Error( 'offline' ); } ],
+	[ 'missing result', () => Promise.resolve( undefined ) ],
+] ) {
+	test( `preparation fails closed on ${ name }`, async () => {
+		const { xpay, state } = fakeSdk();
+		const { mod } = load( { xpay } );
+		const handle = mod.mount( { ...BASE, i18n: { notReady: 'not ready' } } );
+		handle.elements.submit = submit;
+		assert.equal( await handle.check(), 'not ready' );
+		assert.equal( ( await handle.confirm( SECRET ) ).ok, false );
+		assert.equal( state.confirmedWith, null );
+	} );
+}
 
 /* ── Mounting ─────────────────────────────────────────────────────────── */
 
@@ -452,10 +549,8 @@ test( 'the fields get the last word on whether the form is complete', async () =
 	assert.equal( state.confirmedWith, null, 'nothing may reach confirm past a refusal' );
 } );
 
-test( 'a transport failure inside submit does not strand a filled-in form', async () => {
-	// Only a verdict about the shopper's input stops a payment. The embed
-	// not answering in time is not evidence anyone typed anything wrong.
-	const { xpay } = fakeSdk( {
+test( 'a transport failure inside submit refuses order creation and confirmation', async () => {
+	const { xpay, state } = fakeSdk( {
 		submitResult: { error: { type: 'api_error', message: 'Validation timed out' } },
 	} );
 	const { mod } = load( { xpay } );
@@ -463,7 +558,20 @@ test( 'a transport failure inside submit does not strand a filled-in form', asyn
 	await Promise.resolve();
 	await Promise.resolve();
 
-	assert.equal( await handle.check(), null );
+	assert.equal( await handle.check(), 'Validation timed out' );
+	assert.equal( ( await handle.confirm( SECRET, {} ) ).ok, false );
+	assert.equal( state.confirmedWith, null );
+} );
+
+test( 'a rejected submit refuses order creation and confirmation', async () => {
+	const { xpay, state } = fakeSdk( { submitError: new Error( 'private transport detail' ) } );
+	const { mod } = load( { xpay } );
+	const handle = mod.mount( { ...BASE, i18n: { notReady: 'Payment is not ready.' } } );
+	await Promise.resolve();
+	await Promise.resolve();
+	assert.equal( await handle.check(), 'Payment is not ready.' );
+	assert.equal( ( await handle.confirm( SECRET, {} ) ).ok, false );
+	assert.equal( state.confirmedWith, null );
 } );
 
 /* ── The deferred contract ────────────────────────────────────────────── */

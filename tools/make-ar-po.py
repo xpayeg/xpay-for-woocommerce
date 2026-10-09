@@ -16,6 +16,26 @@ POT = str(_LANG / "xpay-for-woocommerce.pot")
 OUT = str(_LANG / "xpay-for-woocommerce-ar.po")
 
 AR = {
+    'Apple Pay': 'Apple Pay',
+    'Pay securely with Apple Pay.': 'ادفع بأمان باستخدام Apple Pay.',
+    'XPay: that file is not an Apple Pay domain verification file. Download it again from your Apple Developer account and upload it unchanged.':
+        'XPay: هذا الملف ليس ملف التحقق من النطاق الخاص بـ Apple Pay. نزّله مرة أخرى من حساب Apple Developer الخاص بك وارفعه كما هو دون تعديل.',
+    'Apple Pay needs a one-time setup before you can turn it on.':
+        'يحتاج Apple Pay إلى إعداد لمرة واحدة قبل أن تتمكن من تفعيله.',
+    'Read the setup guide': 'اقرأ دليل الإعداد',
+    'Apple Pay is on but hidden at checkout until setup is complete.':
+        'Apple Pay مفعَّل لكنه لن يظهر في صفحة الدفع حتى يكتمل الإعداد.',
+    'XPay dashboard setup': 'الإعداد في لوحة تحكم XPay',
+    'Complete': 'مكتمل',
+    'Not complete': 'غير مكتمل',
+    'Domain verification file': 'ملف التحقق من النطاق',
+    'Found': 'موجود',
+    'Not found': 'غير موجود',
+    'Upload the domain verification file from your Apple Developer account. The plugin serves it at:':
+        'ارفع ملف التحقق من النطاق من حساب Apple Developer الخاص بك. تعرضه الإضافة على العنوان:',
+    'Replace the uploaded file': 'استبدال الملف المرفوع',
+    'Upload the file': 'رفع الملف',
+    'Save changes to check the setup again.': 'احفظ التغييرات لفحص الإعداد مرة أخرى.',
     'Which payment methods shoppers see is set in your XPay account, not here.':
         'طرق الدفع التي يراها المشتري تُحدَّد من حساب XPay الخاص بك، وليس من هنا.',
     'Match my store': 'مطابقة متجري',
@@ -46,6 +66,7 @@ AR = {
     'Automatic (match my store)': 'تلقائي (مطابقة متجري)',
     "XPay for WooCommerce": "XPay لـ WooCommerce",
     "https://xpay.app/": "https://xpay.app/",
+    "https://github.com/xpayeg/xpay-for-woocommerce": "https://github.com/xpayeg/xpay-for-woocommerce",
     "Accept payments on your WooCommerce store via XPay (Egypt): cards, ValU and more, in a secure on-site checkout.":
         "استقبل المدفوعات في متجر WooCommerce الخاص بك عبر XPay (مصر) — البطاقات وڤاليو والمزيد، في صفحة دفع آمنة داخل متجرك.",
     "XPay": "XPay",

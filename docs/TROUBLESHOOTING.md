@@ -21,6 +21,19 @@ Check that:
 
 Reconnect the selected mode if its account status says that its keys are invalid or missing.
 
+## Apple Pay does not appear or cannot start
+
+Apple Pay must be available on your XPay account. Before you can turn it on in the plugin's **Payment Methods** tab, the tab must show both setup steps as done:
+
+- **XPay dashboard setup:** add your Apple Merchant ID and both certificates in your XPay dashboard. Keep certificates in XPay, not WordPress.
+- **Domain verification file:** register your store's exact HTTPS domain with Apple, then upload the file Apple gives you in the Apple Pay row. The plugin serves it at `/.well-known/apple-developer-merchantid-domain-association.txt`.
+
+Save changes to check the setup again. If the file shows as not found after uploading it, your server or a security plugin may be blocking the `.well-known` path, or WordPress may be installed in a subfolder. Apple needs the file at the root of your domain.
+
+Follow the full guide at https://docs.xpay.app/en/plugins/woocommerce#apple-pay
+
+Availability also depends on the shopper's browser, device, and wallet setup. Contact XPay support if setup is complete but Apple Pay still fails.
+
 ## The payment fields do not load
 
 A JavaScript optimizer, consent tool, browser extension, or strict Content Security Policy may be blocking XPay.

@@ -72,6 +72,7 @@ function boot( { confirmResult = { ok: true }, checkProblem = '', ajax = {} } = 
 			return Promise.resolve( confirmResult );
 		},
 		destroy: () => {},
+		cancelPreparation: () => calls.push( 'cancel-preparation' ),
 	};
 
 	const window = {
@@ -116,6 +117,9 @@ function boot( { confirmResult = { ok: true }, checkProblem = '', ajax = {} } = 
 			const action = ( options.body.entries.find( ( e ) => 'action' === e[ 0 ] ) || [] )[ 1 ];
 			calls.push( action );
 			const scripted = ajax[ action ];
+			if ( scripted instanceof Error ) {
+				return Promise.reject( scripted );
+			}
 			const body = scripted || { success: true, data: { verdict: 'unpaid' } };
 			return Promise.resolve( { ok: true, json: () => Promise.resolve( body ) } );
 		},
@@ -160,6 +164,25 @@ async function press( boot ) {
 }
 
 const SESSION_ANSWER = { success: true, data: { paid: false, clientSecret: 'cs_ops_secret' } };
+
+for ( const [ reason, answer ] of [
+	[ 'server rejection', { success: false } ],
+	[ 'missing secret', { success: true, data: {} } ],
+	[ 'network failure', new Error( 'offline' ) ],
+] ) {
+	test( `order-pay abandons preparation after ${ reason } and allows retry`, async () => {
+		const ajax = { xpayeg_elements_order_session: answer };
+		const b = boot( { ajax } );
+		await press( b );
+		assert.ok( b.calls.includes( 'cancel-preparation' ) );
+		assert.equal( b.confirms.length, 0 );
+		assert.equal( b.payButton.disabled, false );
+		assert.equal( b.errorNode.textContent, 'unavailable' );
+		ajax.xpayeg_elements_order_session = SESSION_ANSWER;
+		await press( b );
+		assert.equal( b.confirms.length, 1 );
+	} );
+}
 
 test( 'the form submit is intercepted and the session comes from the server at Pay', async () => {
 	const b = boot( { ajax: { xpayeg_elements_order_session: SESSION_ANSWER } } );

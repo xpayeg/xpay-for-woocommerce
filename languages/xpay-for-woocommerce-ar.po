@@ -14,10 +14,9 @@ msgid "XPay for WooCommerce"
 msgstr "XPay لـ WooCommerce"
 
 #. Plugin URI of the plugin
-#. Author URI of the plugin
 #: xpay-for-woocommerce.php
-msgid "https://xpay.app/"
-msgstr "https://xpay.app/"
+msgid "https://github.com/xpayeg/xpay-for-woocommerce"
+msgstr "https://github.com/xpayeg/xpay-for-woocommerce"
 
 #. Description of the plugin
 #: xpay-for-woocommerce.php
@@ -31,6 +30,11 @@ msgstr "استقبل المدفوعات في متجر WooCommerce الخاص ب�
 #: includes/gateway/class-xpayeg-gateway.php:108
 msgid "XPay"
 msgstr "XPay"
+
+#. Author URI of the plugin
+#: xpay-for-woocommerce.php
+msgid "https://xpay.app/"
+msgstr "https://xpay.app/"
 
 #: includes/admin/class-xpayeg-admin-screen.php:107
 msgid "Connecting…"
@@ -65,7 +69,7 @@ msgid "Payment Methods"
 msgstr "طرق الدفع"
 
 #: includes/admin/class-xpayeg-admin-screen.php:178
-#: includes/admin/class-xpayeg-admin-screen.php:445
+#: includes/admin/class-xpayeg-admin-screen.php:494
 msgid "Settings"
 msgstr "الإعدادات"
 
@@ -102,271 +106,323 @@ msgid "This only changes the order of XPay methods. Manage all payment methods i
 msgstr "هذا يغيّر ترتيب طرق XPay فقط. أدر جميع طرق الدفع من WooCommerce ← الإعدادات ← المدفوعات."
 
 #: includes/admin/class-xpayeg-admin-screen.php:244
-#: includes/admin/class-xpayeg-admin-screen.php:519
+#: includes/admin/class-xpayeg-admin-screen.php:568
 msgid "Save changes"
 msgstr "حفظ التغييرات"
 
-#: includes/admin/class-xpayeg-admin-screen.php:280
+#: includes/admin/class-xpayeg-admin-screen.php:290
+msgid "Apple Pay needs a one-time setup before you can turn it on."
+msgstr "يحتاج Apple Pay إلى إعداد لمرة واحدة قبل أن تتمكن من تفعيله."
+
+#: includes/admin/class-xpayeg-admin-screen.php:290
+msgid "Read the setup guide"
+msgstr "اقرأ دليل الإعداد"
+
+#: includes/admin/class-xpayeg-admin-screen.php:293
+msgid "Apple Pay is on but hidden at checkout until setup is complete."
+msgstr "Apple Pay مفعَّل لكنه لن يظهر في صفحة الدفع حتى يكتمل الإعداد."
+
+#: includes/admin/class-xpayeg-admin-screen.php:297
+msgid "XPay dashboard setup"
+msgstr "الإعداد في لوحة تحكم XPay"
+
+#: includes/admin/class-xpayeg-admin-screen.php:297
+msgid "Complete"
+msgstr "مكتمل"
+
+#: includes/admin/class-xpayeg-admin-screen.php:297
+msgid "Not complete"
+msgstr "غير مكتمل"
+
+#: includes/admin/class-xpayeg-admin-screen.php:298
+msgid "Domain verification file"
+msgstr "ملف التحقق من النطاق"
+
+#: includes/admin/class-xpayeg-admin-screen.php:298
+msgid "Found"
+msgstr "موجود"
+
+#: includes/admin/class-xpayeg-admin-screen.php:298
+msgid "Not found"
+msgstr "غير موجود"
+
+#: includes/admin/class-xpayeg-admin-screen.php:302
+msgid "Upload the domain verification file from your Apple Developer account. The plugin serves it at:"
+msgstr "ارفع ملف التحقق من النطاق من حساب Apple Developer الخاص بك. تعرضه الإضافة على العنوان:"
+
+#: includes/admin/class-xpayeg-admin-screen.php:307
+msgid "Replace the uploaded file"
+msgstr "استبدال الملف المرفوع"
+
+#: includes/admin/class-xpayeg-admin-screen.php:307
+msgid "Upload the file"
+msgstr "رفع الملف"
+
+#: includes/admin/class-xpayeg-admin-screen.php:311
+msgid "Save changes to check the setup again."
+msgstr "احفظ التغييرات لفحص الإعداد مرة أخرى."
+
+#: includes/admin/class-xpayeg-admin-screen.php:329
 msgid "Live mode"
 msgstr "الوضع الفعلي"
 
-#: includes/admin/class-xpayeg-admin-screen.php:280
+#: includes/admin/class-xpayeg-admin-screen.php:329
 msgid "Test mode"
 msgstr "الوضع التجريبي"
 
-#: includes/admin/class-xpayeg-admin-screen.php:282
+#: includes/admin/class-xpayeg-admin-screen.php:331
 msgid "Open XPay dashboard"
 msgstr "افتح لوحة تحكم XPay"
 
-#: includes/admin/class-xpayeg-admin-screen.php:300
+#: includes/admin/class-xpayeg-admin-screen.php:349
 msgid "Start accepting payments"
 msgstr "ابدأ بقبول المدفوعات"
 
-#: includes/admin/class-xpayeg-admin-screen.php:301
+#: includes/admin/class-xpayeg-admin-screen.php:350
 msgid "Connect your XPay account to start accepting payments. Setup is automatic, and card details never touch your server."
 msgstr "اربط حساب XPay لبدء قبول المدفوعات. يتم الإعداد تلقائيًا، ولا تمر بيانات البطاقة بخادمك أبدًا."
 
-#: includes/admin/class-xpayeg-admin-screen.php:309
+#: includes/admin/class-xpayeg-admin-screen.php:358
 msgid "Connect with XPay"
 msgstr "الاتصال بـ XPay"
 
-#: includes/admin/class-xpayeg-admin-screen.php:310
+#: includes/admin/class-xpayeg-admin-screen.php:359
 msgid "Starts in test mode. Nothing goes live until you switch it yourself."
 msgstr "يبدأ في الوضع التجريبي. لا شيء يصبح فعلياً حتى تبدّله بنفسك."
 
-#: includes/admin/class-xpayeg-admin-screen.php:314
-#: includes/admin/class-xpayeg-admin-screen.php:621
-#: includes/admin/class-xpayeg-admin-screen.php:833
+#: includes/admin/class-xpayeg-admin-screen.php:363
+#: includes/admin/class-xpayeg-admin-screen.php:670
+#: includes/admin/class-xpayeg-admin-screen.php:882
 msgid "Connecting needs your site served over HTTPS."
 msgstr "يتطلب الاتصال أن يعمل موقعك عبر HTTPS."
 
-#: includes/admin/class-xpayeg-admin-screen.php:374
+#: includes/admin/class-xpayeg-admin-screen.php:423
 msgid "Account status"
 msgstr "حالة الحساب"
 
-#: includes/admin/class-xpayeg-admin-screen.php:393
-#: includes/admin/class-xpayeg-admin-screen.php:599
+#: includes/admin/class-xpayeg-admin-screen.php:442
+#: includes/admin/class-xpayeg-admin-screen.php:648
 msgid "Account"
 msgstr "الحساب"
 
-#: includes/admin/class-xpayeg-admin-screen.php:393
-#: includes/admin/class-xpayeg-admin-screen.php:599
+#: includes/admin/class-xpayeg-admin-screen.php:442
+#: includes/admin/class-xpayeg-admin-screen.php:648
 msgid "Connected"
 msgstr "متصل"
 
-#: includes/admin/class-xpayeg-admin-screen.php:393
-#: includes/admin/class-xpayeg-admin-screen.php:599
+#: includes/admin/class-xpayeg-admin-screen.php:442
+#: includes/admin/class-xpayeg-admin-screen.php:648
 msgid "Disconnected"
 msgstr "غير متصل"
 
-#: includes/admin/class-xpayeg-admin-screen.php:394
+#: includes/admin/class-xpayeg-admin-screen.php:443
 msgid "Payments"
 msgstr "المدفوعات"
 
-#: includes/admin/class-xpayeg-admin-screen.php:394
+#: includes/admin/class-xpayeg-admin-screen.php:443
 msgid "Awaiting activation"
 msgstr "في انتظار التفعيل"
 
-#: includes/admin/class-xpayeg-admin-screen.php:394
+#: includes/admin/class-xpayeg-admin-screen.php:443
 msgid "Enabled"
 msgstr "مفعّل"
 
-#: includes/admin/class-xpayeg-admin-screen.php:394
+#: includes/admin/class-xpayeg-admin-screen.php:443
 msgid "Disabled"
 msgstr "معطّل"
 
-#: includes/admin/class-xpayeg-admin-screen.php:395
-#: includes/admin/class-xpayeg-admin-screen.php:600
+#: includes/admin/class-xpayeg-admin-screen.php:444
+#: includes/admin/class-xpayeg-admin-screen.php:649
 msgid "Webhook"
 msgstr "Webhook"
 
-#: includes/admin/class-xpayeg-admin-screen.php:395
-#: includes/admin/class-xpayeg-admin-screen.php:600
+#: includes/admin/class-xpayeg-admin-screen.php:444
+#: includes/admin/class-xpayeg-admin-screen.php:649
 msgid "Configured"
 msgstr "مُعدّ"
 
-#: includes/admin/class-xpayeg-admin-screen.php:395
-#: includes/admin/class-xpayeg-admin-screen.php:600
+#: includes/admin/class-xpayeg-admin-screen.php:444
+#: includes/admin/class-xpayeg-admin-screen.php:649
 msgid "Not configured"
 msgstr "غير مُعدّ"
 
-#: includes/admin/class-xpayeg-admin-screen.php:401
+#: includes/admin/class-xpayeg-admin-screen.php:450
 msgid "Refresh"
 msgstr "تحديث"
 
-#: includes/admin/class-xpayeg-admin-screen.php:416
+#: includes/admin/class-xpayeg-admin-screen.php:465
 msgid "Connection actions"
 msgstr "إجراءات الاتصال"
 
-#: includes/admin/class-xpayeg-admin-screen.php:418
+#: includes/admin/class-xpayeg-admin-screen.php:467
 msgid "Configure connection"
 msgstr "إعداد الاتصال"
 
-#: includes/admin/class-xpayeg-admin-screen.php:419
+#: includes/admin/class-xpayeg-admin-screen.php:468
 msgid "Refresh account details"
 msgstr "تحديث بيانات الحساب"
 
-#: includes/admin/class-xpayeg-admin-screen.php:421
+#: includes/admin/class-xpayeg-admin-screen.php:470
 msgid "Disconnect"
 msgstr "فصل"
 
-#: includes/admin/class-xpayeg-admin-screen.php:449
+#: includes/admin/class-xpayeg-admin-screen.php:498
 #: includes/gateway/class-xpayeg-gateway.php:101
 msgid "Enable XPay"
 msgstr "تفعيل XPay"
 
-#: includes/admin/class-xpayeg-admin-screen.php:449
+#: includes/admin/class-xpayeg-admin-screen.php:498
 msgid "When off, no XPay option appears at checkout."
 msgstr "عند الإيقاف، لا يظهر أي خيار XPay في صفحة إتمام الطلب."
 
-#: includes/admin/class-xpayeg-admin-screen.php:472
+#: includes/admin/class-xpayeg-admin-screen.php:521
 msgid "Enable test mode"
 msgstr "تفعيل الوضع التجريبي"
 
-#: includes/admin/class-xpayeg-admin-screen.php:473
+#: includes/admin/class-xpayeg-admin-screen.php:522
 msgid "Test mode never charges real money."
 msgstr "الوضع التجريبي لا يخصم أموالًا حقيقية أبدًا."
 
-#: includes/admin/class-xpayeg-admin-screen.php:475
+#: includes/admin/class-xpayeg-admin-screen.php:524
 msgid "Live mode cannot be enabled before you have connected a live XPay account."
 msgstr "لا يمكن تفعيل الوضع الفعلي قبل ربط حساب XPay فعلي."
 
-#: includes/admin/class-xpayeg-admin-screen.php:476
+#: includes/admin/class-xpayeg-admin-screen.php:525
 msgid "Connect your live account"
 msgstr "اربط حسابك الفعلي"
 
-#: includes/admin/class-xpayeg-admin-screen.php:479
+#: includes/admin/class-xpayeg-admin-screen.php:528
 msgid "Test mode cannot be enabled before you have connected a test XPay account."
 msgstr "لا يمكن تفعيل الوضع التجريبي قبل ربط حساب XPay تجريبي."
 
-#: includes/admin/class-xpayeg-admin-screen.php:480
+#: includes/admin/class-xpayeg-admin-screen.php:529
 msgid "Connect your test account"
 msgstr "اربط حسابك التجريبي"
 
-#: includes/admin/class-xpayeg-admin-screen.php:495
-#: includes/admin/class-xpayeg-admin-screen.php:498
+#: includes/admin/class-xpayeg-admin-screen.php:544
+#: includes/admin/class-xpayeg-admin-screen.php:547
 #: includes/gateway/class-xpayeg-gateway.php:166
 msgid "Theme"
 msgstr "المظهر"
 
-#: includes/admin/class-xpayeg-admin-screen.php:500
+#: includes/admin/class-xpayeg-admin-screen.php:549
 msgid "Automatic"
 msgstr "تلقائي"
 
-#: includes/admin/class-xpayeg-admin-screen.php:501
+#: includes/admin/class-xpayeg-admin-screen.php:550
 msgid "Light"
 msgstr "فاتح"
 
-#: includes/admin/class-xpayeg-admin-screen.php:502
+#: includes/admin/class-xpayeg-admin-screen.php:551
 msgid "Dark"
 msgstr "داكن"
 
-#: includes/admin/class-xpayeg-admin-screen.php:510
+#: includes/admin/class-xpayeg-admin-screen.php:559
 msgid "Payment fields use the branding from your XPay dashboard. Automatic matches your checkout theme."
 msgstr "تستخدم حقول الدفع إعدادات العلامة التجارية من لوحة تحكم XPay. الوضع التلقائي يطابق مظهر صفحة الدفع."
 
-#: includes/admin/class-xpayeg-admin-screen.php:513
+#: includes/admin/class-xpayeg-admin-screen.php:562
 #: includes/gateway/class-xpayeg-gateway.php:190
 msgid "Diagnostic logging"
 msgstr "التسجيل التشخيصي"
 
-#: includes/admin/class-xpayeg-admin-screen.php:513
+#: includes/admin/class-xpayeg-admin-screen.php:562
 msgid "Write redacted diagnostic logs to WooCommerce → Status → Logs (source \"xpayeg\"). Failures are always recorded either way."
 msgstr "كتابة سجلات تشخيصية منقّحة إلى WooCommerce ← الحالة ← السجلات (المصدر \"xpayeg\"). تُسجّل الأعطال دائمًا في كل الأحوال."
 
-#: includes/admin/class-xpayeg-admin-screen.php:515
+#: includes/admin/class-xpayeg-admin-screen.php:564
 msgid "WPFunnels: force the standard confirmation page"
 msgstr "WPFunnels: فرض صفحة التأكيد القياسية"
 
-#: includes/admin/class-xpayeg-admin-screen.php:515
+#: includes/admin/class-xpayeg-admin-screen.php:564
 msgid "Only relevant when the WPFunnels plugin is active. Keeps shoppers on the normal order-received page after paying, unless you run a working upsell flow."
 msgstr "مهم فقط عندما تكون إضافة WPFunnels نشطة. يُبقي المتسوقين على صفحة استلام الطلب العادية بعد الدفع، ما لم تكن لديك مسار بيع إضافي يعمل."
 
 #. translators: %s is the documentation URL.
-#: includes/admin/class-xpayeg-admin-screen.php:523
+#: includes/admin/class-xpayeg-admin-screen.php:572
 #, php-format
 msgid "Guides and troubleshooting live at <a href=\"%s\" target=\"_blank\" rel=\"noopener noreferrer\">docs.xpay.app</a>."
 msgstr "الأدلة وحل المشكلات على <a href=\"%s\" target=\"_blank\" rel=\"noopener noreferrer\">docs.xpay.app</a>."
 
-#: includes/admin/class-xpayeg-admin-screen.php:550
+#: includes/admin/class-xpayeg-admin-screen.php:599
 msgid "XPay account and webhooks"
 msgstr "حساب XPay ونقاط الويب هوك"
 
-#: includes/admin/class-xpayeg-admin-screen.php:553
+#: includes/admin/class-xpayeg-admin-screen.php:602
 msgid "XPay account & webhooks"
 msgstr "حساب XPay ونقاط الويب هوك"
 
-#: includes/admin/class-xpayeg-admin-screen.php:554
+#: includes/admin/class-xpayeg-admin-screen.php:603
 msgid "Close"
 msgstr "إغلاق"
 
-#: includes/admin/class-xpayeg-admin-screen.php:560
+#: includes/admin/class-xpayeg-admin-screen.php:609
 #: includes/gateway/class-xpayeg-gateway.php:125
 msgid "Live"
 msgstr "مباشر"
 
-#: includes/admin/class-xpayeg-admin-screen.php:560
+#: includes/admin/class-xpayeg-admin-screen.php:609
 #: includes/gateway/class-xpayeg-gateway.php:124
 msgid "Test"
 msgstr "اختبار"
 
-#: includes/admin/class-xpayeg-admin-screen.php:603
+#: includes/admin/class-xpayeg-admin-screen.php:652
 msgid "Connect with XPay in live mode"
 msgstr "الاتصال بـ XPay في الوضع الفعلي"
 
-#: includes/admin/class-xpayeg-admin-screen.php:603
+#: includes/admin/class-xpayeg-admin-screen.php:652
 msgid "Connect with XPay in test mode"
 msgstr "الاتصال بـ XPay في الوضع التجريبي"
 
-#: includes/admin/class-xpayeg-admin-screen.php:604
+#: includes/admin/class-xpayeg-admin-screen.php:653
 msgid "Connect your XPay account. Payment methods and order updates are set up automatically."
 msgstr "اربط حساب XPay. يتم إعداد طرق الدفع وتحديثات الطلبات تلقائيًا."
 
-#: includes/admin/class-xpayeg-admin-screen.php:609
+#: includes/admin/class-xpayeg-admin-screen.php:658
 msgid "Connect live account"
 msgstr "اتصال بالحساب الفعلي"
 
-#: includes/admin/class-xpayeg-admin-screen.php:609
+#: includes/admin/class-xpayeg-admin-screen.php:658
 msgid "Connect test account"
 msgstr "اتصال بالحساب التجريبي"
 
-#: includes/admin/class-xpayeg-admin-screen.php:616
+#: includes/admin/class-xpayeg-admin-screen.php:665
 msgid "Reconfigure webhook"
 msgstr "إعادة إعداد الويب هوك"
 
 #. translators: %s is this store's webhook URL.
-#: includes/admin/class-xpayeg-admin-screen.php:629
+#: includes/admin/class-xpayeg-admin-screen.php:678
 #, php-format
 msgid "Your webhook endpoint is set up. Events are sent to: %s."
 msgstr "نقطة الويب هوك الخاصة بك جاهزة. تُرسل الأحداث إلى: %s."
 
 #. translators: %s is this store's webhook URL.
-#: includes/admin/class-xpayeg-admin-screen.php:631
+#: includes/admin/class-xpayeg-admin-screen.php:680
 #, php-format
 msgid "Webhook events will be sent to: %s."
 msgstr "ستُرسل أحداث الويب هوك إلى: %s."
 
-#: includes/admin/class-xpayeg-admin-screen.php:767
+#: includes/admin/class-xpayeg-admin-screen.php:816
 msgid "Just reconfigured. Give it a minute before trying again."
 msgstr "تمت إعادة الإعداد للتو. انتظر دقيقة قبل المحاولة مرة أخرى."
 
-#: includes/admin/class-xpayeg-admin-screen.php:774
+#: includes/admin/class-xpayeg-admin-screen.php:823
 msgid "Save this mode's keys first."
 msgstr "احفظ مفاتيح هذا الوضع أولًا."
 
-#: includes/admin/class-xpayeg-admin-screen.php:782
+#: includes/admin/class-xpayeg-admin-screen.php:831
 msgid "Webhook reconfigured. The signing secret was stored for you."
 msgstr "تمت إعادة إعداد الويب هوك. تم حفظ سر التوقيع لك."
 
-#: includes/admin/class-xpayeg-admin-screen.php:812
+#: includes/admin/class-xpayeg-admin-screen.php:861
 msgid "The method list changed while you were editing. Reload the page and try again."
 msgstr "تغيّرت قائمة طرق الدفع أثناء التعديل. أعد تحميل الصفحة وحاول مرة أخرى."
 
-#: includes/admin/class-xpayeg-admin-screen.php:819
+#: includes/admin/class-xpayeg-admin-screen.php:868
 msgid "Display order saved."
 msgstr "تم حفظ ترتيب العرض."
 
-#: includes/admin/class-xpayeg-admin-screen.php:840
+#: includes/admin/class-xpayeg-admin-screen.php:889
 msgid "The connection could not be started. Check that your store can reach XPay and try again."
 msgstr "تعذّر بدء الاتصال. تأكد من أن متجرك يمكنه الوصول إلى XPay ثم حاول مرة أخرى."
 
@@ -400,7 +456,7 @@ msgstr "المحاولات: %d"
 
 #: includes/blocks/class-xpayeg-blocks-support.php:159
 #: includes/gateway/class-xpayeg-gateway.php:74
-#: includes/gateway/class-xpayeg-gateway.php:1433
+#: includes/gateway/class-xpayeg-gateway.php:1516
 #: includes/gateway/class-xpayeg-method-gateway.php:68
 msgid "Pay now"
 msgstr "ادفع الآن"
@@ -443,64 +499,76 @@ msgstr "XPay: أُلغي الاتصال قبل اكتماله. لم يتغير �
 msgid "XPay: the connection could not be completed. Nothing changed. Try again in a moment. If it keeps failing, the WooCommerce logs (source \"xpayeg\") carry the details."
 msgstr "XPay: تعذّر إكمال الاتصال. لم يتغير شيء. حاول مرة أخرى بعد قليل. إذا استمر الفشل فستجد التفاصيل في سجلات ووكومرس (المصدر \"xpayeg\")."
 
-#: includes/constants/class-xpayeg-payment-methods.php:45
+#: includes/constants/class-xpayeg-payment-methods.php:53
 msgid "Card"
 msgstr "بطاقة بنكية"
 
-#: includes/constants/class-xpayeg-payment-methods.php:47
+#: includes/constants/class-xpayeg-payment-methods.php:55
+msgid "Apple Pay"
+msgstr "Apple Pay"
+
+#: includes/constants/class-xpayeg-payment-methods.php:57
 msgid "ValU"
 msgstr "ڤاليو"
 
-#: includes/constants/class-xpayeg-payment-methods.php:49
+#: includes/constants/class-xpayeg-payment-methods.php:59
 msgid "Fawry"
 msgstr "فوري"
 
-#: includes/constants/class-xpayeg-payment-methods.php:58
+#: includes/constants/class-xpayeg-payment-methods.php:68
 msgid "Pay with your Visa, Mastercard or Meeza card."
 msgstr "ادفع ببطاقة فيزا أو ماستركارد أو ميزة."
 
-#: includes/constants/class-xpayeg-payment-methods.php:60
+#: includes/constants/class-xpayeg-payment-methods.php:70
+msgid "Pay securely with Apple Pay."
+msgstr "ادفع بأمان باستخدام Apple Pay."
+
+#: includes/constants/class-xpayeg-payment-methods.php:72
 msgid "Split your payment into installments with ValU."
 msgstr "قسّم مبلغك إلى أقساط مع ڤاليو."
 
-#: includes/constants/class-xpayeg-payment-methods.php:62
+#: includes/constants/class-xpayeg-payment-methods.php:74
 msgid "Get a reference code and pay at any Fawry point or in the app."
 msgstr "احصل على كود مرجعي وادفع في أي منفذ فوري أو من التطبيق."
 
-#: includes/gateway/class-xpayeg-checkout-elements.php:224
-#: includes/gateway/class-xpayeg-checkout-elements.php:292
+#: includes/gateway/class-xpayeg-apple-pay-domain.php:154
+msgid "XPay: that file is not an Apple Pay domain verification file. Download it again from your Apple Developer account and upload it unchanged."
+msgstr "XPay: هذا الملف ليس ملف التحقق من النطاق الخاص بـ Apple Pay. نزّله مرة أخرى من حساب Apple Developer الخاص بك وارفعه كما هو دون تعديل."
+
+#: includes/gateway/class-xpayeg-checkout-elements.php:225
+#: includes/gateway/class-xpayeg-checkout-elements.php:294
 msgid "Payment is unavailable right now. Please try again in a moment."
 msgstr "الدفع غير متاح الآن. برجاء المحاولة بعد قليل."
 
-#: includes/gateway/class-xpayeg-checkout-elements.php:225
+#: includes/gateway/class-xpayeg-checkout-elements.php:226
 msgid "Your order total changed. Check the new total and try again."
 msgstr "تغيّر إجمالي طلبك. راجع الإجمالي الجديد ثم حاول مرة أخرى."
 
-#: includes/gateway/class-xpayeg-checkout-elements.php:226
+#: includes/gateway/class-xpayeg-checkout-elements.php:227
 msgid "Your basket is empty, so there is nothing to pay for. Add something to it and try again."
 msgstr "سلة مشترياتك فارغة، فلا يوجد ما تدفع مقابله. أضف شيئًا إليها وحاول مرة أخرى."
 
-#: includes/gateway/class-xpayeg-checkout-elements.php:227
-#: includes/gateway/class-xpayeg-checkout-elements.php:294
+#: includes/gateway/class-xpayeg-checkout-elements.php:228
+#: includes/gateway/class-xpayeg-checkout-elements.php:296
 msgid "Payment was not completed. Your order is saved, and you can try again."
 msgstr "لم تكتمل عملية الدفع. طلبك محفوظ، ويمكنك المحاولة مرة أخرى."
 
-#: includes/gateway/class-xpayeg-checkout-elements.php:228
-#: includes/gateway/class-xpayeg-checkout-elements.php:295
+#: includes/gateway/class-xpayeg-checkout-elements.php:229
+#: includes/gateway/class-xpayeg-checkout-elements.php:297
 msgid "This payment is taking longer than expected. Do not pay again. Check your order status or your XPay app before retrying, and contact us if you are unsure."
 msgstr "تستغرق هذه الدفعة وقتًا أطول من المتوقع. لا تدفع مرة أخرى. تحقق من حالة طلبك أو من تطبيق XPay قبل إعادة المحاولة، وتواصل معنا إذا لم تكن متأكدًا."
 
-#: includes/gateway/class-xpayeg-checkout-elements.php:229
-#: includes/gateway/class-xpayeg-checkout-elements.php:296
+#: includes/gateway/class-xpayeg-checkout-elements.php:230
+#: includes/gateway/class-xpayeg-checkout-elements.php:298
 msgid "The payment fields are still loading. Please try again in a moment."
 msgstr "حقول الدفع ما زالت قيد التحميل. برجاء المحاولة بعد قليل."
 
-#: includes/gateway/class-xpayeg-checkout-elements.php:230
-#: includes/gateway/class-xpayeg-checkout-elements.php:297
+#: includes/gateway/class-xpayeg-checkout-elements.php:231
+#: includes/gateway/class-xpayeg-checkout-elements.php:299
 msgid "Please finish filling in the payment details before placing your order."
 msgstr "برجاء استكمال بيانات الدفع قبل تأكيد الطلب."
 
-#: includes/gateway/class-xpayeg-checkout-elements.php:293
+#: includes/gateway/class-xpayeg-checkout-elements.php:295
 msgid "The payment form could not load. Reload the page to try again."
 msgstr "تعذّر تحميل نموذج الدفع. أعد تحميل الصفحة للمحاولة مرة أخرى."
 
@@ -658,107 +726,107 @@ msgstr "تعيد WPFunnels توجيه صفحة ما بعد الدفع إلى م�
 msgid "Write redacted diagnostic logs (WooCommerce → Status → Logs, source \"xpayeg\")"
 msgstr "كتابة سجلات تشخيصية بعد إخفاء البيانات الحساسة (WooCommerce ← الحالة ← السجلات، المصدر \"xpayeg\")"
 
-#: includes/gateway/class-xpayeg-gateway.php:707
+#: includes/gateway/class-xpayeg-gateway.php:759
 msgid "XPay: no API key is saved for the selected mode, so XPay stays hidden at checkout until you connect it."
 msgstr "XPay: لا يوجد مفتاح API محفوظ للوضع المحدد، لذلك يبقى XPay مخفياً في صفحة الدفع حتى تربطه."
 
-#: includes/gateway/class-xpayeg-gateway.php:721
+#: includes/gateway/class-xpayeg-gateway.php:773
 msgid "XPay: the stored key for the selected mode is a LIVE key but the gateway is in Test mode. Connect the mode you selected from the connection dialog."
 msgstr "XPay: المفتاح المحفوظ للوضع المحدد مفتاح فعلي بينما البوابة في الوضع التجريبي. اربط الوضع الذي اخترته من نافذة الاتصال."
 
-#: includes/gateway/class-xpayeg-gateway.php:732
+#: includes/gateway/class-xpayeg-gateway.php:784
 msgid "XPay: the stored key for the selected mode is a TEST key but the gateway is in Live mode. Connect the mode you selected from the connection dialog."
 msgstr "XPay: المفتاح المحفوظ للوضع المحدد مفتاح تجريبي بينما البوابة في الوضع الفعلي. اربط الوضع الذي اخترته من نافذة الاتصال."
 
-#: includes/gateway/class-xpayeg-gateway.php:753
+#: includes/gateway/class-xpayeg-gateway.php:805
 msgid "XPay: no publishable key is saved for the selected mode. The payment fields cannot load without it."
 msgstr "XPay: لا يوجد مفتاح قابل للنشر محفوظ للوضع المحدد. لا يمكن تحميل حقول الدفع بدونه."
 
-#: includes/gateway/class-xpayeg-gateway.php:764
+#: includes/gateway/class-xpayeg-gateway.php:816
 msgid "XPay: the stored publishable key does not belong to the mode you selected. Connect this mode again to store a matching pair."
 msgstr "XPay: المفتاح القابل للنشر المحفوظ لا ينتمي إلى الوضع الذي اخترته. اربط هذا الوضع مرة أخرى لحفظ زوج متطابق."
 
-#: includes/gateway/class-xpayeg-gateway.php:845
+#: includes/gateway/class-xpayeg-gateway.php:897
 msgid "XPay: the stored secret key was refused. It may have been revoked in your XPay dashboard. Connect again to store a fresh key."
 msgstr "XPay: رُفض المفتاح السري المحفوظ. ربما أُلغي من لوحة تحكم XPay. اربط مرة أخرى لحفظ مفتاح جديد."
 
-#: includes/gateway/class-xpayeg-gateway.php:853
+#: includes/gateway/class-xpayeg-gateway.php:905
 msgid "XPay: the stored key cannot act for your account. It looks like a publishable key, which belongs in the browser, not on the server. Connect again to store the right keys."
 msgstr "XPay: المفتاح المحفوظ لا يستطيع التصرف باسم حسابك. يبدو أنه مفتاح قابل للنشر، ومكانه المتصفح لا الخادم. اربط مرة أخرى لحفظ المفاتيح الصحيحة."
 
-#: includes/gateway/class-xpayeg-gateway.php:865
+#: includes/gateway/class-xpayeg-gateway.php:917
 msgid "XPay: settings saved. XPay could not be reached just now, so the connection is unconfirmed. Reload this page in a moment to check it."
 msgstr "XPay: تم حفظ الإعدادات. تعذّر الوصول إلى XPay الآن، فالاتصال غير مؤكد. أعد تحميل هذه الصفحة بعد قليل للتحقق."
 
-#: includes/gateway/class-xpayeg-gateway.php:887
+#: includes/gateway/class-xpayeg-gateway.php:939
 msgid "Checkout Sessions (write)"
 msgstr "جلسات الدفع (كتابة)"
 
-#: includes/gateway/class-xpayeg-gateway.php:888
+#: includes/gateway/class-xpayeg-gateway.php:940
 msgid "Refunds (write)"
 msgstr "الاستردادات (كتابة)"
 
 #. translators: %s is a comma-separated list of permission names, for example "Checkout Sessions (write), Refunds (write)".
-#: includes/gateway/class-xpayeg-gateway.php:897
+#: includes/gateway/class-xpayeg-gateway.php:949
 #, php-format
 msgid "XPay: this key is missing: %s. Connect again from the settings screen to mint a key with everything the plugin needs."
 msgstr "XPay: هذا المفتاح ينقصه: %s. اربط مرة أخرى من شاشة الإعدادات لإصدار مفتاح يحمل كل ما تحتاجه الإضافة."
 
-#: includes/gateway/class-xpayeg-gateway.php:943
+#: includes/gateway/class-xpayeg-gateway.php:995
 msgid "XPay connected (live mode). Your account is not activated for live payments yet, so payments stay off until XPay activates it. Test mode works fully in the meantime."
 msgstr "تم توصيل XPay (الوضع الفعلي). حسابك غير مفعَّل للمدفوعات الفعلية بعد، فستظل المدفوعات متوقفة حتى يفعّله XPay. الوضع التجريبي يعمل بالكامل في الوقت الحالي."
 
-#: includes/gateway/class-xpayeg-gateway.php:949
+#: includes/gateway/class-xpayeg-gateway.php:1001
 msgid "XPay connected (test mode)."
 msgstr "تم الاتصال بـ XPay (وضع الاختبار)."
 
-#: includes/gateway/class-xpayeg-gateway.php:950
+#: includes/gateway/class-xpayeg-gateway.php:1002
 msgid "XPay connected (live mode)."
 msgstr "تم الاتصال بـ XPay (الوضع المباشر)."
 
-#: includes/gateway/class-xpayeg-gateway.php:992
+#: includes/gateway/class-xpayeg-gateway.php:1053
 msgid "XPay: keep at least one payment method on. Your payment method changes were not saved. To take XPay off the checkout entirely, turn off Enable XPay instead."
 msgstr "XPay: أبقِ طريقة دفع واحدة على الأقل مفعّلة. لم تُحفظ تغييرات طرق الدفع. لإزالة XPay من صفحة إتمام الشراء بالكامل، أوقف تفعيل XPay بدلًا من ذلك."
 
-#: includes/gateway/class-xpayeg-gateway.php:1160
+#: includes/gateway/class-xpayeg-gateway.php:1243
 msgid "XPay: this key cannot manage webhooks, so order confirmations are not connected. Use Connect with XPay on the settings screen to get a key that can, or allow Webhook Endpoints (write) on this key in your XPay dashboard and save again."
 msgstr "XPay: هذا المفتاح لا يستطيع إدارة الويب هوك، لذلك تأكيدات الطلبات غير متصلة. استخدم الاتصال بـ XPay من شاشة الإعدادات للحصول على مفتاح يستطيع ذلك، أو اسمح بنقاط الويب هوك (كتابة) لهذا المفتاح من لوحة تحكم XPay ثم احفظ مرة أخرى."
 
-#: includes/gateway/class-xpayeg-gateway.php:1166
+#: includes/gateway/class-xpayeg-gateway.php:1249
 msgid "XPay: webhook set up automatically. Order confirmations are connected, with nothing to paste."
 msgstr "XPay: تم إعداد الويب هوك تلقائيًا. تأكيدات الطلبات متصلة الآن، دون الحاجة إلى لصق أي شيء."
 
-#: includes/gateway/class-xpayeg-gateway.php:1169
+#: includes/gateway/class-xpayeg-gateway.php:1252
 msgid "XPay: the webhook could not be set up automatically just now. Use Reconfigure webhook in the connection dialog to retry."
 msgstr "XPay: تعذّر تجهيز الويب هوك تلقائياً الآن. استخدم زر إعادة تجهيز الويب هوك في نافذة الاتصال للمحاولة مرة أخرى."
 
-#: includes/gateway/class-xpayeg-gateway.php:1305
-#: includes/gateway/class-xpayeg-gateway.php:1339
-#: includes/gateway/class-xpayeg-gateway.php:1377
+#: includes/gateway/class-xpayeg-gateway.php:1388
+#: includes/gateway/class-xpayeg-gateway.php:1422
+#: includes/gateway/class-xpayeg-gateway.php:1460
 msgid "The payment could not be started. Please try again. Your card has not been charged."
 msgstr "تعذّر بدء عملية الدفع. من فضلك حاول مرة أخرى — لم يتم الخصم من بطاقتك."
 
 #. translators: 1: XPay error code, 2: error message.
-#: includes/gateway/class-xpayeg-gateway.php:1309
+#: includes/gateway/class-xpayeg-gateway.php:1392
 #, php-format
 msgid "XPay could not be reached [%1$s]: %2$s"
 msgstr "تعذّر الوصول إلى XPay [%1$s]: %2$s"
 
 #. translators: 1: XPay error code, 2: error message.
-#: includes/gateway/class-xpayeg-gateway.php:1343
+#: includes/gateway/class-xpayeg-gateway.php:1426
 #, php-format
 msgid "XPay session creation failed [%1$s]: %2$s"
 msgstr "فشل إنشاء جلسة XPay ‏[%1$s]: %2$s"
 
-#: includes/gateway/class-xpayeg-gateway.php:1428
+#: includes/gateway/class-xpayeg-gateway.php:1511
 msgid "This order has already been paid."
 msgstr "هذا الطلب مدفوع بالفعل."
 
-#: includes/gateway/class-xpayeg-gateway.php:1428
+#: includes/gateway/class-xpayeg-gateway.php:1511
 msgid "View your order confirmation"
 msgstr "عرض تأكيد طلبك"
 
-#: includes/gateway/class-xpayeg-gateway.php:1493
+#: includes/gateway/class-xpayeg-gateway.php:1576
 msgid "Refund amount is required."
 msgstr "مبلغ الاسترداد مطلوب."
 

@@ -230,6 +230,9 @@
 	 *                                            these method types (one per
 	 *                                            checkout row). Absent =
 	 *                                            every enabled method.
+	 * @param {string[]} [options.walletTypes]    Method types whose submission
+	 *                                            holds an authorization that
+	 *                                            cancelPreparation() releases.
 	 * @param {string}   [options.layout]         'accordion' or 'tabs'. A row
 	 *                                            that already draws the
 	 *                                            method's logo and title
@@ -246,7 +249,7 @@
 	 * @param {Function} options.onError          Called with a shopper-facing message.
 	 * @param {Function} options.onUnavailable    Called when the SDK cannot load.
 	 * @return {Object} A handle with confirm(), check(), canPay(),
-	 *                  setAmount() and destroy().
+	 *                  cancelPreparation(), setAmount() and destroy().
 	 */
 	XPayEGElements.mount = function ( options ) {
 		var opts = options || {};
@@ -276,6 +279,8 @@
 		var errorListener = null;
 
 		var fired = false;
+		var prepared = false;
+		var remounting = false;
 
 		/**
 		 * Report that no payment form is going to appear.
@@ -362,7 +367,10 @@
 
 				handle.element.on( 'ready', function () {
 					handle.ready = true;
-					call( opts.onReady );
+					if ( ! remounting ) {
+						call( opts.onReady );
+					}
+					remounting = false;
 				} );
 
 				handle.element.on( 'loaderror', function ( event ) {
@@ -444,9 +452,7 @@
 		 * Ask whether a payment may be attempted, and why not when it may not.
 		 *
 		 * What a page should call before it commits a shopper to anything.
-		 * It costs one message to the element and no network at all, and
-		 * unlike canPay() it puts the completeness question to the fields
-		 * rather than repeating whatever they last happened to announce.
+		 * Wallet methods may request authorization here, before a session exists.
 		 *
 		 * @return {Promise<?string>} A reason to stop, or null to go ahead.
 		 */
@@ -473,33 +479,43 @@
 		/**
 		 * Validate the fields before committing to a charge.
 		 *
-		 * Only a verdict about the shopper's input stops the payment. A
-		 * transport failure here — the embed not answering inside its own
-		 * ten second window, or an element that never mounted — is not
-		 * evidence anyone typed anything wrong, and confirm() carries the
-		 * same guards a moment later, so those fall through rather than
-		 * stranding somebody who filled the form in correctly.
+		 * submit() can collect wallet authorization as well as validate fields.
+		 * Every refusal stops order creation and confirmation; a transport error
+		 * is not permission to proceed without that authorization.
 		 *
 		 * @return {Promise<?string>} A reason to stop, or null to continue.
 		 */
 		function preflight() {
+			var submission;
+			var elements = handle.elements;
 			if ( 'function' !== typeof handle.elements.submit ) {
-				return Promise.resolve( null );
+				return Promise.resolve( text( opts, 'notReady' ) );
 			}
-			return handle.elements
-				.submit()
+			try {
+				submission = handle.elements.submit();
+			} catch ( error ) {
+				return Promise.resolve( text( opts, 'notReady' ) );
+			}
+			return Promise.resolve( submission )
 				.then( function ( outcome ) {
+					if ( handle.elements !== elements || ! handle.ready ) {
+						return text( opts, 'notReady' );
+					}
+					if ( ! outcome || 'object' !== typeof outcome ) {
+						return text( opts, 'notReady' );
+					}
 					var error = outcome && outcome.error;
 					if ( ! error ) {
+						// Only a wallet submission holds an authorization to
+						// release. Remounting after a card submission would
+						// wipe the card details the shopper typed.
+						prepared = ( opts.walletTypes || [] ).indexOf( outcome.selectedPaymentMethod ) !== -1;
 						return null;
 					}
-					if ( 'invalid_request_error' === error.type ) {
-						return messageFrom( error ) || text( opts, 'incomplete' );
-					}
-					return null;
+					return messageFrom( error ) || text( opts, 'incomplete' );
 				} )
 				.catch( function () {
-					return null;
+					return text( opts, 'notReady' );
 				} );
 		}
 
@@ -553,9 +569,11 @@
 				.then( function ( problem ) {
 					if ( problem ) {
 						handle.paying = false;
+						handle.cancelPreparation();
 						return { ok: false, message: problem };
 					}
 
+					prepared = false;
 					return withDeadline(
 						handle.xpay.confirmPayment( {
 							elements: handle.elements,
@@ -650,7 +668,34 @@
 			}
 		};
 
+		/**
+		 * Release a prepared wallet authorization before confirmation begins.
+		 *
+		 * Remount the fields with the current amount and currency on the same
+		 * handle. Card submissions and payments already confirming are left alone.
+		 *
+		 * @return {void}
+		 */
+		handle.cancelPreparation = function () {
+			if ( ! prepared || handle.paying || ! handle.xpay ) {
+				return;
+			}
+			var xpay = handle.xpay;
+			handle.destroy();
+			fired = false;
+			remounting = true;
+			start( xpay );
+		};
+
+		/**
+		 * Tear down the fields and listeners, clear preparation and readiness,
+		 * and prevent a pending SDK load from mounting abandoned fields.
+		 *
+		 * @return {void}
+		 */
 		handle.destroy = function () {
+			fired = true;
+			prepared = false;
 			try {
 				if ( errorListener && handle.elements && 'function' === typeof handle.elements.off ) {
 					handle.elements.off( 'error', errorListener );
@@ -679,6 +724,7 @@
 			handle.element = null;
 			handle.ready = false;
 			handle.complete = false;
+			handle.selectedMethod = null;
 			handle.paying = false;
 		};
 

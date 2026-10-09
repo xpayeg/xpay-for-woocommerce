@@ -265,4 +265,48 @@ class KeySaveOutcomeTest extends XPayEG_Integration_Test_Case {
 		$this->assertFalse( $this->said( 'errors', 'refused' ) );
 		$this->assertTrue( $this->said( 'messages', 'could not be reached' ) );
 	}
+
+	/* ── What the cache may still claim ──────────────────────────────── */
+
+	public function test_new_keys_that_cannot_be_read_drop_the_previous_accounts_facts(): void {
+		// Facts cached for the account the previous keys belonged to.
+		update_option( XPayEG_Constants::account_methods_option( false ), array( 'EGP' => array( 'card', 'apple_pay' ) ) );
+		update_option( XPayEG_Constants::account_wallets_option( false ), array( 'apple_pay' => true ) );
+		update_option( XPayEG_Constants::merchant_id_option( false ), 'acct_previous' );
+		update_option( XPayEG_Constants::merchant_name_option( false ), 'Previous Store' );
+		update_option( XPayEG_Constants::account_checked_option( false ), time() );
+		update_option( XPayEG_Constants::account_wallets_option( true ), array( 'apple_pay' => true ) );
+		$this->xpayeg_answers( 502, 'api_error' );
+
+		$this->save_keys();
+
+		foreach ( array(
+			XPayEG_Constants::account_methods_option( false ),
+			XPayEG_Constants::account_wallets_option( false ),
+			XPayEG_Constants::merchant_id_option( false ),
+			XPayEG_Constants::merchant_name_option( false ),
+			XPayEG_Constants::account_checked_option( false ),
+		) as $option ) {
+			$this->assertFalse( get_option( $option ), $option . ' still describes the previous account.' );
+		}
+		$this->assertSame( array( 'apple_pay' => true ), get_option( XPayEG_Constants::account_wallets_option( true ) ), 'The other mode is untouched.' );
+	}
+
+	public function test_proved_keys_keep_their_facts_when_the_account_cannot_be_read(): void {
+		$this->xpayeg_answers_account();
+		$this->save_keys();
+		$this->xpayeg_answers( 502, 'api_error' );
+
+		$this->save_keys();
+
+		$this->assertIsArray( get_option( XPayEG_Constants::OPTION_KEY_VALIDATED ) );
+		$this->assertSame(
+			array(
+				'EGP' => array( 'card', 'fawry' ),
+				'USD' => array( 'card' ),
+			),
+			get_option( XPayEG_Constants::account_methods_option( false ) ),
+			'Facts read with these same keys stay until a read replaces them.'
+		);
+	}
 }

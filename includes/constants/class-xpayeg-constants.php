@@ -264,6 +264,15 @@ final class XPayEG_Constants {
 		return $live_mode ? self::OPTION_MERCHANT_ID_LIVE : self::OPTION_MERCHANT_ID_TEST;
 	}
 
+	/**
+	 * The stored merchant display-name option name for one plane.
+	 *
+	 * @param bool $live_mode Which plane.
+	 */
+	public static function merchant_name_option( bool $live_mode ): string {
+		return 'xpayeg_merchant_name_' . ( $live_mode ? 'live' : 'test' );
+	}
+
 	/*
 	 * What THIS account can actually charge, per plane: GET /account's
 	 * supportedCurrencies as a map of uppercase currency code to the
@@ -287,6 +296,17 @@ final class XPayEG_Constants {
 	 */
 	public static function account_methods_option( bool $live_mode ): string {
 		return $live_mode ? self::OPTION_ACCOUNT_METHODS_LIVE : self::OPTION_ACCOUNT_METHODS_TEST;
+	}
+
+	/**
+	 * The cached wallet setup map for one plane: wallet type => whether
+	 * its website setup is complete in the merchant's XPay dashboard.
+	 * Written with the account methods map.
+	 *
+	 * @param bool $live_mode Which plane.
+	 */
+	public static function account_wallets_option( bool $live_mode ): string {
+		return 'xpayeg_account_wallets_' . ( $live_mode ? 'live' : 'test' );
 	}
 
 	/**
@@ -325,6 +345,9 @@ final class XPayEG_Constants {
 
 	/** The merchant-facing XPay dashboard (production host). */
 	const DASHBOARD_URL = 'https://app.xpay.app';
+
+	/** The public XPay documentation (production host). */
+	const DOCS_URL = 'https://docs.xpay.app';
 
 	/**
 	 * Deep link to one payment in the merchant's dashboard.

@@ -202,6 +202,7 @@
 				layout: settings.method ? 'tabs' : undefined,
 				amount: cartAmount(),
 				currency: cartCurrency(),
+				walletTypes: params.walletTypes,
 				publishableKey: params.publishableKey,
 				sdkUrl: params.sdkUrl,
 				colorMode: params.colorMode,
@@ -295,7 +296,7 @@
 			function () {
 				var registration = props.eventRegistration;
 				var emit = props.emitResponse;
-				if ( ! registration || ! registration.onPaymentSetup || ! registration.onCheckoutSuccess || ! emit ) {
+				if ( ! registration || ! registration.onPaymentSetup || ! registration.onCheckoutSuccess || ! registration.onCheckoutFail || ! emit ) {
 					return undefined;
 				}
 
@@ -326,6 +327,13 @@
 					} );
 				} );
 
+				var unsubscribeFail = registration.onCheckoutFail( function () {
+					if ( handleRef.current ) {
+						handleRef.current.cancelPreparation();
+					}
+					return { type: emit.responseTypes.SUCCESS };
+				} );
+
 				var unsubscribeSuccess = registration.onCheckoutSuccess( function ( data ) {
 					var details =
 						data && data.processingResponse && data.processingResponse.paymentDetails
@@ -351,6 +359,9 @@
 					// given nothing to confirm against (already paid, or a
 					// fallback the server owns). Let Blocks redirect.
 					if ( 'yes' !== details.xpayeg_confirm || ! details.xpayeg_secret ) {
+						if ( handleRef.current ) {
+							handleRef.current.cancelPreparation();
+						}
 						return { type: emit.responseTypes.SUCCESS };
 					}
 
@@ -440,6 +451,7 @@
 					if ( unsubscribeSuccess ) {
 						unsubscribeSuccess();
 					}
+					unsubscribeFail();
 				};
 			},
 			[]

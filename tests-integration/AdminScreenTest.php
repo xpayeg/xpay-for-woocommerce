@@ -235,6 +235,9 @@ class AdminScreenTest extends XPayEG_Integration_Test_Case {
 			)
 		);
 
+		update_option( XPayEG_Constants::account_wallets_option( false ), array( 'apple_pay' => true ) );
+		update_option( XPayEG_Constants::account_wallets_option( true ), array( 'apple_pay' => true ) );
+
 		$answer = $this->call_verb( 'disconnect', array( 'plane' => 'test' ) );
 		$this->assertTrue( $answer['success'] );
 
@@ -244,6 +247,9 @@ class AdminScreenTest extends XPayEG_Integration_Test_Case {
 		$this->assertSame( array(), $settings['test_webhook_data'] );
 		$this->assertSame( 'rk_live_other', $settings['live_api_key'], 'The other mode is untouched.' );
 		$this->assertFalse( get_option( XPayEG_Constants::OPTION_KEY_VALIDATED ), 'A disconnected mode cannot keep its Connected badge.' );
+		$this->assertFalse( get_option( XPayEG_Constants::account_wallets_option( false ) ), 'Wallet setup leaves with the account it described.' );
+		$this->assertSame( array( 'apple_pay' => true ), get_option( XPayEG_Constants::account_wallets_option( true ) ), 'The other mode is untouched.' );
+		delete_option( XPayEG_Constants::account_wallets_option( true ) );
 	}
 
 	public function test_reconfigure_refuses_without_keys_and_rate_limits(): void {

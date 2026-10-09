@@ -31,6 +31,9 @@ class MethodRowsTest extends XPayEG_Integration_Test_Case {
 
 	public function tear_down(): void {
 		delete_option( XPayEG_Constants::account_methods_option( false ) );
+		delete_option( XPayEG_Constants::OPTION_ENABLED_METHODS );
+		delete_option( XPayEG_Constants::account_wallets_option( false ) );
+		delete_option( XPayEG_Apple_Pay_Domain::OPTION_CHECK );
 		update_option( 'woocommerce_currency', 'EGP' );
 		parent::tear_down();
 	}
@@ -68,6 +71,37 @@ class MethodRowsTest extends XPayEG_Integration_Test_Case {
 		);
 		$this->assertInstanceOf( 'XPayEG_Gateway', $rows['xpayeg'] );
 		$this->assertInstanceOf( 'XPayEG_Method_Gateway', $rows['xpayeg_valu'] );
+	}
+
+	public function test_apple_pay_uses_the_registry_in_classic_and_blocks(): void {
+		update_option( XPayEG_Constants::account_methods_option( false ), array( 'EGP' => array( 'card', 'apple_pay' ) ) );
+		update_option( XPayEG_Constants::OPTION_ENABLED_METHODS, array( 'card', 'apple_pay' ) );
+		update_option( XPayEG_Constants::account_wallets_option( false ), array( 'apple_pay' => true ) );
+		update_option(
+			XPayEG_Apple_Pay_Domain::OPTION_CHECK,
+			array(
+				'host'  => XPayEG_Apple_Pay_Domain::host(),
+				'found' => true,
+				'at'    => time(),
+			)
+		);
+		$rows = $this->registered_rows();
+		$this->assertSame( 'Apple Pay', $rows['xpayeg_apple_pay']->get_title() );
+		$this->assertTrue( $rows['xpayeg_apple_pay']->is_available() );
+		$this->assertStringContainsString( 'assets/images/apple-pay.svg', $rows['xpayeg_apple_pay']->get_icon() );
+		$this->assertSame( 'Pay securely with Apple Pay.', XPayEG_Payment_Methods::description( 'apple_pay' ) );
+
+		$blocks = $this->registered_blocks_rows();
+		$data   = $blocks['xpayeg_apple_pay']->get_payment_method_data();
+		$this->assertSame( 'Apple Pay', $data['title'] );
+		$this->assertStringContainsString( 'assets/images/apple-pay.svg', $data['icon'] );
+		$this->assertSame( 'apple_pay', $data['method'] );
+	}
+
+	public function test_card_capability_does_not_imply_apple_pay(): void {
+		$this->cache_map();
+		$this->assertArrayNotHasKey( 'xpayeg_apple_pay', $this->registered_rows() );
+		$this->assertArrayNotHasKey( 'xpayeg_apple_pay', $this->registered_blocks_rows() );
 	}
 
 	public function test_without_a_cached_map_only_the_single_row_registers(): void {

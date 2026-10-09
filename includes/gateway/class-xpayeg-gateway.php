@@ -327,12 +327,58 @@ class XPayEG_Gateway extends WC_Payment_Gateway {
 	 * @return string[]
 	 */
 	public function enabled_method_types(): array {
+		return array_values( array_filter( $this->checked_method_types(), array( $this, 'method_offerable' ) ) );
+	}
+
+	/**
+	 * The Payment Methods tab's checked list, before wallet readiness is
+	 * applied. With no stored list every account method is checked except
+	 * wallets: a wallet needs website setup first, so it is never switched
+	 * on by default.
+	 *
+	 * @return string[]
+	 */
+	public function checked_method_types(): array {
 		$ordered = $this->ordered_method_types();
 		$stored  = get_option( XPayEG_Constants::OPTION_ENABLED_METHODS, null );
 		if ( ! is_array( $stored ) ) {
-			return $ordered;
+			return array_values( array_diff( $ordered, XPayEG_Payment_Methods::WALLETS ) );
 		}
 		return array_values( array_intersect( $ordered, array_filter( $stored, 'is_string' ) ) );
+	}
+
+	/**
+	 * Whether a checked method may reach the checkout. Wallets only once
+	 * their website setup is complete; every other method always.
+	 *
+	 * @param string $type Wire method type.
+	 */
+	public function method_offerable( string $type ): bool {
+		return ! in_array( $type, XPayEG_Payment_Methods::WALLETS, true ) || $this->wallet_ready( $type );
+	}
+
+	/**
+	 * Whether the merchant's XPay dashboard reports a wallet's website setup
+	 * as complete, for the selected plane.
+	 *
+	 * @param string $type Wallet method type.
+	 */
+	public function wallet_dashboard_ready( string $type ): bool {
+		$wallets = get_option( XPayEG_Constants::account_wallets_option( ! $this->is_test_mode() ), array() );
+		return is_array( $wallets ) && ! empty( $wallets[ $type ] );
+	}
+
+	/**
+	 * Whether a wallet can run on this store: its dashboard setup is
+	 * complete and, for Apple Pay, the domain file is reachable here.
+	 *
+	 * @param string $type Wallet method type.
+	 */
+	public function wallet_ready( string $type ): bool {
+		if ( ! $this->wallet_dashboard_ready( $type ) ) {
+			return false;
+		}
+		return XPayEG_Payment_Methods::APPLE_PAY !== $type || XPayEG_Apple_Pay_Domain::found();
 	}
 
 	/**
@@ -662,6 +708,12 @@ class XPayEG_Gateway extends WC_Payment_Gateway {
 		update_option( $this->get_option_key(), $after_decommission );
 		$this->init_settings();
 
+		$upload_error = XPayEG_Apple_Pay_Domain::save_upload();
+		if ( null !== $upload_error ) {
+			WC_Admin_Settings::add_error( $upload_error );
+		}
+		$this->maybe_check_apple_pay_domain();
+
 		$this->save_enabled_methods();
 
 		foreach ( $this->validate_and_provision()['notices'] as $notice ) {
@@ -838,6 +890,10 @@ class XPayEG_Gateway extends WC_Payment_Gateway {
 			$status = $e->get_http_status();
 
 			delete_option( XPayEG_Constants::OPTION_KEY_VALIDATED );
+			// These keys are unproved, so the cached facts may describe the
+			// account the previous keys belonged to. Drop them rather than
+			// let checkout offer that account's methods and wallets.
+			self::forget_account_facts( $mode_is_live );
 
 			if ( 401 === $status ) {
 				$notices[] = array(
@@ -988,12 +1044,27 @@ class XPayEG_Gateway extends WC_Payment_Gateway {
 		// is a stale page or a forged value, and neither belongs stored.
 		$enabled = array_values( array_intersect( $this->ordered_method_types(), $posted ) );
 
-		if ( array() === $enabled ) {
+		if ( array() === array_filter( $enabled, array( $this, 'method_offerable' ) ) ) {
 			WC_Admin_Settings::add_error( __( 'XPay: keep at least one payment method on. Your payment method changes were not saved. To take XPay off the checkout entirely, turn off Enable XPay instead.', 'xpay-for-woocommerce' ) );
 			return;
 		}
 
 		update_option( XPayEG_Constants::OPTION_ENABLED_METHODS, $enabled, false );
+	}
+
+	/**
+	 * Drop every cached account fact for one plane, the shelf-life stamp
+	 * included, so the checkout's quiet refresh reads the account on its
+	 * next pass instead of waiting out ACCOUNT_CACHE_SECONDS.
+	 *
+	 * @param bool $live Which plane.
+	 */
+	public static function forget_account_facts( bool $live ): void {
+		delete_option( XPayEG_Constants::account_checked_option( $live ) );
+		delete_option( XPayEG_Constants::account_methods_option( $live ) );
+		delete_option( XPayEG_Constants::account_wallets_option( $live ) );
+		delete_option( XPayEG_Constants::merchant_id_option( $live ) );
+		delete_option( XPayEG_Constants::merchant_name_option( $live ) );
 	}
 
 	/**
@@ -1021,7 +1092,7 @@ class XPayEG_Gateway extends WC_Payment_Gateway {
 			update_option( XPayEG_Constants::merchant_id_option( $live ), $account['id'], false );
 		}
 		if ( isset( $account['displayName'] ) && is_string( $account['displayName'] ) && '' !== $account['displayName'] ) {
-			update_option( 'xpayeg_merchant_name_' . ( $live ? 'live' : 'test' ), $account['displayName'], false );
+			update_option( XPayEG_Constants::merchant_name_option( $live ), $account['displayName'], false );
 		}
 
 		// Currency code => the method types that can charge it, in the
@@ -1048,6 +1119,19 @@ class XPayEG_Gateway extends WC_Payment_Gateway {
 			XPayEG_Plugin::sync_gateway_order();
 		}
 
+		// Wallet type => website setup complete in the XPay dashboard. A
+		// response without the list clears it: a wallet is never offered
+		// on an earlier response's word.
+		$wallets = array();
+		if ( isset( $account['wallets'] ) && is_array( $account['wallets'] ) ) {
+			foreach ( $account['wallets'] as $row ) {
+				if ( is_array( $row ) && isset( $row['type'] ) && is_string( $row['type'] ) ) {
+					$wallets[ $row['type'] ] = isset( $row['websiteReady'] ) && true === $row['websiteReady'];
+				}
+			}
+		}
+		update_option( XPayEG_Constants::account_wallets_option( $live ), $wallets, false );
+
 		// Live activation, as a cached FACT for the status card's badge.
 		// Present-and-false is the only state that claims a problem;
 		// absent stays silent.
@@ -1069,6 +1153,17 @@ class XPayEG_Gateway extends WC_Payment_Gateway {
 	public function refresh_account_facts( array $account ): void {
 		$this->cache_account_facts( $account );
 		$this->maybe_configure_webhook( $account );
+		$this->maybe_check_apple_pay_domain();
+	}
+
+	/**
+	 * Re-check the Apple Pay domain file when the account offers Apple Pay.
+	 * Admin paths only: the check requests this store's own URL.
+	 */
+	private function maybe_check_apple_pay_domain(): void {
+		if ( in_array( XPayEG_Payment_Methods::APPLE_PAY, $this->available_method_types(), true ) ) {
+			XPayEG_Apple_Pay_Domain::check();
+		}
 	}
 
 	/**

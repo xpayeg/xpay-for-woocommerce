@@ -184,6 +184,7 @@
 			layout: method ? 'tabs' : undefined,
 			amount: cartAmount(),
 			currency: params.currency,
+			walletTypes: params.walletTypes,
 			publishableKey: params.publishableKey,
 			sdkUrl: params.sdkUrl,
 			colorMode: params.colorMode,
@@ -290,7 +291,9 @@
 		// not an answer — and the reason they give back is the reason for
 		// the state the shopper is actually in, which for a session that has
 		// expired under them is not advice to fill in more fields.
-		handle.check().then( function ( problem ) {
+		var attempt = handle;
+		var gateway = selectedId();
+		attempt.check().then( function ( problem ) {
 			if ( problem ) {
 				// Refused before anything was created, so there is nothing
 				// to release and nothing to undo.
@@ -298,7 +301,12 @@
 				showError( problem );
 				return;
 			}
-			placeOrderThenConfirm( wcForm );
+			if ( handle !== attempt || selectedId() !== gateway ) {
+				attempt.cancelPreparation();
+				release( wcForm );
+				return;
+			}
+			placeOrderThenConfirm( wcForm, attempt );
 		} );
 	}
 
@@ -321,8 +329,9 @@
 	 * Create the order, then charge for it.
 	 *
 	 * @param {Object} wcForm WooCommerce's checkout-form controller.
+	 * @param {Object} attempt The fields that prepared this payment.
 	 */
-	function placeOrderThenConfirm( wcForm ) {
+	function placeOrderThenConfirm( wcForm, attempt ) {
 		var $form = wcForm && wcForm.$checkout_form ? wcForm.$checkout_form : window.jQuery( 'form.checkout' );
 
 		/*
@@ -348,11 +357,12 @@
 				// paid, or a fallback it owns). It named where to go; go
 				// there.
 				if ( 'yes' !== result.xpayeg_confirm || ! result.xpayeg_secret ) {
+					attempt.cancelPreparation();
 					navigate( result.redirect );
 					return;
 				}
 
-				return handle.confirm( result.xpayeg_secret, customerDetails() ).then( function ( outcome ) {
+				return attempt.confirm( result.xpayeg_secret, customerDetails() ).then( function ( outcome ) {
 					/*
 					 * Charge = display, refused. The session the server made
 					 * does not total what these fields showed, so NOTHING
@@ -417,6 +427,7 @@
 				} );
 			} )
 			.catch( function ( error ) {
+				attempt.cancelPreparation();
 				release( wcForm );
 				if ( error && error.wcMessages && wcForm && wcForm.submit_error ) {
 					// WooCommerce's own validation messages, rendered by

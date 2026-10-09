@@ -195,7 +195,7 @@ final class XPayEG_Admin_Screen {
 	 * @param string[]     $ordered The account's methods in display order.
 	 */
 	private static function methods_card( XPayEG_Gateway $gateway, array $ordered ): void {
-		$enabled = $gateway->enabled_method_types();
+		$enabled = $gateway->checked_method_types();
 
 		echo '<div class="xpayeg-ad__card" data-xpayeg-methods>';
 
@@ -230,7 +230,7 @@ final class XPayEG_Admin_Screen {
 
 		echo '<ul class="xpayeg-ad__methods" data-xpayeg-method-list>';
 		foreach ( $ordered as $type ) {
-			self::method_row( $type, in_array( $type, $enabled, true ) );
+			self::method_row( $gateway, $type, in_array( $type, $enabled, true ) );
 		}
 		echo '</ul>';
 
@@ -247,21 +247,75 @@ final class XPayEG_Admin_Screen {
 	}
 
 	/**
-	 * @param string $type    Wire method type.
-	 * @param bool   $checked Whether this store offers it.
+	 * @param XPayEG_Gateway $gateway Gateway.
+	 * @param string         $type    Wire method type.
+	 * @param bool           $checked Whether this store offers it.
 	 */
-	private static function method_row( string $type, bool $checked ): void {
-		$icon = XPayEG_Payment_Methods::icon_url( $type );
+	private static function method_row( XPayEG_Gateway $gateway, string $type, bool $checked ): void {
+		$icon     = XPayEG_Payment_Methods::icon_url( $type );
+		$wallet   = in_array( $type, XPayEG_Payment_Methods::WALLETS, true );
+		$disabled = $wallet && ! $gateway->wallet_ready( $type );
 
 		echo '<li class="xpayeg-ad__method" data-xpayeg-method-row data-xpayeg-type="' . esc_attr( $type ) . '">';
 		echo '<span class="xpayeg-ad__method-drag" aria-hidden="true">⋮⋮</span>';
-		echo '<input type="checkbox" class="xpayeg-ad__method-check" name="xpayeg_method_enabled[]" id="xpayeg-method-' . esc_attr( $type ) . '" value="' . esc_attr( $type ) . '"' . checked( $checked, true, false ) . '>';
+		echo '<input type="checkbox" class="xpayeg-ad__method-check" name="xpayeg_method_enabled[]" id="xpayeg-method-' . esc_attr( $type ) . '" value="' . esc_attr( $type ) . '"' . checked( $checked, true, false ) . disabled( $disabled, true, false ) . '>';
+		if ( $disabled && $checked ) {
+			// A disabled checkbox never posts; carry its checked state so a
+			// save does not read it as switched off.
+			echo '<input type="hidden" name="xpayeg_method_enabled[]" value="' . esc_attr( $type ) . '">';
+		}
 		echo '<span class="xpayeg-ad__method-icon">' . ( '' !== $icon ? '<img src="' . esc_url( $icon ) . '" alt="">' : '' ) . '</span>';
 		echo '<label class="xpayeg-ad__method-main" for="xpayeg-method-' . esc_attr( $type ) . '">';
 		echo '<span class="xpayeg-ad__method-name">' . esc_html( XPayEG_Payment_Methods::label( $type ) ) . '</span>';
 		echo '<span class="xpayeg-ad__field-help">' . esc_html( XPayEG_Payment_Methods::description( $type ) ) . '</span>';
 		echo '</label>';
+		if ( XPayEG_Payment_Methods::APPLE_PAY === $type ) {
+			self::apple_pay_setup( $gateway, $checked );
+		}
 		echo '</li>';
+	}
+
+	/**
+	 * Apple Pay's website setup: what is still missing, the domain file
+	 * upload, and the guide. Apple Pay cannot be switched on until both
+	 * steps are complete.
+	 *
+	 * @param XPayEG_Gateway $gateway Gateway.
+	 * @param bool           $checked Whether the merchant switched it on.
+	 */
+	private static function apple_pay_setup( XPayEG_Gateway $gateway, bool $checked ): void {
+		$type      = XPayEG_Payment_Methods::APPLE_PAY;
+		$dashboard = $gateway->wallet_dashboard_ready( $type );
+		$domain    = XPayEG_Apple_Pay_Domain::found();
+		$guide     = XPayEG_Constants::DOCS_URL . '/' . ( 0 === strpos( get_user_locale(), 'ar' ) ? 'ar' : 'en' ) . '/plugins/woocommerce#apple-pay';
+
+		echo '<div class="xpayeg-ad__wallet-setup">';
+
+		if ( ! $dashboard || ! $domain ) {
+			echo '<p class="xpayeg-ad__field-help">' . esc_html__( 'Apple Pay needs a one-time setup before you can turn it on.', 'xpay-for-woocommerce' ) . ' <a href="' . esc_url( $guide ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Read the setup guide', 'xpay-for-woocommerce' ) . '</a></p>';
+		}
+		if ( $checked && ( ! $dashboard || ! $domain ) ) {
+			echo '<p class="xpayeg-ad__field-help">' . esc_html__( 'Apple Pay is on but hidden at checkout until setup is complete.', 'xpay-for-woocommerce' ) . '</p>';
+		}
+
+		echo '<div class="xpayeg-ad__badges">';
+		self::badge( __( 'XPay dashboard setup', 'xpay-for-woocommerce' ), $dashboard, $dashboard ? __( 'Complete', 'xpay-for-woocommerce' ) : __( 'Not complete', 'xpay-for-woocommerce' ) );
+		self::badge( __( 'Domain verification file', 'xpay-for-woocommerce' ), $domain, $domain ? __( 'Found', 'xpay-for-woocommerce' ) : __( 'Not found', 'xpay-for-woocommerce' ) );
+		echo '</div>';
+
+		echo '<p class="xpayeg-ad__field-help">';
+		echo esc_html__( 'Upload the domain verification file from your Apple Developer account. The plugin serves it at:', 'xpay-for-woocommerce' );
+		echo ' <code>' . esc_html( XPayEG_Apple_Pay_Domain::url() ) . '</code>';
+		echo '</p>';
+
+		echo '<label class="xpayeg-ad__field-help" for="xpayeg-apple-pay-domain-file">';
+		echo esc_html( '' !== XPayEG_Apple_Pay_Domain::file() ? __( 'Replace the uploaded file', 'xpay-for-woocommerce' ) : __( 'Upload the file', 'xpay-for-woocommerce' ) );
+		echo '</label> ';
+		echo '<input type="file" id="xpayeg-apple-pay-domain-file" name="' . esc_attr( XPayEG_Apple_Pay_Domain::UPLOAD_FIELD ) . '" accept=".txt,text/plain">';
+
+		echo '<p class="xpayeg-ad__field-help">' . esc_html__( 'Save changes to check the setup again.', 'xpay-for-woocommerce' ) . '</p>';
+
+		echo '</div>';
 	}
 
 	/**
@@ -367,7 +421,7 @@ final class XPayEG_Admin_Screen {
 		$merchant_id     = (string) get_option( XPayEG_Constants::merchant_id_option( $live ), '' );
 		$payments_denied = $live && self::live_payments_disabled();
 
-		$merchant_name = (string) get_option( 'xpayeg_merchant_name_' . $mode, '' );
+		$merchant_name = (string) get_option( XPayEG_Constants::merchant_name_option( $live ), '' );
 
 		echo '<div class="xpayeg-ad__card" data-xpayeg-status-card>';
 		echo '<div class="xpayeg-ad__card-head">';
@@ -521,7 +575,7 @@ final class XPayEG_Admin_Screen {
 			sprintf(
 				/* translators: %s is the documentation URL. */
 				__( 'Guides and troubleshooting live at <a href="%s" target="_blank" rel="noopener noreferrer">docs.xpay.app</a>.', 'xpay-for-woocommerce' ),
-				'https://docs.xpay.app'
+				XPayEG_Constants::DOCS_URL
 			),
 			array(
 				'a' => array(
@@ -870,9 +924,7 @@ final class XPayEG_Admin_Screen {
 		if ( is_array( $proof ) && isset( $proof['mode'] ) && $proof['mode'] === $mode ) {
 			delete_option( XPayEG_Constants::OPTION_KEY_VALIDATED );
 		}
-		delete_option( XPayEG_Constants::account_methods_option( $live ) );
-		delete_option( XPayEG_Constants::merchant_id_option( $live ) );
-		delete_option( 'xpayeg_merchant_name_' . $mode );
+		XPayEG_Gateway::forget_account_facts( $live );
 
 		XPayEG_Logger::event( 'admin.disconnected', array( 'live_mode' => $live ) );
 		wp_send_json_success( array( 'disconnected' => true ) );
