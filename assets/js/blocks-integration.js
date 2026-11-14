@@ -47,6 +47,9 @@
 
 	var params = window.xpayegElementsParams || {};
 
+	/** XPayEG_Blocks_Support::CART_DATA_NAMESPACE. */
+	var CART_DATA_NAMESPACE = 'xpayeg';
+
 	/**
 	 * Ask one of the plugin's endpoints. The same set classic checkout uses.
 	 *
@@ -141,21 +144,27 @@
 	function RowContent( props ) {
 		var settings = props.settings;
 
+		/** This plugin's data on the Store API cart (XPayEG_Blocks_Support::cart_data). */
+		function cartData() {
+			var extensions = props.cartData && props.cartData.extensions;
+			return ( extensions && extensions[ CART_DATA_NAMESPACE ] ) || {};
+		}
+
 		var mountRef = element.useRef( null );
 		var handleRef = element.useRef( null );
 
 		/**
-		 * The cart total Blocks is currently showing, in minor units.
+		 * The cart total in XPay minor units, as the server converted it.
 		 *
-		 * Blocks hands the row its own billing data, so this needs no
-		 * server round trip and no DOM scraping: `cartTotal.value` is
-		 * already minor units, which is the unit the element wants.
+		 * Every Store API cart response carries it, so it follows each cart
+		 * change with no request of its own. Blocks' own `cartTotal.value`
+		 * is not used: it is in the store's decimals setting, which a
+		 * merchant may set to something other than the currency's.
 		 *
 		 * @return {number} Minor units, or 0 when it cannot be read.
 		 */
 		function cartAmount() {
-			var total = props.billing && props.billing.cartTotal ? props.billing.cartTotal.value : null;
-			var amount = parseInt( total, 10 );
+			var amount = parseInt( cartData().amount, 10 );
 			if ( ! isNaN( amount ) && amount > 0 ) {
 				return amount;
 			}
@@ -163,9 +172,9 @@
 			return amount > 0 ? amount : 0;
 		}
 
-		/** The currency Blocks is pricing in, falling back to the store's. */
+		/** The currency of cartAmount(), falling back to Blocks' and the store's. */
 		function cartCurrency() {
-			var currency = props.billing && props.billing.currency ? props.billing.currency.code : null;
+			var currency = cartData().currency || ( props.billing && props.billing.currency ? props.billing.currency.code : null );
 			return String( currency || params.currency || '' ).toUpperCase();
 		}
 
@@ -243,14 +252,15 @@
 		 * The library refuses the move once a payment is in flight, which
 		 * is what the old server-side payment lock existed to do.
 		 */
-		var cartTotal = props.billing && props.billing.cartTotal ? props.billing.cartTotal.value : null;
+		var cartTotal = cartAmount();
+		var cartTotalCurrency = cartCurrency();
 		element.useEffect(
 			function () {
 				if ( handleRef.current ) {
-					handleRef.current.setAmount( cartAmount(), cartCurrency() );
+					handleRef.current.setAmount( cartTotal, cartTotalCurrency );
 				}
 			},
-			[ cartTotal ]
+			[ cartTotal, cartTotalCurrency ]
 		);
 
 		/*

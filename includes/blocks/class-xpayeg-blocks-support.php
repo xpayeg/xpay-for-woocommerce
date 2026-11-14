@@ -23,8 +23,12 @@
 defined( 'ABSPATH' ) || exit;
 
 use Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType;
+use Automattic\WooCommerce\StoreApi\Schemas\V1\CartSchema;
 
 final class XPayEG_Blocks_Support extends AbstractPaymentMethodType {
+
+	/** Namespace of this plugin's data on the Store API cart. */
+	const CART_DATA_NAMESPACE = 'xpayeg';
 
 	/** @var array{title:string, description:string, icon:string, active:bool} */
 	private $row;
@@ -42,6 +46,7 @@ final class XPayEG_Blocks_Support extends AbstractPaymentMethodType {
 		if ( ! class_exists( AbstractPaymentMethodType::class ) ) {
 			return;
 		}
+		self::register_cart_data();
 		add_action(
 			'woocommerce_blocks_payment_method_type_registration',
 			function ( $registry ) {
@@ -103,6 +108,58 @@ final class XPayEG_Blocks_Support extends AbstractPaymentMethodType {
 					);
 				}
 			}
+		);
+	}
+
+	/**
+	 * Put the cart total in XPay minor units on every Store API cart
+	 * response, where the Blocks rows read it.
+	 *
+	 * Blocks reports its own cart total in the store's decimals setting,
+	 * not the currency's: a store set to 0 decimals reports EGP 349 as
+	 * 349, not 34900. Converting here keeps money conversion in
+	 * XPayEG_Money, and the value follows every cart change because each
+	 * response carries it.
+	 */
+	private static function register_cart_data(): void {
+		if ( ! function_exists( 'woocommerce_store_api_register_endpoint_data' ) ) {
+			return;
+		}
+		woocommerce_store_api_register_endpoint_data(
+			array(
+				'endpoint'        => CartSchema::IDENTIFIER,
+				'namespace'       => self::CART_DATA_NAMESPACE,
+				'data_callback'   => array( __CLASS__, 'cart_data' ),
+				'schema_callback' => array( __CLASS__, 'cart_data_schema' ),
+				'schema_type'     => ARRAY_A,
+			)
+		);
+	}
+
+	/**
+	 * @return array{amount: int|null, currency: string}
+	 */
+	public static function cart_data(): array {
+		return array(
+			'amount'   => XPayEG_Checkout_Elements::calculated_cart_total_minor(),
+			'currency' => strtoupper( get_woocommerce_currency() ),
+		);
+	}
+
+	public static function cart_data_schema(): array {
+		return array(
+			'amount'   => array(
+				'description' => 'Cart total in XPay minor units, or null when there is nothing to pay.',
+				'type'        => array( 'integer', 'null' ),
+				'context'     => array( 'view', 'edit' ),
+				'readonly'    => true,
+			),
+			'currency' => array(
+				'description' => 'Currency of the amount.',
+				'type'        => 'string',
+				'context'     => array( 'view', 'edit' ),
+				'readonly'    => true,
+			),
 		);
 	}
 

@@ -749,6 +749,22 @@ final class XPayEG_Checkout_Elements {
 
 		self::recalculate_in_checkout_context();
 
+		return self::calculated_cart_total_minor();
+	}
+
+	/**
+	 * The cart total as last calculated, in minor units, or null when
+	 * there is nothing to pay.
+	 *
+	 * For callers whose cart is already calculated, like a Store API cart
+	 * response: recalculating there would change the totals the response
+	 * itself reports.
+	 */
+	public static function calculated_cart_total_minor(): ?int {
+		if ( ! function_exists( 'WC' ) || ! WC()->cart || WC()->cart->is_empty() ) {
+			return null;
+		}
+
 		$total = WC()->cart->get_total( 'edit' );
 		if ( '' === (string) $total ) {
 			return null;

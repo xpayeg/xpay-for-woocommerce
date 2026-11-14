@@ -4,7 +4,7 @@ Tags: woocommerce, payments, payment gateway, egypt, valu
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -106,6 +106,10 @@ Yes. If customers return to the cart after paying and you do not use a working W
 6. The XPay panel on a WooCommerce order, for support and reconciliation.
 
 == Changelog ==
+
+= 1.1.1 =
+
+* The block-based checkout now shows payment methods for the correct order total when your store's number of decimals is set to something other than 2. Before, a store set to 0 decimals saw payment methods as available only above a minimum the order already met.
 
 = 1.1.0 =
 

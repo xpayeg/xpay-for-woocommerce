@@ -5,29 +5,59 @@ import vm from 'node:vm';
 
 const source = ( name ) => readFileSync( new URL( '../../assets/js/' + name, import.meta.url ), 'utf8' );
 
-function boot( { submitResult = { selectedPaymentMethod: 'apple_pay' }, confirmResult = { type: 'success' } } = {} ) {
-	const effects = [];
+const EGP_BILLING = { cartTotal: { value: 29000 }, currency: { code: 'EGP', minorUnit: 2 } };
+const EGP_CART = { extensions: { xpayeg: { amount: 29000, currency: 'EGP' } } };
+
+function boot( {
+	submitResult = { selectedPaymentMethod: 'apple_pay' },
+	confirmResult = { type: 'success' },
+	billing = EGP_BILLING,
+	cartData = EGP_CART,
+} = {} ) {
+	// A small hook runtime: slots persist across renders, and an effect
+	// re-runs only when its dependencies change, as React's do.
+	const slots = [];
+	let slot = 0;
+	let pending = [];
 	const callbacks = {};
 	const instances = [];
 	const confirms = [];
 	const errors = [];
 	let row;
 	const element = {
-		useRef: ( current ) => ( { current } ),
-		useState: ( initial ) => [ initial, ( value ) => errors.push( value ) ],
-		useEffect: ( effect ) => effects.push( effect ),
+		useRef: ( current ) => {
+			const i = slot++;
+			slots[ i ] = slots[ i ] || { current };
+			return slots[ i ];
+		},
+		useState: ( initial ) => {
+			const i = slot++;
+			slots[ i ] = slots[ i ] || [ initial, ( value ) => errors.push( value ) ];
+			return slots[ i ];
+		},
+		useEffect: ( effect, deps ) => {
+			const i = slot++;
+			const prev = slots[ i ];
+			if ( ! prev || ! deps || deps.some( ( dep, k ) => dep !== prev.deps[ k ] ) ) {
+				pending.push( { i, effect } );
+			}
+			slots[ i ] = { deps, cleanup: prev && prev.cleanup };
+		},
 		createElement: ( type, props, ...children ) => {
 			if ( props && props.ref ) { props.ref.current = {}; }
 			return { type, props, children };
 		},
 	};
+	const mounts = [];
+	const updates = [];
 	const xpay = {
-		elements: () => {
+		elements: ( options ) => {
+			mounts.push( options );
 			const handlers = {};
 			const state = { destroyed: false, submitted: 0 };
 			instances.push( state );
 			return {
-				on() {}, off() {}, update() {},
+				on() {}, off() {}, update: ( options ) => { updates.push( options ); },
 				submit: async () => { state.submitted++; return submitResult; },
 				destroy: () => { state.destroyed = true; },
 				create: () => ( {
@@ -60,13 +90,25 @@ function boot( { submitResult = { selectedPaymentMethod: 'apple_pay' }, confirmR
 			event, ( callback ) => { callbacks[ event ] = callback; return () => { delete callbacks[ event ]; }; },
 		] )
 	);
-	row.content.type( {
+	const base = {
 		...row.content.props, eventRegistration,
 		emitResponse: { responseTypes: { SUCCESS: 'success', ERROR: 'error' } },
-		billing: { cartTotal: { value: 29000 }, currency: { code: 'EGP' } },
-	} );
-	const cleanups = effects.map( ( effect ) => effect() );
-	return { callbacks, instances, confirms, errors, unmount: () => cleanups.forEach( ( fn ) => fn && fn() ) };
+	};
+	const render = ( props ) => {
+		slot = 0;
+		pending = [];
+		row.content.type( { ...base, ...props } );
+		pending.forEach( ( { i, effect } ) => {
+			if ( slots[ i ].cleanup ) { slots[ i ].cleanup(); }
+			slots[ i ].cleanup = effect();
+		} );
+	};
+	render( { billing, cartData } );
+	return {
+		callbacks, instances, confirms, errors, mounts, updates,
+		rerender: render,
+		unmount: () => slots.forEach( ( s ) => s && s.cleanup && s.cleanup() ),
+	};
 }
 
 const success = { processingResponse: { paymentDetails: { xpayeg_confirm: 'yes', xpayeg_secret: 'cs_test_secret' } } };
@@ -114,4 +156,40 @@ test( 'Blocks keeps the typed card when a card checkout fails', async () => {
 	b.callbacks.onCheckoutFail();
 	assert.equal( b.instances.length, 1 );
 	assert.equal( b.instances[ 0 ].destroyed, false );
+} );
+
+const mountedWith = ( billing, cartData ) => boot( { billing, cartData } ).mounts[ 0 ];
+
+test( 'Blocks mounts with the amount the server converted, not Blocks\' own total', () => {
+	// A store set to 0 decimals: Blocks reports EGP 349 as 349.
+	const mount = mountedWith(
+		{ cartTotal: { value: 349 }, currency: { code: 'EGP', minorUnit: 0 } },
+		{ extensions: { xpayeg: { amount: 34900, currency: 'EGP' } } }
+	);
+	assert.equal( mount.amount, 34900 );
+	assert.equal( mount.currency, 'EGP' );
+} );
+
+test( 'Blocks falls back to the page amount when the cart carries none', () => {
+	const billing = { cartTotal: { value: 349 }, currency: { code: 'EGP', minorUnit: 0 } };
+	assert.equal( mountedWith( billing, { extensions: { xpayeg: { amount: null, currency: 'EGP' } } } ).amount, 29000 );
+	assert.equal( mountedWith( billing, { extensions: {} } ).amount, 29000, 'Never Blocks\' total in the store decimals.' );
+	assert.equal( mountedWith( billing, null ).amount, 29000 );
+} );
+
+test( 'Blocks moves the mounted fields with each cart change, without mounting again', () => {
+	const cart = ( amount, currency ) => ( { extensions: { xpayeg: { amount, currency } } } );
+	const b = boot( { cartData: cart( 34900, 'EGP' ) } );
+	assert.equal( b.mounts.length, 1 );
+
+	b.rerender( { billing: EGP_BILLING, cartData: cart( 39900, 'EGP' ) } );
+	b.rerender( { billing: EGP_BILLING, cartData: cart( 39900, 'USD' ) } );
+	b.rerender( { billing: EGP_BILLING, cartData: cart( 39900, 'USD' ) } );
+
+	assert.equal( b.mounts.length, 1, 'A cart change must keep what the shopper typed.' );
+	assert.deepEqual(
+		b.updates.map( ( u ) => [ u.amount, u.currency ] ),
+		[ [ 39900, 'EGP' ], [ 39900, 'USD' ] ],
+		'An amount-only and a currency-only change each move the fields once; an unchanged cart moves nothing.'
+	);
 } );

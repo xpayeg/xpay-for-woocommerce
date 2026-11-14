@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1
+
+### Patch Changes
+
+- The block-based checkout now shows payment methods for the correct order total when your store's number of decimals is set to something other than 2. Before, a store set to 0 decimals saw payment methods as available only above a minimum the order already met.
+
 ## 1.1.0
 
 ### Minor Changes
